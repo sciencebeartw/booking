@@ -1,5 +1,5 @@
 <!-- 檔案：detail.html -->
-<!-- 版本：V27.0 (加入浮動 LINE 按鈕) -->
+<!-- 版本：V28.1 (修正所有連結路徑：首頁=index.html, 劃位=booking.html) -->
 <!DOCTYPE html>
 <html lang="zh-TW">
 <head>
@@ -34,7 +34,7 @@
         .course-desc img { max-width: 100%; height: auto; border-radius: 5px; }
         .bottom-action-area { margin-top: 40px; border-top: 1px solid #eee; padding-top: 20px; }
         footer { text-align: center; padding: 40px; color: #999; font-size: 14px; background-color: #2c3e50; color: white; margin-top: 80px; }
-
+        
         /* ★★★ 浮動 LINE 按鈕樣式 ★★★ */
         .float-line-btn { position: fixed; bottom: 25px; right: 20px; width: 60px; height: 60px; border-radius: 50%; background-color: #06C755; box-shadow: 0 4px 12px rgba(0,0,0,0.3); z-index: 9999; cursor: pointer; transition: transform 0.2s; animation: bounce 2s ease-in-out infinite; display: flex; align-items: center; justify-content: center; text-decoration: none; color: white; font-weight: 900; font-size: 1.2rem; font-family: Arial, sans-serif; letter-spacing: 0.5px; }
         .float-line-btn:active { transform: scale(0.9); animation: none; }
@@ -50,7 +50,8 @@
     </header>
 
     <div class="container">
-        <a href="home.html" class="back-link">⬅ 回到課程列表</a>
+        <!-- ★★★ 修正 1：回到首頁 (index.html) ★★★ -->
+        <a href="index.html" class="back-link">⬅ 回到課程列表</a>
         
         <div id="loading" style="text-align:center; padding:50px;">載入中...</div>
 
@@ -109,7 +110,7 @@
 
         if (!courseId) {
             alert("無效的課程連結！");
-            window.location.href = "home.html";
+            window.location.href = "index.html"; // ★★★ 修正 2：錯誤跳轉回 index.html ★★★
         }
 
         const dbRef = ref(db);
@@ -119,7 +120,7 @@
                 renderPage(c);
             } else {
                 alert("找不到此課程！");
-                window.location.href = "home.html";
+                window.location.href = "index.html"; // ★★★ 修正 3：錯誤跳轉回 index.html ★★★
             }
         }).catch((error) => {
             console.error(error);
@@ -173,7 +174,8 @@
                     timerText.textContent = "第一階段劃位中";
                     btn.textContent = "前往劃位 ➜";
                     btn.className = "btn-action btn-active";
-                    btn.href = `index.html?class=${courseId}`;
+                    // ★★★ 修正 4：前往劃位頁 (booking.html) ★★★
+                    btn.href = `booking.html?class=${courseId}`;
                 }
                 else if (now >= end1 && now < start2) {
                     const diff = start2 - now;
@@ -187,7 +189,8 @@
                     timerText.textContent = "第二階段開放中 (含候補)";
                     btn.textContent = "前往劃位 ➜";
                     btn.className = "btn-action btn-active";
-                    btn.href = `index.html?class=${courseId}`;
+                    // ★★★ 修正 5：前往劃位頁 (booking.html) ★★★
+                    btn.href = `booking.html?class=${courseId}`;
                 }
             }
 

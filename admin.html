@@ -1,5 +1,5 @@
 <!-- 檔案：admin.html -->
-<!-- 版本：V25.0 (修復班級選單 + 教室預覽 + 時間寫入修正) -->
+<!-- 版本：V28.0 (修正回首頁連結) -->
 <!DOCTYPE html>
 <html lang="zh-TW">
 <head>
@@ -8,7 +8,6 @@
     <title>🐻 山熊科學 - 後台指揮中心</title>
     <script src="https://cdn.tiny.cloud/1/2nwvnffdvbvf93d6ry0sov7w0d7yabtr1d6tp8l38cb6hoh1/tinymce/6/tinymce.min.js" referrerpolicy="origin"></script>
     <style>
-        /* ... (樣式維持不變) ... */
         body { font-family: "Microsoft JhengHei", sans-serif; background-color: #f0f2f5; padding: 20px; margin: 0; }
         .navbar { background-color: #2c3e50; padding: 15px; border-radius: 10px; margin-bottom: 20px; display: flex; justify-content: space-between; align-items: center; color: white; }
         .nav-title { font-size: 24px; font-weight: bold; display: flex; align-items: center; }
@@ -62,8 +61,6 @@
         .classroom-preview-list { display: grid; grid-template-columns: repeat(auto-fill, minmax(250px, 1fr)); gap: 20px; }
         .classroom-card { background: white; padding: 15px; border-radius: 10px; text-align: center; box-shadow: 0 2px 5px rgba(0,0,0,0.1); cursor: pointer; transition: 0.2s; }
         .classroom-card:hover { transform: translateY(-3px); box-shadow: 0 5px 15px rgba(0,0,0,0.2); }
-        
-        /* 教室預覽 Modal */
         .preview-modal { position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.5); display: none; justify-content: center; align-items: center; z-index: 999; }
         .preview-box { background: white; padding: 20px; border-radius: 10px; max-width: 90%; max-height: 90%; overflow: auto; text-align: center; }
     </style>
@@ -83,7 +80,8 @@
                 <button onclick="switchTab('waitlist')">📋 候補名單</button>
                 <button onclick="switchTab('classrooms')">🏫 教室預覽</button>
             </div>
-            <a href="home.html" class="btn-home" target="_blank">🏠 回首頁</a>
+            <!-- ★★★ 修正連結：回到首頁 (index.html) ★★★ -->
+            <a href="index.html" class="btn-home" target="_blank">🏠 回首頁</a>
         </div>
     </div>
 
@@ -141,7 +139,6 @@
                     <label>班別 (Class Type)</label>
                     <input list="class_type_list" id="c_class_type" placeholder="例如：週一四班" onchange="autoFillTime()">
                     <datalist id="class_type_list">
-                        <!-- ★★★ V25.0 補回班別選項 ★★★ -->
                         <option value="週一四班"></option><option value="週二五班"></option><option value="週三六班"></option>
                         <option value="週一班"></option><option value="週二班"></option><option value="週三班"></option>
                         <option value="週四班"></option><option value="週五班"></option><option value="週六班"></option>
@@ -421,8 +418,6 @@
                     alert("✅ 課程新增成功！");
                 }
 
-                // ★★★ V25.0 修正：時間寫入邏輯 ★★★
-                // 確保時間戳記是數字，且若未填寫則設為無限遠
                 const start1Time = new Date(start1).getTime();
                 const end1Time = end1 ? new Date(end1).getTime() : 9999999999999;
                 const start2Time = start2 ? new Date(start2).getTime() : 9999999999999;
