@@ -1,0 +1,207 @@
+<!-- 檔案：detail.html -->
+<!-- 版本：V27.0 (加入浮動 LINE 按鈕) -->
+<!DOCTYPE html>
+<html lang="zh-TW">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>課程詳情 - 山熊科學</title>
+    <link rel="icon" href="logo1.png">
+    <style>
+        body { font-family: "Microsoft JhengHei", sans-serif; background-color: #f8f9fa; margin: 0; padding: 0; }
+        header { background: #2c3e50; padding: 15px 20px; display: flex; justify-content: center; align-items: center; gap: 20px; color: white; box-shadow: 0 2px 5px rgba(0,0,0,0.1); }
+        header img { height: 60px; }
+        header h1 { margin: 0; font-size: 24px; letter-spacing: 1px; text-align: center; color: white; }
+        .container { max-width: 900px; margin: 40px auto; background: white; padding: 40px; border-radius: 15px; box-shadow: 0 5px 20px rgba(0,0,0,0.1); }
+        .back-link { display: inline-block; margin-bottom: 20px; color: #3498db; text-decoration: none; font-size: 16px; font-weight: bold; border: 1px solid #3498db; padding: 8px 20px; border-radius: 20px; transition: 0.3s; }
+        .back-link:hover { background: #3498db; color: white; }
+        .course-header { display: flex; gap: 30px; margin-bottom: 40px; flex-wrap: wrap; }
+        .course-img { flex: 1; min-width: 300px; height: 300px; background-size: cover; background-position: center; border-radius: 10px; background-color: #eee; }
+        .course-meta { flex: 1; min-width: 300px; }
+        .badge { display: inline-block; padding: 5px 10px; background: #e74c3c; color: white; border-radius: 5px; font-size: 14px; margin-bottom: 10px; }
+        h1 { margin: 0 0 15px 0; color: #2c3e50; font-size: 32px; }
+        .price { font-size: 28px; color: #27ae60; font-weight: bold; margin-bottom: 20px; }
+        .info-item { margin-bottom: 10px; font-size: 16px; color: #555; }
+        .info-item strong { color: #333; margin-right: 10px; }
+        .countdown-box { background: #fdf2e9; border: 2px solid #f39c12; padding: 20px; border-radius: 10px; text-align: center; margin-top: 30px; }
+        .timer-label { font-size: 16px; color: #d35400; margin-bottom: 5px; }
+        .timer-text { font-size: 28px; font-weight: bold; color: #d35400; font-family: monospace; }
+        .btn-action { display: inline-block; width: 100%; padding: 15px; text-align: center; border: none; border-radius: 8px; font-size: 20px; font-weight: bold; cursor: pointer; text-decoration: none; transition: 0.3s; margin-top: 10px; }
+        .btn-disabled { background: #bdc3c7; color: white; cursor: not-allowed; pointer-events: none; }
+        .btn-active { background: #27ae60; color: white; box-shadow: 0 5px 15px rgba(39, 174, 96, 0.4); }
+        .btn-active:hover { background: #219150; transform: translateY(-2px); }
+        .course-desc { border-top: 1px solid #eee; margin-top: 40px; padding-top: 30px; line-height: 1.8; color: #333; }
+        .course-desc img { max-width: 100%; height: auto; border-radius: 5px; }
+        .bottom-action-area { margin-top: 40px; border-top: 1px solid #eee; padding-top: 20px; }
+        footer { text-align: center; padding: 40px; color: #999; font-size: 14px; background-color: #2c3e50; color: white; margin-top: 80px; }
+
+        /* ★★★ 浮動 LINE 按鈕樣式 ★★★ */
+        .float-line-btn { position: fixed; bottom: 25px; right: 20px; width: 60px; height: 60px; border-radius: 50%; background-color: #06C755; box-shadow: 0 4px 12px rgba(0,0,0,0.3); z-index: 9999; cursor: pointer; transition: transform 0.2s; animation: bounce 2s ease-in-out infinite; display: flex; align-items: center; justify-content: center; text-decoration: none; color: white; font-weight: 900; font-size: 1.2rem; font-family: Arial, sans-serif; letter-spacing: 0.5px; }
+        .float-line-btn:active { transform: scale(0.9); animation: none; }
+        @keyframes bounce { 0%, 20%, 50%, 80%, 100% { transform: translateY(0); } 40% { transform: translateY(-10px); } 60% { transform: translateY(-5px); } }
+    </style>
+</head>
+<body>
+
+    <header>
+        <img src="logo1.png" alt="山熊科學">
+        <h1>山熊科學 / 山熊升大</h1>
+        <img src="logo2.png" alt="山熊升大">
+    </header>
+
+    <div class="container">
+        <a href="home.html" class="back-link">⬅ 回到課程列表</a>
+        
+        <div id="loading" style="text-align:center; padding:50px;">載入中...</div>
+
+        <div id="content" style="display:none;">
+            <div class="course-header">
+                <div class="course-img" id="c_img"></div>
+                <div class="course-meta">
+                    <span class="badge" id="c_grade">年級</span>
+                    <h1 id="c_title">課程名稱</h1>
+                    <div class="price" id="c_price">$0</div>
+                    
+                    <div class="info-item"><strong>⏰ 上課時間:</strong> <span id="c_time_desc">-</span></div>
+                    <div class="info-item"><strong>👨‍🏫 授課老師:</strong> <span id="c_teacher">-</span></div>
+                    <div class="info-item"><strong>📍 上課教室:</strong> <span id="c_classroom">-</span></div>
+                    <div class="info-item"><strong>📅 開課日期:</strong> <span id="c_start_date">-</span></div>
+                    <div class="info-item"><strong>🔥 一階開放:</strong> <span id="c_start1">-</span></div>
+                    <div class="info-item"><strong>🔥 二階開放:</strong> <span id="c_start2">-</span></div>
+                </div>
+            </div>
+
+            <div class="course-desc">
+                <h3>課程介紹</h3>
+                <div id="c_desc_content"></div>
+            </div>
+
+            <div class="bottom-action-area">
+                <div class="countdown-box">
+                    <div id="timerLabel" class="timer-label">距離開放還有</div>
+                    <div id="timerText" class="timer-text">計算中...</div>
+                    <a href="#" id="actionBtn" class="btn-action btn-disabled">尚未開放</a>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <footer>
+        &copy; 2024 山熊科學補習班 | 系統開發：Sciencebear Tech Team
+    </footer>
+
+    <!-- ★★★ 浮動 LINE 按鈕 ★★★ -->
+    <a href="https://lin.ee/oGKweky" target="_blank" class="float-line-btn" title="聯繫官方LINE">LINE</a>
+
+    <script type="module">
+        import { db, ref, child, get } from './firebase-config.js';
+
+        const classroomNames = {
+            "high_red": "高中紅教室", "high_orange": "高中橘教室", "high_green": "高中綠教室",
+            "high_yellow": "高中黃教室", "high_blue": "高中藍教室",
+            "middle_new_orange": "國中新橘教室", "middle_new_blue": "國中新藍教室", "middle_new_yellow": "國中新黃教室",
+            "middle_new_red": "國中新紅教室", "middle_big_red": "國中大紅教室",
+            "middle_da_chiao": "國中大橋教室", "middle_big_green": "國中大綠教室"
+        };
+
+        const params = new URLSearchParams(window.location.search);
+        const courseId = params.get('id') ? params.get('id').trim() : null;
+
+        if (!courseId) {
+            alert("無效的課程連結！");
+            window.location.href = "home.html";
+        }
+
+        const dbRef = ref(db);
+        get(child(dbRef, `courses/${courseId}`)).then((snapshot) => {
+            if (snapshot.exists()) {
+                const c = snapshot.val();
+                renderPage(c);
+            } else {
+                alert("找不到此課程！");
+                window.location.href = "home.html";
+            }
+        }).catch((error) => {
+            console.error(error);
+            alert("讀取錯誤");
+        });
+
+        function renderPage(c) {
+            document.getElementById('loading').style.display = 'none';
+            document.getElementById('content').style.display = 'block';
+
+            const title = `${c.subject} ${c.classType || ''}`;
+            document.title = `${title} - 課程詳情`;
+            
+            document.getElementById('c_img').style.backgroundImage = `url('${c.image}')`;
+            document.getElementById('c_grade').textContent = c.grade;
+            document.getElementById('c_title').textContent = title;
+            document.getElementById('c_price').textContent = c.price;
+            document.getElementById('c_teacher').textContent = c.teacher;
+            document.getElementById('c_time_desc').textContent = c.timeDescription || '-';
+            document.getElementById('c_start_date').textContent = c.startDate || '-';
+            document.getElementById('c_classroom').textContent = classroomNames[c.classroom] || c.classroom; 
+            
+            const start1 = new Date(c.start1);
+            const end1 = c.end1 ? new Date(c.end1) : new Date(9999999999999);
+            const start2 = c.start2 ? new Date(c.start2) : new Date(9999999999999);
+
+            document.getElementById('c_start1').textContent = start1.toLocaleString();
+            document.getElementById('c_start2').textContent = c.start2 ? start2.toLocaleString() : "未設定";
+            document.getElementById('c_desc_content').innerHTML = c.desc;
+
+            startTimer(start1, end1, start2, c.classroom);
+        }
+
+        function startTimer(start1, end1, start2, classroomId) {
+            const timerLabel = document.getElementById('timerLabel');
+            const timerText = document.getElementById('timerText');
+            const btn = document.getElementById('actionBtn');
+
+            function update() {
+                const now = new Date();
+
+                if (now < start1) {
+                    const diff = start1 - now;
+                    timerLabel.textContent = "距離一階開放還有";
+                    timerText.textContent = formatTime(diff);
+                    btn.textContent = "尚未開放";
+                    btn.className = "btn-action btn-disabled";
+                }
+                else if (now >= start1 && now < end1) {
+                    timerLabel.textContent = "🔥 目前狀態";
+                    timerText.textContent = "第一階段劃位中";
+                    btn.textContent = "前往劃位 ➜";
+                    btn.className = "btn-action btn-active";
+                    btn.href = `index.html?class=${courseId}`;
+                }
+                else if (now >= end1 && now < start2) {
+                    const diff = start2 - now;
+                    timerLabel.textContent = "系統整理中 (暫停開放)";
+                    timerText.textContent = `距離二階還有：${formatTime(diff)}`;
+                    btn.textContent = "暫停開放";
+                    btn.className = "btn-action btn-disabled";
+                }
+                else {
+                    timerLabel.textContent = "🔥 目前狀態";
+                    timerText.textContent = "第二階段開放中 (含候補)";
+                    btn.textContent = "前往劃位 ➜";
+                    btn.className = "btn-action btn-active";
+                    btn.href = `index.html?class=${courseId}`;
+                }
+            }
+
+            setInterval(update, 1000);
+            update();
+        }
+
+        function formatTime(ms) {
+            const totalSec = Math.floor(ms / 1000);
+            const h = Math.floor(totalSec / 3600);
+            const m = Math.floor((totalSec % 3600) / 60);
+            const s = totalSec % 60;
+            return `${h}時 ${m}分 ${s}秒`;
+        }
+    </script>
+</body>
+</html>

@@ -1,0 +1,148 @@
+<!-- 檔案：check.html -->
+<!-- 版本：V27.0 (加入浮動 LINE 按鈕) -->
+<!DOCTYPE html>
+<html lang="zh-TW">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>查詢劃位 - 山熊科學</title>
+    <link rel="icon" href="logo1.png">
+    <style>
+        body { font-family: "Microsoft JhengHei", sans-serif; background-color: #f8f9fa; margin: 0; padding: 0; }
+        
+        header { background: #2c3e50; box-shadow: 0 2px 5px rgba(0,0,0,0.1); position: sticky; top: 0; z-index: 1000; }
+        .header-container { max-width: 1200px; margin: 0 auto; padding: 10px 20px; display: flex; justify-content: center; align-items: center; gap: 20px; }
+        .header-container img { height: 60px; }
+        .header-container h1 { margin: 0; font-size: 24px; letter-spacing: 1px; color: white; }
+
+        .container { max-width: 600px; margin: 40px auto; background: white; padding: 40px; border-radius: 15px; box-shadow: 0 5px 20px rgba(0,0,0,0.1); text-align: center; }
+        
+        h1.page-title { color: #2c3e50; margin-top: 0; margin-bottom: 30px; }
+        
+        .form-group { margin-bottom: 15px; text-align: left; }
+        label { display: block; margin-bottom: 5px; font-weight: bold; }
+        input { padding: 10px; width: 100%; font-size: 16px; border: 1px solid #ddd; border-radius: 5px; box-sizing: border-box; }
+        button { padding: 10px 20px; background: #3498db; color: white; border: none; border-radius: 5px; cursor: pointer; font-size: 16px; width: 100%; margin-top: 10px; }
+        button:hover { background: #2980b9; }
+        
+        #result { margin-top: 30px; text-align: left; }
+        .result-item { background: #f0f2f5; padding: 15px; border-radius: 8px; margin-bottom: 10px; border-left: 5px solid #27ae60; }
+        
+        .back-btn { display: inline-block; margin-bottom: 20px; color: #3498db; text-decoration: none; font-size: 16px; font-weight: bold; border: 1px solid #3498db; padding: 8px 20px; border-radius: 20px; transition: 0.3s; float: left; }
+        .back-btn:hover { background: #3498db; color: white; }
+
+        footer { text-align: center; padding: 40px; color: #999; font-size: 14px; background-color: #2c3e50; color: white; margin-top: 80px; }
+
+        /* ★★★ 浮動 LINE 按鈕樣式 ★★★ */
+        .float-line-btn { position: fixed; bottom: 25px; right: 20px; width: 60px; height: 60px; border-radius: 50%; background-color: #06C755; box-shadow: 0 4px 12px rgba(0,0,0,0.3); z-index: 9999; cursor: pointer; transition: transform 0.2s; animation: bounce 2s ease-in-out infinite; display: flex; align-items: center; justify-content: center; text-decoration: none; color: white; font-weight: 900; font-size: 1.2rem; font-family: Arial, sans-serif; letter-spacing: 0.5px; }
+        .float-line-btn:active { transform: scale(0.9); animation: none; }
+        @keyframes bounce { 0%, 20%, 50%, 80%, 100% { transform: translateY(0); } 40% { transform: translateY(-10px); } 60% { transform: translateY(-5px); } }
+    </style>
+</head>
+<body>
+
+    <header>
+        <div class="header-container">
+            <img src="logo1.png" alt="山熊科學">
+            <h1>山熊科學 / 山熊升大</h1>
+            <img src="logo2.png" alt="山熊升大">
+        </div>
+    </header>
+
+    <div class="container">
+        <a href="javascript:history.back()" class="back-btn">⬅ 回上一頁</a>
+        <div style="clear:both;"></div> 
+        
+        <h1 class="page-title">🔍 查詢劃位結果</h1>
+        
+        <div class="form-group">
+            <label>訂單編號 (選填)</label>
+            <input type="text" id="orderInput" placeholder="請輸入訂單編號">
+        </div>
+        <div style="text-align:center; margin:10px 0; color:#999;">--- 或 ---</div>
+        <div class="form-group">
+            <label>學生姓名</label>
+            <input type="text" id="nameInput" placeholder="請輸入學生姓名">
+        </div>
+        <div class="form-group">
+            <label>家長手機</label>
+            <input type="tel" id="phoneInput" placeholder="請輸入家長手機">
+        </div>
+        
+        <button onclick="checkBooking()">查詢</button>
+        
+        <div id="result"></div>
+    </div>
+
+    <footer>
+        &copy; 2024 山熊科學補習班 | 系統開發：Sciencebear Tech Team
+    </footer>
+
+    <!-- ★★★ 浮動 LINE 按鈕 ★★★ -->
+    <a href="https://lin.ee/oGKweky" target="_blank" class="float-line-btn" title="聯繫官方LINE">LINE</a>
+
+    <script type="module">
+        import { db, ref } from './firebase-config.js';
+        import { onValue } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-database.js";
+
+        let allBookings = [];
+        let coursesData = {};
+
+        onValue(ref(db, 'courses'), snap => coursesData = snap.val() || {});
+        onValue(ref(db, 'seats'), snap => {
+            const data = snap.val() || {};
+            allBookings = [];
+            Object.keys(data).forEach(courseId => {
+                const seats = data[courseId];
+                Object.keys(seats).forEach(seatId => {
+                    if(seatId === '_settings') return;
+                    const info = seats[seatId];
+                    if (info.status === 'sold') {
+                        allBookings.push({
+                            courseId, seatId, ...info
+                        });
+                    }
+                });
+            });
+        });
+
+        window.checkBooking = function() {
+            const orderId = document.getElementById('orderInput').value.trim();
+            const name = document.getElementById('nameInput').value.trim();
+            const phone = document.getElementById('phoneInput').value.trim();
+            const resultDiv = document.getElementById('result');
+            resultDiv.innerHTML = "";
+
+            let myBookings = [];
+
+            if (orderId) {
+                myBookings = allBookings.filter(b => b.orderId === orderId);
+            } else if (name && phone) {
+                myBookings = allBookings.filter(b => b.studentName === name && b.parentPhone === phone);
+            } else {
+                alert("請輸入「訂單編號」或「姓名+電話」！");
+                return;
+            }
+
+            if (myBookings.length === 0) {
+                resultDiv.innerHTML = "<p style='color:red; text-align:center;'>查無資料，請確認輸入是否正確。</p>";
+            } else {
+                myBookings.forEach(b => {
+                    const c = coursesData[b.courseId];
+                    const courseName = c ? `${c.subject} ${c.classType || ''}` : "未知課程";
+                    
+                    const div = document.createElement('div');
+                    div.className = 'result-item';
+                    div.innerHTML = `
+                        <strong>${courseName}</strong><br>
+                        座位：${b.seatId}<br>
+                        訂單編號：${b.orderId || '-'}<br>
+                        劃位時間：${b.soldTime}
+                    `;
+                    resultDiv.appendChild(div);
+                });
+            }
+        };
+    </script>
+</body>
+</html>

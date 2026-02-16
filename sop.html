@@ -1,0 +1,79 @@
+<!-- 檔案：sop.html -->
+<!-- 版本：V27.0 (加入浮動 LINE 按鈕) -->
+<!DOCTYPE html>
+<html lang="zh-TW">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>劃位須知 - 山熊科學</title>
+    <link rel="icon" href="logo1.png">
+    <style>
+        body { font-family: "Microsoft JhengHei", sans-serif; background-color: #f8f9fa; margin: 0; padding: 0; }
+        
+        header { background: #2c3e50; box-shadow: 0 2px 5px rgba(0,0,0,0.1); position: sticky; top: 0; z-index: 1000; }
+        .header-container { max-width: 1200px; margin: 0 auto; padding: 10px 20px; display: flex; justify-content: center; align-items: center; gap: 20px; }
+        .header-container img { height: 60px; }
+        .header-container h1 { margin: 0; font-size: 24px; letter-spacing: 1px; color: white; }
+
+        .container { max-width: 800px; margin: 40px auto; background: white; padding: 40px; border-radius: 15px; box-shadow: 0 5px 20px rgba(0,0,0,0.1); position: relative; }
+        
+        h1.page-title { color: #2c3e50; text-align: center; border-bottom: 2px solid #e74c3c; padding-bottom: 10px; margin-top: 0; }
+        h3 { color: #e74c3c; margin-top: 30px; }
+        ul { padding-left: 20px; line-height: 1.8; }
+        li { margin-bottom: 10px; }
+        .highlight { color: #d35400; font-weight: bold; }
+        
+        .back-btn { display: inline-block; margin-bottom: 20px; color: #3498db; text-decoration: none; font-size: 16px; font-weight: bold; border: 1px solid #3498db; padding: 8px 20px; border-radius: 20px; transition: 0.3s; }
+        .back-btn:hover { background: #3498db; color: white; }
+
+        footer { text-align: center; padding: 40px; color: #999; font-size: 14px; background-color: #2c3e50; color: white; margin-top: 80px; }
+
+        /* ★★★ 浮動 LINE 按鈕樣式 ★★★ */
+        .float-line-btn { position: fixed; bottom: 25px; right: 20px; width: 60px; height: 60px; border-radius: 50%; background-color: #06C755; box-shadow: 0 4px 12px rgba(0,0,0,0.3); z-index: 9999; cursor: pointer; transition: transform 0.2s; animation: bounce 2s ease-in-out infinite; display: flex; align-items: center; justify-content: center; text-decoration: none; color: white; font-weight: 900; font-size: 1.2rem; font-family: Arial, sans-serif; letter-spacing: 0.5px; }
+        .float-line-btn:active { transform: scale(0.9); animation: none; }
+        @keyframes bounce { 0%, 20%, 50%, 80%, 100% { transform: translateY(0); } 40% { transform: translateY(-10px); } 60% { transform: translateY(-5px); } }
+    </style>
+</head>
+<body>
+
+    <header>
+        <div class="header-container">
+            <img src="logo1.png" alt="山熊科學">
+            <h1>山熊科學 / 山熊升大</h1>
+            <img src="logo2.png" alt="山熊升大">
+        </div>
+    </header>
+
+    <div class="container">
+        <a href="javascript:history.back()" class="back-btn">⬅ 回上一頁</a>
+        <h1 class="page-title">📜 劃位報名請詳讀</h1>
+        
+        <h3>⚠️ 重要注意事項</h3>
+        <ul>
+            <li>購買人姓名請填寫 <span class="highlight">學生姓名</span>，聯絡電話請填寫 <span class="highlight">家長電話</span>。</li>
+            <li>若找不到相對應的學生資料，我們將會直接釋出座位。</li>
+            <li>請務必提前加入【山熊升大】Line官方帳號，並主動傳訊告知是哪位同學或家長。</li>
+        </ul>
+
+        <h3>🕒 開放時間</h3>
+        <ul>
+            <li>19:00 - 20:00：第一階段開放 (全體學生)。</li>
+            <li>21:00 - 22:00：第二階段開放 (釋出座位 + 候補)。</li>
+        </ul>
+
+        <h3>🚫 關於候補</h3>
+        <ul>
+            <li>若座位已額滿，可於第二階段選購 <span class="highlight">候補</span> 選項。</li>
+            <li>若有釋出座位，將依照候補順位通知。</li>
+        </ul>
+    </div>
+
+    <footer>
+        &copy; 2024 山熊科學補習班 | 系統開發：Sciencebear Tech Team
+    </footer>
+
+    <!-- ★★★ 浮動 LINE 按鈕 ★★★ -->
+    <a href="https://lin.ee/oGKweky" target="_blank" class="float-line-btn" title="聯繫官方LINE">LINE</a>
+
+</body>
+</html>
