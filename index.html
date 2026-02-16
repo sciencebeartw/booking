@@ -1,0 +1,573 @@
+<!-- 檔案：index.html -->
+<!-- 版本：V9.4 最終教室修訂版 (國中新藍教室修正) -->
+<!DOCTYPE html>
+<html lang="zh-TW">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>山熊科學 - V9.4 劃位系統</title>
+    <!-- 引入 Google reCAPTCHA (繁體中文) -->
+    <script src="https://www.google.com/recaptcha/api.js?hl=zh-TW" async defer></script>
+    <style>
+        body { font-family: "Microsoft JhengHei", sans-serif; background-color: #f4f4f9; text-align: center; }
+        h1 { color: #333; }
+        
+        /* 教室容器 */
+        .classroom-wrapper {
+            display: inline-block;
+            background-color: white;
+            padding: 30px; /* 加大內距 */
+            border-radius: 15px;
+            box-shadow: 0 5px 15px rgba(0,0,0,0.1);
+            margin-top: 20px;
+            max-width: 95vw;
+            overflow-x: auto;
+        }
+
+        /* 講台樣式 */
+        .stage-box {
+            width: 80%;
+            margin: 0 auto 30px auto; /* 加大講台與第一排的距離 */
+            padding: 12px;
+            border: 3px solid #333;
+            background-color: #fff;
+            font-weight: bold;
+            font-size: 22px;
+            letter-spacing: 8px;
+            text-align: center;
+        }
+
+        /* ★★★ 深邃版設定：加大排距 ★★★ */
+        .row { display: flex; justify-content: center; gap: 8px; margin-bottom: 15px; }
+        
+        /* ★★★ 深邃版設定：長方形座位 ★★★ */
+        .seat { 
+            width: 45px; height: 55px; 
+            background-color: #4CAF50; color: white; 
+            display: flex; align-items: center; justify-content: center; 
+            border-radius: 6px; cursor: pointer; 
+            font-weight: bold; font-size: 13px; 
+            user-select: none; position: relative; transition: 0.2s; 
+        }
+        .seat:hover { transform: scale(1.1); z-index: 10; }
+        
+        /* 各種狀態 */
+        .seat.sold { background-color: #e74c3c; cursor: not-allowed; transform: none; }
+        .seat.locked { background-color: #f39c12; border: 2px solid #333; transform: scale(1.05); }
+        .seat.blocked { background-color: #95a5a6; cursor: not-allowed; transform: none; } /* 灰色保留位 */
+        .seat.aisle { background-color: transparent; color: transparent; pointer-events: none; cursor: default; } /* 走道 */
+        
+        /* 門與柱子 */
+        .seat.door { 
+            background-color: #fff; color: #333; 
+            border: 2px solid #333; 
+            font-size: 16px; writing-mode: vertical-rl; 
+            cursor: default; pointer-events: none; transform: none;
+        }
+        .seat.pillar {
+            background-color: #7f8c8d; color: white;
+            cursor: default; pointer-events: none; transform: none;
+            border-radius: 2px;
+        }
+        .seat.loading { opacity: 0.5; pointer-events: none; }
+        
+        .status-bar { margin: 10px 0; }
+        .dot { height: 12px; width: 12px; display: inline-block; border-radius: 50%; margin-right: 5px; }
+        
+        /* 教室切換按鈕區 */
+        .class-selector { 
+            display: flex; 
+            flex-wrap: wrap; 
+            justify-content: center; 
+            gap: 10px; 
+            margin-bottom: 20px; 
+            max-width: 800px;
+            margin-left: auto;
+            margin-right: auto;
+        }
+        .class-selector button { 
+            padding: 8px 12px; 
+            cursor: pointer; 
+            border: 1px solid #ccc;
+            background: #fff;
+            border-radius: 5px;
+            transition: 0.2s;
+        }
+        .class-selector button:hover { background: #eee; }
+        .class-selector button.active { background: #333; color: #fff; border-color: #333; }
+
+        /* Modal & reCAPTCHA 樣式 */
+        .modal-overlay { position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0, 0, 0, 0.5); display: none; justify-content: center; align-items: center; z-index: 999; }
+        .modal-box { background: white; padding: 25px; border-radius: 15px; width: 90%; max-width: 420px; box-shadow: 0 10px 25px rgba(0,0,0,0.2); text-align: left; border-top: 5px solid #f39c12; max-height: 90vh; overflow-y: auto; }
+        .modal-title { font-size: 20px; font-weight: bold; margin-bottom: 5px; color: #333; }
+        .modal-desc { font-size: 14px; color: #666; margin-bottom: 15px; }
+        .timer-box { background-color: #fff3cd; color: #856404; padding: 10px; border-radius: 5px; text-align: center; font-weight: bold; margin-bottom: 20px; border: 1px solid #ffeeba; }
+        .form-group { margin-bottom: 15px; }
+        .form-group label { display: block; margin-bottom: 5px; font-weight: bold; }
+        .form-group input { width: 100%; padding: 10px; border: 1px solid #ddd; border-radius: 5px; font-size: 16px; box-sizing: border-box; }
+        .input-hint { font-size: 12px; color: #999; margin-top: 3px; }
+        .recaptcha-wrapper { display: flex; justify-content: center; margin-bottom: 15px; margin-top: 10px; }
+        .btn-group { display: flex; justify-content: space-between; gap: 10px; margin-top: 10px; }
+        .btn { padding: 10px 20px; border: none; border-radius: 5px; cursor: pointer; font-size: 16px; flex: 1; transition: 0.3s; }
+        .btn-confirm { background-color: #4CAF50; color: white; }
+        .btn-confirm:disabled { background-color: #ccc; cursor: not-allowed; } 
+        .btn-cancel { background-color: #e74c3c; color: white; }
+    </style>
+</head>
+<body>
+    <h1>🐻 山熊科學 - V9.4 劃位系統</h1>
+    
+    <!-- 教室切換按鈕 -->
+    <div class="class-selector" id="classBtnContainer">
+        <!-- 按鈕會由 JS 自動產生 -->
+    </div>
+
+    <div class="status-bar">
+        <span class="dot" style="background:#4CAF50;"></span>可選
+        <span class="dot" style="background:#e74c3c;"></span>已售出
+        <span class="dot" style="background:#f39c12;"></span>填寫中
+        <span class="dot" style="background:#95a5a6;"></span>不開放
+    </div>
+
+    <!-- 教室渲染區 -->
+    <div class="classroom-wrapper">
+        <div id="stageArea"></div>
+        <div id="classroom">載入中...</div>
+    </div>
+
+    <!-- 彈出視窗 -->
+    <div id="bookingModal" class="modal-overlay">
+        <div class="modal-box">
+            <div class="modal-title">🎉 搶到位置了！請填寫資料</div>
+            <div class="modal-desc">座位：<span id="modalSeatLabel" style="color:#e74c3c; font-weight:bold; font-size:18px;"></span></div>
+            <div id="timerDisplay" class="timer-box">計算剩餘時間中...</div>
+            <div class="form-group">
+                <label>學生姓名：</label>
+                <input type="text" id="studentName" placeholder="例如：王小明">
+            </div>
+            <div class="form-group">
+                <label>家長手機：</label>
+                <input type="tel" id="parentPhone" placeholder="09xxxxxxxx" maxlength="10">
+                <div class="input-hint">請輸入 10 碼手機號碼</div>
+            </div>
+            <div style="display: none;">
+                <label>請勿填寫此欄位 (機器人陷阱)：</label>
+                <input type="text" id="honeyPotField" value="" tabindex="-1" autocomplete="off">
+            </div>
+            <div class="recaptcha-wrapper">
+                <div class="g-recaptcha" 
+                     data-sitekey="6LdkWVwsAAAAAKBQSZKiPxOQ7E3ZbL0V-zaclqt5" 
+                     data-callback="recaptchaSuccess" 
+                     data-expired-callback="recaptchaExpired">
+                </div>
+            </div>
+            <div class="btn-group">
+                <button class="btn btn-cancel" id="cancelBtn">放棄離開</button>
+                <button class="btn btn-confirm" id="confirmBtn" disabled>確認送出</button>
+            </div>
+        </div>
+    </div>
+
+    <script type="module">
+        import { db, ref, set, update } from './firebase-config.js';
+        import { onValue, runTransaction } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-database.js";
+
+        // ----- reCAPTCHA 設定 -----
+        window.recaptchaVerified = false;
+        window.recaptchaSuccess = function(token) { window.recaptchaVerified = true; document.getElementById('confirmBtn').disabled = false; };
+        window.recaptchaExpired = function() { window.recaptchaVerified = false; document.getElementById('confirmBtn').disabled = true; };
+
+        // ----- 12 間教室完整設定 (阿喵老師版 + 國中新藍修正) -----
+        const classrooms = {
+            "high_red": {
+                name: "高中紅教室",
+                hasStage: true,
+                layout: [
+                    ["1-1:X", "1-2:X", "_", "1-3", "1-4", "1-5", "_", "1-6", "1-7", "1-8", "_", "1-9:X", "1-10:X"],
+                    ["2-1", "2-2", "_", "2-3", "2-4", "2-5", "_", "2-6", "2-7", "2-8", "_", "2-9", "2-10"],
+                    ["3-1", "3-2", "_", "3-3", "3-4", "3-5", "_", "3-6", "3-7", "3-8", "_", "3-9", "3-10"],
+                    ["4-1", "4-2", "_", "4-3", "4-4", "4-5", "_", "4-6", "4-7", "4-8", "_", "4-9", "4-10"],
+                    ["5-1", "5-2", "_", "5-3", "5-4", "5-5", "_", "5-6", "5-7", "5-8", "_", "5-9", "5-10"],
+                    ["6-1", "6-2", "_", "6-3", "6-4", "6-5", "_", "6-6", "6-7", "6-8", "_", "6-9", "6-10"],
+                    ["7-1:X", "7-2:X", "_", "7-3:X", "7-4:X", "7-5:X", "_", "7-6:X", "7-7:X", "7-8:X", "_", "7-9:X", "7-10:X"],
+                    ["8-1:X", "8-2:X", "_", "8-3:X", "8-4:X", "8-5:X", "_", "8-6:X", "8-7:X", "8-8:X", "_", "_", "DOOR"]
+                ]
+            },
+            "high_orange": {
+                name: "高中橘教室",
+                hasStage: true,
+                layout: [
+                    ["1-1:X", "1-2", "_", "1-3", "1-4", "1-5", "_", "1-6", "1-7", "1-8", "_", "1-9:X", "1-10:X"],
+                    ["2-1", "2-2", "_", "2-3", "2-4", "2-5", "_", "2-6", "2-7", "2-8", "_", "2-9", "2-10"],
+                    ["3-1", "3-2", "_", "3-3", "3-4", "3-5", "_", "3-6", "3-7", "3-8", "_", "3-9", "3-10"],
+                    ["4-1", "4-2", "_", "4-3", "4-4", "4-5", "_", "4-6", "4-7", "4-8", "_", "4-9", "4-10"],
+                    ["5-1", "5-2", "_", "5-3", "5-4", "5-5", "_", "5-6", "5-7", "5-8", "_", "5-9", "5-10"],
+                    ["6-1", "6-2", "_", "6-3", "6-4", "6-5", "_", "6-6", "6-7", "6-8", "_", "6-9", "6-10"],
+                    ["_","_","_","_","_","_","_","_","_","_","_","_","DOOR"]
+                ]
+            },
+            "high_green": {
+                name: "高中綠教室",
+                hasStage: true,
+                layout: [
+                    ["1-1:X", "1-2", "_", "1-3", "1-4", "1-5", "_", "1-6:X", "1-7:X", "1-8:X"],
+                    ["2-1", "2-2", "_", "2-3", "2-4", "2-5", "_", "2-6", "2-7", "2-8"],
+                    ["3-1", "3-2", "_", "3-3", "3-4", "3-5", "_", "3-6", "3-7", "3-8"],
+                    ["4-1", "4-2", "_", "4-3", "4-4", "4-5", "_", "4-6", "4-7", "4-8"],
+                    ["5-1", "5-2", "_", "5-3", "5-4", "5-5", "_", "5-6", "5-7", "5-8"],
+                    ["6-1:X", "6-2:X", "_", "6-3:X", "6-4:X", "6-5:X", "_", "_", "_", "DOOR"]
+                ]
+            },
+            "high_yellow": {
+                name: "高中黃教室",
+                hasStage: true,
+                layout: [
+                    ["1-1", "1-2:X", "_", "1-3", "1-4", "1-5", "_", "1-6:X", "1-7:X"],
+                    ["2-1", "2-2", "_", "2-3", "2-4", "2-5", "_", "2-6", "2-7"],
+                    ["3-1", "3-2", "_", "3-3", "3-4", "3-5", "_", "3-6", "3-7"],
+                    ["DOOR", "_", "_", "4-3", "4-4", "4-5", "_", "4-6", "4-7"],
+                    ["_", "_", "_", "5-3:X", "5-4:X", "5-5:X", "_", "5-6:X", "5-7:X"],
+                    ["_", "_", "_", "_", "_", "_", "_", "_", "_"]
+                ]
+            },
+            "high_blue": {
+                name: "高中藍教室",
+                hasStage: true,
+                layout: [
+                    ["1-1:X", "1-2", "_", "1-3", "1-4", "1-5", "_", "1-6:X", "1-7:X"],
+                    ["2-1", "2-2", "_", "2-3", "2-4", "2-5", "_", "2-6", "2-7"],
+                    ["3-1", "3-2", "_", "3-3", "3-4", "3-5", "_", "3-6", "3-7"],
+                    ["4-1", "4-2", "_", "4-3", "4-4", "4-5", "_", "4-6", "4-7"],
+                    ["5-1:X", "5-2:X", "_", "5-3:X", "5-4:X", "5-5:X", "_", "5-6:X", "5-7:X"],
+                    ["6-1:X", "6-2:X", "_", "_", "DOOR", "_", "_", "_", "_"]
+                ]
+            },
+            "middle_new_orange": {
+                name: "國中新橘教室",
+                hasStage: true,
+                layout: [
+                    ["1-1:X", "1-2", "_", "1-3", "1-4", "1-5", "_", "1-6", "1-7", "1-8:X"],
+                    ["2-1", "2-2", "_", "2-3", "2-4", "2-5", "_", "2-6", "2-7", "2-8"],
+                    ["3-1", "3-2", "_", "3-3", "3-4", "3-5", "_", "3-6", "3-7", "3-8"],
+                    ["4-1", "4-2", "_", "4-3", "4-4", "4-5", "_", "4-6", "4-7", "4-8:X"],
+                    ["DOOR", "_", "_", "5-3", "5-4", "5-5", "_", "5-6", "5-7", "PILLAR"]
+                ]
+            },
+            "middle_new_blue": {
+                name: "國中新藍教室",
+                hasStage: true,
+                layout: [
+                    ["1-1", "1-2", "1-3", "_", "1-4", "1-5", "1-6", "1-7:X"],
+                    ["2-1", "2-2", "2-3", "_", "2-4", "2-5", "2-6", "2-7:X"],
+                    ["3-1", "3-2", "3-3", "_", "3-4", "3-5", "3-6", "3-7:X"],
+                    ["4-1", "4-2", "4-3", "_", "4-4", "4-5", "4-6", "4-7:X"],
+                    ["5-1", "5-2", "5-3", "_", "5-4", "5-5", "5-6", "5-7:X"],
+                    ["6-1:X", "6-2:X", "6-3:X", "_", "6-4:X", "6-5:X", "6-6:X", "6-7:X"],
+                    ["7-1:X", "7-2:X", "7-3:X", "_", "7-4:X", "7-5:X", "7-6:X", "7-7:X"],
+                    ["DOOR", "_", "_", "_", "_", "_", "_", "_"]
+                ]
+            },
+            "middle_new_yellow": {
+                name: "國中新黃教室",
+                hasStage: true,
+                layout: [
+                    ["1-1", "1-2", "1-3", "_", "1-4", "1-5", "1-6", "_", "1-7", "1-8:X"],
+                    ["PILLAR", "2-2", "2-3", "_", "2-4", "2-5", "2-6", "_", "2-7", "2-8:X"],
+                    ["3-1:X", "3-2", "3-3", "_", "3-4", "3-5", "3-6", "_", "3-7", "3-8"],
+                    ["4-1", "4-2", "4-3", "_", "4-4", "4-5", "4-6", "_", "4-7", "4-8"],
+                    ["5-1", "5-2", "5-3", "_", "5-4", "5-5", "5-6", "_", "5-7", "5-8"],
+                    ["6-1:X", "6-2", "6-3", "_", "6-4", "6-5", "6-6", "_", "6-7", "6-8"],
+                    ["DOOR", "_", "_", "_", "_", "_", "_", "_", "_", "_"]
+                ]
+            },
+            "middle_new_red": {
+                name: "國中新紅教室",
+                hasStage: true,
+                layout: [
+                    ["1-1", "1-2:X", "1-3", "_", "1-4", "1-5", "1-6", "1-7", "_", "1-8", "1-9:X", "1-10:X"],
+                    ["2-1", "2-2", "2-3", "_", "2-4", "2-5", "2-6", "2-7", "_", "2-8", "2-9", "2-10"],
+                    ["3-1", "3-2", "3-3", "_", "3-4", "3-5", "3-6", "3-7", "_", "3-8", "3-9", "3-10"],
+                    ["DOOR", "_", "_", "_", "_", "_", "_", "_", "_", "_", "_", "_"],
+                    ["4-1", "4-2", "4-3", "_", "4-4", "4-5", "4-6", "4-7", "_", "4-8", "4-9", "4-10"],
+                    ["5-1", "5-2", "5-3", "_", "5-4", "5-5", "5-6", "5-7", "_", "5-8", "5-9", "5-10"],
+                    ["6-1", "6-2", "6-3", "_", "6-4", "6-5", "6-6", "6-7", "_", "6-8", "6-9", "6-10"],
+                    ["7-1", "7-2", "7-3", "_", "7-4", "7-5", "7-6", "7-7", "_", "7-8", "7-9", "7-10"],
+                    ["8-1:X", "8-2:X", "8-3:X","_","8-4:X", "8-5:X", "8-6:X", "8-7:X", "_", "8-8:X", "8-9:X", "8-10:X"]
+                ]
+            },
+            "middle_big_red": {
+                name: "國中大紅教室",
+                hasStage: true,
+                layout: [
+                    ["1-1:X", "1-2", "_", "1-3", "1-4", "1-5", "_", "1-6", "1-7", "1-8", "_", "1-9", "1-10:X"],
+                    ["2-1", "2-2", "_", "2-3", "2-4", "2-5", "_", "2-6", "2-7", "2-8", "_", "2-9", "2-10"],
+                    ["3-1", "3-2", "_", "3-3", "3-4", "3-5", "_", "3-6", "3-7", "3-8", "_", "3-9", "3-10"],
+                    ["4-1", "4-2", "_", "4-3", "4-4", "4-5", "_", "4-6", "4-7", "4-8", "_", "4-9", "4-10"],
+                    ["5-1", "5-2", "_", "5-3", "5-4", "5-5", "_", "5-6", "5-7", "5-8", "_", "5-9", "5-10"],
+                    ["6-1", "6-2", "_", "6-3", "6-4", "6-5", "_", "6-6", "6-7", "6-8", "_", "6-9", "6-10"],
+                    ["7-1", "7-2", "_", "7-3", "7-4", "7-5", "_", "7-6", "7-7", "7-8", "_", "7-9", "7-10"],
+                    ["_","_","_","_","_","_","_","_","_","_","_","_","DOOR"]
+                ]
+            },
+            "middle_big_orange": {
+                name: "國中大橋教室",
+                hasStage: true,
+                layout: [
+                    ["1-1:X", "1-2:X", "1-3", "_", "1-4", "1-5", "1-6", "_", "1-7", "1-8:X"],
+                    ["2-1", "2-2", "2-3", "_", "2-4", "2-5", "2-6", "_", "2-7", "2-8"],
+                    ["3-1", "3-2", "3-3", "_", "3-4", "3-5", "3-6", "_", "3-7", "3-8"],
+                    ["4-1", "4-2", "4-3", "_", "4-4", "4-5", "4-6", "_", "4-7", "4-8:X"],
+                    ["5-1", "5-2", "5-3", "_", "5-4", "5-5", "5-6", "_", "5-7", "5-8"],
+                    ["_","_","_","_","_","_","_","_","_","DOOR"]
+                ]
+            },
+            "middle_big_green": {
+                name: "國中大綠教室",
+                hasStage: true,
+                layout: [
+                    ["DOOR", "_", "_", "_", "_", "_"],
+                    ["1-1", "1-2", "1-3", "_", "1-4", "1-5"],
+                    ["2-1", "2-2", "2-3", "_", "2-4", "2-5"],
+                    ["3-1", "3-2", "3-3", "_", "3-4", "3-5"],
+                    ["PILLAR", "4-2", "4-3", "_", "4-4", "4-5"]
+                ]
+            }
+        };
+
+        // ----- 全域變數 -----
+        // 1. 嘗試從網址取得參數 (例如 ?class=middle_new_yellow)
+const urlParams = new URLSearchParams(window.location.search);
+const urlClassId = urlParams.get('class');
+
+// 2. 如果網址有指定，就用指定的；否則預設用高中紅教室
+let currentClassId = urlClassId && classrooms[urlClassId] ? urlClassId : "high_red"; 
+        let myUserId = localStorage.getItem('tempUserId');
+        if (!myUserId) {
+            myUserId = 'user_' + Math.floor(Math.random() * 100000);
+            localStorage.setItem('tempUserId', myUserId);
+        }
+        
+        const classroomDiv = document.getElementById('classroom');
+        const stageArea = document.getElementById('stageArea');
+        const classBtnContainer = document.getElementById('classBtnContainer');
+        let currentSeatId = null;
+        let timerInterval = null;
+        const TIMEOUT_SECONDS = 60;
+        let unsubscribe = null; 
+
+        // ----- 自動產生切換按鈕 -----
+        function initClassButtons() {
+            classBtnContainer.innerHTML = "";
+            Object.keys(classrooms).forEach(key => {
+                const btn = document.createElement('button');
+                btn.textContent = classrooms[key].name;
+                btn.onclick = () => changeClassroom(key);
+                if (key === currentClassId) btn.classList.add('active');
+                classBtnContainer.appendChild(btn);
+            });
+        }
+
+        window.changeClassroom = function(classId) {
+            if (!classrooms[classId]) return;
+            currentClassId = classId;
+            // 更新按鈕狀態
+            document.querySelectorAll('.class-selector button').forEach(b => b.classList.remove('active'));
+            const btns = Array.from(document.querySelectorAll('.class-selector button'));
+            const targetBtn = btns.find(b => b.textContent === classrooms[classId].name);
+            if (targetBtn) targetBtn.classList.add('active');
+            
+            initClassroom();
+        };
+
+        function initClassroom() {
+            const config = classrooms[currentClassId];
+            document.querySelector('h1').textContent = `🐻 山熊科學 - ${config.name}`;
+            stageArea.innerHTML = config.hasStage ? '<div class="stage-box">講　台</div>' : '';
+            
+            classroomDiv.innerHTML = "";
+            config.layout.forEach((row) => {
+                const rowDiv = document.createElement('div');
+                rowDiv.className = 'row';
+                row.forEach((seatCode) => {
+                    const seat = document.createElement('div');
+                    seat.className = 'seat';
+                    let code = seatCode;
+                    let isBlocked = false;
+                    
+                    if (seatCode.includes(':X')) {
+                        code = seatCode.split(':')[0];
+                        isBlocked = true;
+                    }
+
+                    if (code === "_") {
+                        seat.classList.add('aisle');
+                    } else if (code === "DOOR") {
+                        seat.classList.add('door');
+                        seat.textContent = "門";
+                    } else if (code === "PILLAR") {
+                        seat.classList.add('pillar');
+                        seat.textContent = "柱";
+                    } else {
+                        seat.textContent = code;
+                        seat.dataset.id = code;
+                        seat.id = `seat-${code}`;
+                        if (isBlocked) {
+                            seat.classList.add('blocked'); 
+                        } else {
+                            seat.addEventListener('click', () => tryLockSeat(code));
+                        }
+                    }
+                    rowDiv.appendChild(seat);
+                });
+                classroomDiv.appendChild(rowDiv);
+            });
+
+            if (unsubscribe) unsubscribe(); 
+            const classRef = ref(db, `seats/${currentClassId}`);
+            
+            unsubscribe = onValue(classRef, (snapshot) => {
+                const data = snapshot.val() || {};
+                document.querySelectorAll('.seat').forEach(seatEl => {
+                    const seatId = seatEl.dataset.id;
+                    if (!seatId) return;
+                    if (seatEl.classList.contains('blocked')) return;
+
+                    const seatInfo = data[seatId];
+                    seatEl.classList.remove('sold', 'locked');
+                    seatEl.style.backgroundColor = ""; 
+                    
+                    if (seatInfo) {
+                        if (seatInfo.status === 'sold') { 
+                            seatEl.classList.add('sold'); 
+                        } else if (seatInfo.status === 'locked') {
+                            if (seatInfo.user === myUserId) {
+                                seatEl.classList.add('locked');
+                                checkAndRestoreSession(seatId, seatInfo.timestamp);
+                            } else { 
+                                seatEl.classList.add('sold'); 
+                            }
+                        }
+                    }
+                });
+            });
+        }
+
+        // ----- 核心邏輯 (維持 V8.1) -----
+        function checkAndRestoreSession(seatId, lockTimestamp) {
+            const modal = document.getElementById('bookingModal');
+            if (currentSeatId === seatId && modal.style.display === "flex") return;
+            const now = Date.now();
+            const elapsedSeconds = Math.floor((now - lockTimestamp) / 1000);
+            const remaining = TIMEOUT_SECONDS - elapsedSeconds;
+            if (remaining > 0) { openBookingModal(seatId, lockTimestamp); } 
+            else { if (currentSeatId !== seatId) { currentSeatId = seatId; releaseSeat(true); } }
+        }
+
+        function tryLockSeat(seatId) {
+            if (currentSeatId && currentSeatId !== seatId) { alert("您已經有一個座位正在保留中！"); return; }
+            const seatEl = document.getElementById(`seat-${seatId}`);
+            if (seatEl.classList.contains('sold') || seatEl.classList.contains('locked') || seatEl.classList.contains('blocked')) {
+                if (seatEl.classList.contains('locked')) { openBookingModal(seatId, Date.now()); }
+                return;
+            }
+            
+            seatEl.classList.add('loading');
+            const seatRef = ref(db, `seats/${currentClassId}/${seatId}`); 
+            const nowTimestamp = Date.now();
+            
+            runTransaction(seatRef, (currentData) => {
+                if (currentData === null) { return { status: 'locked', user: myUserId, timestamp: nowTimestamp }; } 
+                else { return; }
+            }).then((result) => {
+                seatEl.classList.remove('loading');
+                if (result.committed) { openBookingModal(seatId, nowTimestamp); } 
+                else { alert("慢了一步！"); }
+            });
+        }
+
+        const modal = document.getElementById('bookingModal');
+        const modalSeatLabel = document.getElementById('modalSeatLabel');
+        const nameInput = document.getElementById('studentName');
+        const phoneInput = document.getElementById('parentPhone');
+        const honeyPotInput = document.getElementById('honeyPotField');
+        const timerDisplay = document.getElementById('timerDisplay');
+        const confirmBtn = document.getElementById('confirmBtn');
+
+        function openBookingModal(seatId, lockTimestamp) {
+            currentSeatId = seatId;
+            modalSeatLabel.textContent = seatId;
+            modal.style.display = "flex";
+            window.recaptchaVerified = false;
+            confirmBtn.disabled = true; 
+            honeyPotInput.value = ""; 
+            try { if(grecaptcha && grecaptcha.reset) grecaptcha.reset(); } catch(e) {}
+            startPrecisionTimer(lockTimestamp);
+        }
+
+        function startPrecisionTimer(startTimestamp) {
+            clearInterval(timerInterval);
+            updateTimerLoop(startTimestamp);
+            timerInterval = setInterval(() => { updateTimerLoop(startTimestamp); }, 1000);
+        }
+
+        function updateTimerLoop(startTimestamp) {
+            const now = Date.now();
+            const elapsed = Math.floor((now - startTimestamp) / 1000);
+            const remaining = TIMEOUT_SECONDS - elapsed;
+            if (remaining <= 0) {
+                updateTimerDisplay(0);
+                clearInterval(timerInterval);
+                if (modal.style.display === "flex") { alert("⏰ 填寫時間已到，座位將釋出給其他人！"); releaseSeat(true); }
+            } else { updateTimerDisplay(remaining); }
+        }
+
+        function updateTimerDisplay(seconds) {
+            const minutes = Math.floor(seconds / 60);
+            const remainingSeconds = seconds % 60;
+            timerDisplay.textContent = `剩餘時間：0${minutes}:${remainingSeconds < 10 ? '0' : ''}${remainingSeconds}`;
+            if (seconds < 10) { timerDisplay.style.backgroundColor = "#ffcccc"; timerDisplay.style.color = "red"; } 
+            else { timerDisplay.style.backgroundColor = "#fff3cd"; timerDisplay.style.color = "#856404"; }
+        }
+
+        function releaseSeat(isAuto = false) {
+            if (!currentSeatId) return;
+            const seatToRelease = currentSeatId;
+            set(ref(db, `seats/${currentClassId}/${seatToRelease}`), null).then(() => {
+                closeModal();
+                if (!isAuto) { alert("已取消保留。"); }
+            }).catch(err => { console.error("釋出失敗", err); closeModal(); });
+        }
+        
+        function closeModal() {
+            modal.style.display = "none";
+            currentSeatId = null;
+            clearInterval(timerInterval);
+            nameInput.value = ""; phoneInput.value = "";
+        }
+
+        document.getElementById('cancelBtn')
+        .addEventListener('click', () => releaseSeat(false));
+
+        confirmBtn.addEventListener('click', () => {
+            if (honeyPotInput.value !== "") { alert("系統偵測到異常操作。"); return; }
+            const name = nameInput.value.trim();
+            const phone = phoneInput.value.trim();
+            if (!window.recaptchaVerified) { alert("🤖 請勾選「我不是機器人」！"); return; }
+            if (!name || !phone) { alert("請填寫完整資料！"); return; }
+            const phoneRegex = /^09\d{8}$/;
+            if (!phoneRegex.test(phone)) { alert("❌ 手機號碼格式錯誤！"); return; }
+            
+            update(ref(db, `seats/${currentClassId}/${currentSeatId}`), {
+                status: 'sold', studentName: name, parentPhone: phone, soldTime: new Date().toLocaleString()
+            }).then(() => {
+                alert(`✅ 劃位成功！\n座位：${currentSeatId}\n請截圖留存！`);
+                closeModal();
+            }).catch((err) => alert("送出失敗：" + err));
+        });
+
+        // 啟動按鈕生成與預設教室
+        initClassButtons();
+        initClassroom();
+    </script>
+</body>
+</html>

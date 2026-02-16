@@ -1,0 +1,186 @@
+<!-- 檔案：home.html -->
+<!-- 版本：V11.1 首頁入口 (修復圖片與倒數) -->
+<!DOCTYPE html>
+<html lang="zh-TW">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>🐻 山熊科學 - 課程劃位入口</title>
+    <style>
+        body { font-family: "Microsoft JhengHei", sans-serif; background-color: #f8f9fa; margin: 0; padding: 0; }
+        
+        /* 橫幅 Banner */
+        .banner {
+            background-color: #2c3e50; color: white;
+            padding: 80px 20px; text-align: center;
+            /* 使用 Unsplash 的科學圖片作為背景 */
+            background-image: linear-gradient(rgba(0,0,0,0.6), rgba(0,0,0,0.6)), url('https://images.unsplash.com/photo-1532094349884-543bc11b234d?ixlib=rb-4.0.3&auto=format&fit=crop&w=1350&q=80');
+            background-size: cover; background-position: center;
+        }
+        .banner h1 { margin: 0; font-size: 3em; text-shadow: 2px 2px 4px rgba(0,0,0,0.5); letter-spacing: 2px; }
+        .banner p { font-size: 1.2em; margin-top: 15px; opacity: 0.9; font-weight: 300; }
+
+        /* 倒數計時器 */
+        .countdown-bar {
+            background-color: #e74c3c; color: white;
+            text-align: center; padding: 15px; font-weight: bold; font-size: 20px;
+            position: sticky; top: 0; z-index: 100;
+            box-shadow: 0 4px 6px rgba(0,0,0,0.1);
+            letter-spacing: 1px;
+        }
+
+        /* 課程列表容器 */
+        .container { max-width: 1100px; margin: 50px auto; padding: 0 20px; display: grid; grid-template-columns: repeat(auto-fit, minmax(320px, 1fr)); gap: 30px; }
+
+        /* 課程卡片 */
+        .course-card {
+            background: white; border-radius: 15px; overflow: hidden;
+            box-shadow: 0 10px 20px rgba(0,0,0,0.05); transition: 0.3s;
+            display: flex; flex-direction: column; border: 1px solid #eee;
+        }
+        .course-card:hover { transform: translateY(-10px); box-shadow: 0 15px 30px rgba(0,0,0,0.15); }
+        
+        .card-img { height: 200px; background-size: cover; background-position: center; }
+        
+        .card-body { padding: 25px; flex-grow: 1; display: flex; flex-direction: column; }
+        .card-title { font-size: 22px; font-weight: bold; margin-bottom: 15px; color: #2c3e50; }
+        .card-info { font-size: 15px; color: #555; margin-bottom: 25px; line-height: 1.8; }
+        
+        /* 按鈕樣式 */
+        .btn {
+            display: block; width: 100%; padding: 15px; text-align: center;
+            border: none; border-radius: 8px; font-size: 18px; font-weight: bold;
+            cursor: pointer; text-decoration: none; transition: 0.3s;
+            margin-top: auto; box-sizing: border-box;
+        }
+        
+        /* 未開放狀態 */
+        .btn-disabled { background-color: #bdc3c7; color: #fff; cursor: not-allowed; pointer-events: none; }
+        
+        /* 開放狀態 */
+        .btn-active { background-color: #27ae60; color: white; box-shadow: 0 4px 6px rgba(39, 174, 96, 0.3); }
+        .btn-active:hover { background-color: #219150; transform: scale(1.02); }
+
+        /* 頁尾 */
+        footer { text-align: center; padding: 40px; color: #999; font-size: 14px; background-color: #2c3e50; color: white; margin-top: 80px; }
+    </style>
+</head>
+<body>
+
+    <!-- 1. 橫幅區 -->
+    <div class="banner">
+        <h1>🐻 山熊科學 112-2學期 劃位系統</h1>
+        <p>請家長詳閱下方課程資訊，並於指定時間進行劃位。</p>
+    </div>
+
+    <!-- 2. 全域倒數計時 -->
+    <div id="countdownBar" class="countdown-bar">
+        距離開放劃位還有：計算中...
+    </div>
+
+    <!-- 3. 課程列表 -->
+    <div class="container">
+        
+        <!-- 課程 1 -->
+        <div class="course-card">
+            <!-- 理化圖片 -->
+            <div class="card-img" style="background-image: url('https://images.unsplash.com/photo-1636466497217-26a8cbeaf0aa?ixlib=rb-4.0.3&auto=format&fit=crop&w=800&q=80');"></div>
+            <div class="card-body">
+                <div class="card-title">🧪 國二理化 (週四班)</div>
+                <div class="card-info">
+                    👨‍🏫 授課老師：黃浩老師<br>
+                    📅 上課時間：每週四 18:30 - 21:30<br>
+                    📍 教室：高中紅教室
+                </div>
+                <a href="index.html?class=high_red" class="btn btn-disabled" id="btn-course-1">尚未開放</a>
+            </div>
+        </div>
+
+        <!-- 課程 2 -->
+        <div class="course-card">
+            <!-- 數學圖片 -->
+            <div class="card-img" style="background-image: url('https://images.unsplash.com/photo-1635070041078-e363dbe005cb?ixlib=rb-4.0.3&auto=format&fit=crop&w=800&q=80');"></div>
+            <div class="card-body">
+                <div class="card-title">📐 國三總複習 (週六班)</div>
+                <div class="card-info">
+                    👨‍🏫 授課老師：小楊老師<br>
+                    📅 上課時間：每週六 09:00 - 12:00<br>
+                    📍 教室：國中新黃教室
+                </div>
+                <a href="index.html?class=middle_new_yellow" class="btn btn-disabled" id="btn-course-2">尚未開放</a>
+            </div>
+        </div>
+
+        <!-- 課程 3 -->
+        <div class="course-card">
+            <!-- 物理圖片 -->
+            <div class="card-img" style="background-image: url('https://images.unsplash.com/photo-1451187580459-43490279c0fa?ixlib=rb-4.0.3&auto=format&fit=crop&w=800&q=80');"></div>
+            <div class="card-body">
+                <div class="card-title">⚛️ 高一物理 (週五班)</div>
+                <div class="card-info">
+                    👨‍🏫 授課老師：熊大老師<br>
+                    📅 上課時間：每週五 18:30 - 21:30<br>
+                    📍 教室：高中藍教室
+                </div>
+                <a href="index.html?class=high_blue" class="btn btn-disabled" id="btn-course-3">尚未開放</a>
+            </div>
+        </div>
+
+    </div>
+
+    <footer>
+        &copy; 2024 山熊科學補習班 | 系統開發：Sciencebear Tech Team
+    </footer>
+
+    <script type="module">
+        // ★★★ 設定開放時間 (這裡設為未來時間，讓你看到倒數) ★★★
+        // 請改成你真正要開放的時間，例如 "2024-02-20T18:00:00"
+        // 目前設為：明天晚上 6 點
+        const tomorrow = new Date();
+        tomorrow.setDate(tomorrow.getDate() + 1);
+        tomorrow.setHours(18, 0, 0, 0);
+        const OPENING_TIME = tomorrow.getTime(); 
+
+        // 如果你想測試「時間到」的樣子，請把上面三行註解掉，打開下面這一行：
+        // const OPENING_TIME = new Date("2023-01-01T00:00:00").getTime(); // 過去時間
+
+        const countdownBar = document.getElementById('countdownBar');
+        const buttons = document.querySelectorAll('.btn');
+
+        function updateTimer() {
+            const now = Date.now();
+            const diff = OPENING_TIME - now;
+
+            if (diff <= 0) {
+                // 時間到！開放！
+                countdownBar.style.backgroundColor = "#27ae60";
+                countdownBar.textContent = "🎉 劃位已開始！請選擇課程進入！";
+                
+                buttons.forEach(btn => {
+                    btn.classList.remove('btn-disabled');
+                    btn.classList.add('btn-active');
+                    btn.textContent = "前往劃位 ➜";
+                    btn.style.pointerEvents = "auto";
+                });
+                
+                clearInterval(timerInterval);
+            } else {
+                // 還沒到，顯示倒數
+                const days = Math.floor(diff / (1000 * 60 * 60 * 24));
+                const hours = Math.floor((diff % (1000 * 60 * 60 * 24)) / (1000 * 60 * 60));
+                const minutes = Math.floor((diff % (1000 * 60 * 60)) / (1000 * 60));
+                const seconds = Math.floor((diff % (1000 * 60)) / 1000);
+                
+                let timeString = "";
+                if (days > 0) timeString += `${days}天 `;
+                timeString += `${hours}小時 ${minutes}分 ${seconds}秒`;
+
+                countdownBar.textContent = `⏳ 距離開放劃位還有：${timeString}`;
+            }
+        }
+
+        const timerInterval = setInterval(updateTimer, 1000);
+        updateTimer(); 
+    </script>
+</body>
+</html>

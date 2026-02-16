@@ -1,0 +1,365 @@
+<!-- 檔案：admin.html -->
+<!-- 版本：V13.0 最終版 (TinyMCE 正版 + Firebase Storage) -->
+<!DOCTYPE html>
+<html lang="zh-TW">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>🐻 山熊科學 - 後台指揮中心</title>
+    
+    <!-- 引入 TinyMCE (使用阿喵老師的 API Key) -->
+    <script src="https://cdn.tiny.cloud/1/2nwvnffdvbvf93d6ry0sov7w0d7yabtr1d6tp8l38cb6hoh1/tinymce/6/tinymce.min.js" referrerpolicy="origin"></script>
+
+    <style>
+        body { font-family: "Microsoft JhengHei", sans-serif; background-color: #f0f2f5; padding: 20px; margin: 0; }
+        .navbar { background-color: #2c3e50; padding: 15px; border-radius: 10px; margin-bottom: 20px; display: flex; justify-content: space-between; align-items: center; color: white; }
+        .nav-title { font-size: 24px; font-weight: bold; }
+        .nav-tabs button { background: none; border: none; color: #bdc3c7; font-size: 18px; cursor: pointer; margin-left: 20px; padding: 5px 10px; transition: 0.3s; }
+        .nav-tabs button.active { color: white; border-bottom: 3px solid #e74c3c; font-weight: bold; }
+        .page-section { display: none; }
+        .page-section.active { display: block; }
+        .form-container { background: white; padding: 30px; border-radius: 10px; box-shadow: 0 2px 10px rgba(0,0,0,0.1); max-width: 900px; margin: 0 auto; }
+        .form-group { margin-bottom: 20px; }
+        .form-group label { display: block; margin-bottom: 8px; font-weight: bold; color: #333; }
+        .form-group input, .form-group select { width: 100%; padding: 10px; border: 1px solid #ddd; border-radius: 5px; font-size: 16px; box-sizing: border-box; }
+        .form-row { display: flex; gap: 20px; }
+        .form-row .form-group { flex: 1; }
+        button { cursor: pointer; background-color: #3498db; color: white; border: none; font-weight: bold; padding: 10px 20px; border-radius: 5px; font-size: 16px; }
+        button:hover { background-color: #2980b9; }
+        button.danger { background-color: #e74c3c; }
+        button.success { background-color: #27ae60; }
+        .course-list { margin-top: 30px; display: grid; grid-template-columns: repeat(auto-fill, minmax(300px, 1fr)); gap: 20px; }
+        .admin-course-card { background: white; padding: 15px; border-radius: 10px; box-shadow: 0 2px 5px rgba(0,0,0,0.1); border-left: 5px solid #3498db; position: relative; }
+        .btn-delete { position: absolute; top: 10px; right: 10px; background: #e74c3c; padding: 5px 10px; font-size: 12px; }
+        .table-container { overflow-x: auto; background: white; border-radius: 10px; box-shadow: 0 2px 10px rgba(0,0,0,0.1); }
+        table { width: 100%; border-collapse: collapse; min-width: 800px; }
+        th, td { padding: 12px 15px; text-align: left; border-bottom: 1px solid #ddd; }
+        th { background-color: #34495e; color: white; }
+        .badge { padding: 5px 10px; border-radius: 15px; font-size: 12px; font-weight: bold; color: white; }
+        .badge.sold { background-color: #27ae60; }
+        .badge.locked { background-color: #f39c12; }
+    </style>
+</head>
+<body>
+
+    <div class="navbar">
+        <div class="nav-title">🐻 山熊科學後台</div>
+        <div class="nav-tabs">
+            <button class="active" onclick="switchTab('monitor')">📊 劃位監控</button>
+            <button onclick="switchTab('courses')">📝 課程管理</button>
+        </div>
+    </div>
+
+    <!-- 分頁 1：劃位監控 -->
+    <div id="tab-monitor" class="page-section active">
+        <div style="text-align:center; margin-bottom:20px;">
+            目前檢視：<span id="currentClassName" style="font-weight:bold;">所有課程</span> | 
+            已劃位：<span id="totalSold" style="font-weight:bold;">0</span>
+        </div>
+        <div style="background:white; padding:20px; border-radius:10px; margin-bottom:20px; display:flex; gap:10px;">
+            <select id="classSelector"><option value="all">全部課程總覽</option></select>
+            <input type="text" id="searchInput" placeholder="搜尋姓名或電話...">
+            <button onclick="exportToCSV()" class="success">📥 匯出 Excel</button>
+        </div>
+        <div class="table-container">
+            <table>
+                <thead><tr><th>課程</th><th>座位</th><th>狀態</th><th>姓名</th><th>電話</th><th>時間</th><th>操作</th></tr></thead>
+                <tbody id="bookingTable"></tbody>
+            </table>
+        </div>
+    </div>
+
+    <!-- 分頁 2：課程管理 -->
+    <div id="tab-courses" class="page-section">
+        <div class="form-container">
+            <h2 style="margin-top:0;">➕ 新增課程</h2>
+            
+            <div class="form-row">
+                <div class="form-group">
+                    <label>課程分類</label>
+                    <input list="category_list" id="c_category" placeholder="選擇或輸入分類">
+                    <datalist id="category_list">
+                        <option value="升國一生物"></option>
+                        <option value="升國一數學"></option>
+                        <option value="升國二理化"></option>
+                        <option value="升國三總複習"></option>
+                        <option value="升小六資優自然"></option>
+                        <option value="升小六資優數學"></option>
+                        <option value="升國一自然超前班"></option>
+                        <option value="升國一數學超前班"></option>
+                        <option value="升小五邏輯數學"></option>
+                    </datalist>
+                </div>
+                <div class="form-group">
+                    <label>課程名稱 (班級)</label>
+                    <input type="text" id="c_name" placeholder="例如：週一四班">
+                </div>
+            </div>
+
+            <div class="form-row">
+                <div class="form-group">
+                    <label>授課老師</label>
+                    <input list="teacher_list" id="c_teacher" placeholder="選擇或輸入老師">
+                    <datalist id="teacher_list">
+                        <option value="白熊老師"></option>
+                        <option value="阿喵老師"></option>
+                        <option value="小彥老師"></option>
+                        <option value="小東老師"></option>
+                        <option value="李翔老師"></option>
+                        <option value="冠維老師"></option>
+                        <option value="小揚老師"></option>
+                        <option value="黃道老師"></option>
+                        <option value="化鈞老師"></option>
+                    </datalist>
+                </div>
+                <div class="form-group">
+                    <label>使用教室</label>
+                    <select id="c_classroom">
+                        <option value="high_red">高中紅教室</option>
+                        <option value="high_orange">高中橘教室</option>
+                        <option value="high_green">高中綠教室</option>
+                        <option value="high_yellow">高中黃教室</option>
+                        <option value="high_blue">高中藍教室</option>
+                        <option value="middle_new_orange">國中新橘教室</option>
+                        <option value="middle_new_blue">國中新藍教室</option>
+                        <option value="middle_new_yellow">國中新黃教室</option>
+                        <option value="middle_new_red">國中新紅教室</option>
+                        <option value="middle_big_red">國中大紅教室</option>
+                        <option value="middle_da_chiao">國中大橋教室</option>
+                        <option value="middle_big_green">國中大綠教室</option>
+                    </select>
+                </div>
+            </div>
+
+            <div class="form-group">
+                <label>封面圖片 (建議 800x400)</label>
+                <input type="file" id="c_image_file" accept="image/*">
+                <div id="uploadStatus" style="font-size:12px; color:#666; margin-top:5px;"></div>
+            </div>
+
+            <div class="form-row">
+                <div class="form-group">
+                    <label>一階開放 (開始)</label>
+                    <input type="datetime-local" id="c_start1">
+                </div>
+                <div class="form-group">
+                    <label>一階開放 (結束)</label>
+                    <input type="datetime-local" id="c_end1">
+                </div>
+            </div>
+
+            <div class="form-row">
+                <div class="form-group">
+                    <label>二階開放 (開始)</label>
+                    <input type="datetime-local" id="c_start2">
+                </div>
+                <div class="form-group">
+                    <label>費用</label>
+                    <input type="text" id="c_price" placeholder="例如：$5000">
+                </div>
+            </div>
+
+            <div class="form-group">
+                <label>課程介紹 / 注意事項</label>
+                <textarea id="c_desc"></textarea>
+            </div>
+
+            <button onclick="addCourse()" class="success" style="width:100%;">確認新增課程</button>
+        </div>
+
+        <h2 style="text-align:center; margin-top:40px;">📋 目前課程列表</h2>
+        <div id="courseList" class="course-list"></div>
+    </div>
+
+    <script type="module">
+        import { db, ref, set, remove, push, storage, storageRef, uploadBytes, getDownloadURL } from './firebase-config.js';
+        import { onValue } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-database.js";
+
+        // 初始化 TinyMCE
+        tinymce.init({
+            selector: '#c_desc',
+            plugins: 'image link lists media table',
+            toolbar: 'undo redo | formatselect | bold italic backcolor | alignleft aligncenter alignright alignjustify | bullist numlist outdent indent | removeformat | image',
+            height: 400,
+            menubar: true
+        });
+
+        // ----- 全域變數 -----
+        let allBookings = [];
+        let coursesData = {};
+
+        window.switchTab = function(tabName) {
+            document.querySelectorAll('.page-section').forEach(el => el.classList.remove('active'));
+            document.querySelectorAll('.nav-tabs button').forEach(el => el.classList.remove('active'));
+            document.getElementById(`tab-${tabName}`).classList.add('active');
+            event.target.classList.add('active');
+        };
+
+        // ----- 課程管理邏輯 -----
+        const coursesRef = ref(db, 'courses');
+
+        onValue(coursesRef, (snapshot) => {
+            coursesData = snapshot.val() || {};
+            renderCourseList();
+            updateClassSelector(); 
+        });
+
+        window.addCourse = async function() {
+            const btn = event.target;
+            btn.disabled = true;
+            btn.textContent = "處理中...";
+
+            try {
+                const descContent = tinymce.get('c_desc').getContent();
+                const category = document.getElementById('c_category').value;
+                const name = document.getElementById('c_name').value;
+                const teacher = document.getElementById('c_teacher').value;
+                const classroom = document.getElementById('c_classroom').value;
+                const start1 = document.getElementById('c_start1').value;
+                const end1 = document.getElementById('c_end1').value;
+                const start2 = document.getElementById('c_start2').value;
+                const price = document.getElementById('c_price').value;
+                const fileInput = document.getElementById('c_image_file');
+
+                if (!category || !name || !start1) throw new Error("請填寫完整資料！");
+
+                // 上傳圖片 (使用 Firebase Storage)
+                let imageUrl = "https://via.placeholder.com/400x200?text=No+Image";
+                if (fileInput.files.length > 0) {
+                    const file = fileInput.files[0];
+                    const storagePath = `course_images/${Date.now()}_${file.name}`;
+                    const imgRef = storageRef(storage, storagePath);
+                    
+                    document.getElementById('uploadStatus').textContent = "上傳圖片到 Firebase 中...";
+                    
+                    // 增加 metadata 嘗試解決 CORS (在 GitHub 上會成功)
+                    const metadata = { contentType: file.type };
+                    await uploadBytes(imgRef, file, metadata);
+                    imageUrl = await getDownloadURL(imgRef);
+                }
+
+                // 寫入資料庫
+                const newCourseRef = push(coursesRef);
+                await set(newCourseRef, {
+                    category, name, teacher, classroom,
+                    start1, end1, start2, price, 
+                    desc: descContent, 
+                    image: imageUrl,
+                    createdAt: Date.now()
+                });
+
+                alert("✅ 課程新增成功！");
+                document.querySelectorAll('input').forEach(i => i.value = '');
+                tinymce.get('c_desc').setContent('');
+                document.getElementById('uploadStatus').textContent = "";
+
+            } catch (err) {
+                alert("錯誤：" + err.message + "\n(如果是圖片上傳失敗，請嘗試上傳到 GitHub 後再試)");
+                console.error(err);
+            } finally {
+                btn.disabled = false;
+                btn.textContent = "確認新增課程";
+            }
+        };
+
+        function renderCourseList() {
+            const listDiv = document.getElementById('courseList');
+            listDiv.innerHTML = "";
+            Object.keys(coursesData).forEach(key => {
+                const c = coursesData[key];
+                const card = document.createElement('div');
+                card.className = 'admin-course-card';
+                card.innerHTML = `
+                    <h3>[${c.category}] ${c.name}</h3>
+                    <p>👨‍🏫 ${c.teacher} | 📍 ${c.classroom}</p>
+                    <p>⏰ 一階：${new Date(c.start1).toLocaleString()}</p>
+                    <button class="btn-delete" onclick="window.deleteCourse('${key}')">刪除</button>
+                `;
+                listDiv.appendChild(card);
+            });
+        }
+
+        window.deleteCourse = function(courseId) {
+            if (confirm("⚠️ 確定要刪除？")) remove(ref(db, `courses/${courseId}`));
+        };
+
+        // ----- 劃位監控邏輯 (維持不變) -----
+        const allSeatsRef = ref(db, 'seats');
+        onValue(allSeatsRef, (snapshot) => {
+            const data = snapshot.val() || {};
+            allBookings = [];
+            Object.keys(data).forEach(courseId => {
+                const seats = data[courseId];
+                const courseName = coursesData[courseId] ? `[${coursesData[courseId].category}] ${coursesData[courseId].name}` : courseId;
+                Object.keys(seats).forEach(seatId => {
+                    const info = seats[seatId];
+                    if (info.status === 'sold' || info.status === 'locked') {
+                        allBookings.push({
+                            courseId, courseName, seatId, status: info.status,
+                            studentName: info.studentName || '-', parentPhone: info.parentPhone || '-',
+                            time: info.soldTime || '-', rawTime: info.timestamp
+                        });
+                    }
+                });
+            });
+            allBookings.sort((a, b) => b.rawTime - a.rawTime);
+            renderTable();
+            updateStats();
+        });
+
+        function updateClassSelector() {
+            const selector = document.getElementById('classSelector');
+            selector.innerHTML = '<option value="all">全部課程總覽</option>';
+            Object.keys(coursesData).forEach(key => {
+                const c = coursesData[key];
+                const option = document.createElement('option');
+                option.value = key;
+                option.textContent = `[${c.category}] ${c.name}`;
+                selector.appendChild(option);
+            });
+        }
+
+        function renderTable() {
+            const filterId = document.getElementById('classSelector').value;
+            const searchText = document.getElementById('searchInput').value.trim().toLowerCase();
+            const tbody = document.getElementById('bookingTable');
+            tbody.innerHTML = "";
+            
+            allBookings.forEach(b => {
+                if (filterId !== 'all' && b.courseId !== filterId) return;
+                if (searchText && !b.studentName.includes(searchText) && !b.parentPhone.includes(searchText)) return;
+                const tr = document.createElement('tr');
+                const statusBadge = b.status === 'sold' ? '<span class="badge sold">已劃位</span>' : '<span class="badge locked">填寫中</span>';
+                tr.innerHTML = `<td>${b.courseName}</td><td>${b.seatId}</td><td>${statusBadge}</td><td>${b.studentName}</td><td>${b.parentPhone}</td><td>${b.time}</td><td><button class="danger" onclick="window.releaseSeat('${b.courseId}', '${b.seatId}')">釋出</button></td>`;
+                tbody.appendChild(tr);
+            });
+        }
+
+        function updateStats() {
+            document.getElementById('totalSold').textContent = allBookings.filter(b => b.status === 'sold').length;
+        }
+
+        window.releaseSeat = function(courseId, seatId) {
+            if (confirm("⚠️ 確定釋出？")) set(ref(db, `seats/${courseId}/${seatId}`), null);
+        };
+
+        window.exportToCSV = function() {
+            let csv = "\uFEFF課程,座位,狀態,姓名,電話,時間\n";
+            allBookings.forEach(b => csv += `${b.courseName},${b.seatId},${b.status},${b.studentName},'${b.parentPhone},${b.time}\n`);
+            const blob = new Blob([csv], { type: "text/csv;charset=utf-8;" });
+            const link = document.createElement("a");
+            link.href = URL.createObjectURL(blob);
+            link.download = "booking_data.csv";
+            link.click();
+        };
+
+        document.getElementById('classSelector').addEventListener('change', () => {
+            const sel = document.getElementById('classSelector');
+            document.getElementById('currentClassName').textContent = sel.options[sel.selectedIndex].text;
+            renderTable();
+        });
+        document.getElementById('searchInput').addEventListener('input', renderTable);
+
+    </script>
+</body>
+</html>
