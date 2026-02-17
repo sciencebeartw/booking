@@ -1,12 +1,16 @@
 <!-- 檔案：check.html -->
-<!-- 版本：V28.0 (修正回首頁連結) -->
+<!-- 版本：V28.2 (資安加固：伺服器端精準查詢 + Icon更新) -->
 <!DOCTYPE html>
 <html lang="zh-TW">
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>查詢劃位 - 山熊科學</title>
-    <link rel="icon" href="logo1.png">
+    
+    <!-- ★★★ 修改：使用 icon.png 作為網頁與手機圖示 ★★★ -->
+    <link rel="icon" href="icon.png" type="image/png">
+    <link rel="apple-touch-icon" href="icon.png">
+
     <style>
         body { font-family: "Microsoft JhengHei", sans-serif; background-color: #f8f9fa; margin: 0; padding: 0; }
         
@@ -24,6 +28,7 @@
         input { padding: 10px; width: 100%; font-size: 16px; border: 1px solid #ddd; border-radius: 5px; box-sizing: border-box; }
         button { padding: 10px 20px; background: #3498db; color: white; border: none; border-radius: 5px; cursor: pointer; font-size: 16px; width: 100%; margin-top: 10px; }
         button:hover { background: #2980b9; }
+        button:disabled { background: #ccc; cursor: not-allowed; }
         
         #result { margin-top: 30px; text-align: left; }
         .result-item { background: #f0f2f5; padding: 15px; border-radius: 8px; margin-bottom: 10px; border-left: 5px solid #27ae60; }
@@ -33,7 +38,7 @@
 
         footer { text-align: center; padding: 40px; color: #999; font-size: 14px; background-color: #2c3e50; color: white; margin-top: 80px; }
 
-        /* ★★★ 浮動 LINE 按鈕樣式 ★★★ */
+        /* 浮動 LINE 按鈕 */
         .float-line-btn { position: fixed; bottom: 25px; right: 20px; width: 60px; height: 60px; border-radius: 50%; background-color: #06C755; box-shadow: 0 4px 12px rgba(0,0,0,0.3); z-index: 9999; cursor: pointer; transition: transform 0.2s; animation: bounce 2s ease-in-out infinite; display: flex; align-items: center; justify-content: center; text-decoration: none; color: white; font-weight: 900; font-size: 1.2rem; font-family: Arial, sans-serif; letter-spacing: 0.5px; }
         .float-line-btn:active { transform: scale(0.9); animation: none; }
         @keyframes bounce { 0%, 20%, 50%, 80%, 100% { transform: translateY(0); } 40% { transform: translateY(-10px); } 60% { transform: translateY(-5px); } }
@@ -50,7 +55,6 @@
     </header>
 
     <div class="container">
-        <!-- ★★★ 修正連結：回到首頁 (index.html) ★★★ -->
         <a href="index.html" class="back-btn">⬅ 回首頁</a>
         <div style="clear:both;"></div> 
         
@@ -70,7 +74,7 @@
             <input type="tel" id="phoneInput" placeholder="請輸入家長手機">
         </div>
         
-        <button onclick="checkBooking()">查詢</button>
+        <button id="searchBtn" onclick="checkBooking()">查詢</button>
         
         <div id="result"></div>
     </div>
@@ -79,69 +83,92 @@
         &copy; 2024 山熊科學補習班 | 系統開發：Sciencebear Tech Team
     </footer>
 
-    <!-- ★★★ 浮動 LINE 按鈕 ★★★ -->
     <a href="https://lin.ee/oGKweky" target="_blank" class="float-line-btn" title="聯繫官方LINE">LINE</a>
 
     <script type="module">
-        import { db, ref } from './firebase-config.js';
-        import { onValue } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-database.js";
+        // ★★★ 資安升級：引入 query, orderByChild, equalTo ★★★
+        import { db, ref, get, child } from './firebase-config.js';
+        import { query, orderByChild, equalTo } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-database.js";
 
-        let allBookings = [];
+        // 預先載入課程資料 (這是公開資料，可以安全下載)
         let coursesData = {};
-
-        onValue(ref(db, 'courses'), snap => coursesData = snap.val() || {});
-        onValue(ref(db, 'seats'), snap => {
-            const data = snap.val() || {};
-            allBookings = [];
-            Object.keys(data).forEach(courseId => {
-                const seats = data[courseId];
-                Object.keys(seats).forEach(seatId => {
-                    if(seatId === '_settings') return;
-                    const info = seats[seatId];
-                    if (info.status === 'sold') {
-                        allBookings.push({
-                            courseId, seatId, ...info
-                        });
-                    }
-                });
-            });
+        get(ref(db, 'courses')).then(snap => {
+            coursesData = snap.val() || {};
         });
 
-        window.checkBooking = function() {
+        window.checkBooking = async function() {
             const orderId = document.getElementById('orderInput').value.trim();
             const name = document.getElementById('nameInput').value.trim();
             const phone = document.getElementById('phoneInput').value.trim();
             const resultDiv = document.getElementById('result');
+            const btn = document.getElementById('searchBtn');
+
             resultDiv.innerHTML = "";
+            btn.disabled = true;
+            btn.textContent = "查詢中...";
 
-            let myBookings = [];
+            try {
+                let foundOrders = [];
 
-            if (orderId) {
-                myBookings = allBookings.filter(b => b.orderId === orderId);
-            } else if (name && phone) {
-                myBookings = allBookings.filter(b => b.studentName === name && b.parentPhone === phone);
-            } else {
-                alert("請輸入「訂單編號」或「姓名+電話」！");
-                return;
-            }
-
-            if (myBookings.length === 0) {
-                resultDiv.innerHTML = "<p style='color:red; text-align:center;'>查無資料，請確認輸入是否正確。</p>";
-            } else {
-                myBookings.forEach(b => {
-                    const c = coursesData[b.courseId];
-                    const courseName = c ? `${c.subject} ${c.classType || ''}` : "未知課程";
+                // ★★★ 策略 A：使用訂單編號查詢 (最快、最安全) ★★★
+                if (orderId) {
+                    // 直接讀取 orders/訂單號，完全不搜尋其他資料
+                    const snapshot = await get(child(ref(db), `orders/${orderId}`));
+                    if (snapshot.exists()) {
+                        foundOrders.push(snapshot.val());
+                    }
+                } 
+                // ★★★ 策略 B：使用電話+姓名查詢 (伺服器端過濾) ★★★
+                else if (name && phone) {
+                    // 建立查詢：只向 Firebase 請求「parentPhone 等於 輸入電話」的資料
+                    // 這需要 Firebase Rules 設定 .indexOn: ["parentPhone"]
+                    const ordersRef = ref(db, 'orders');
+                    const q = query(ordersRef, orderByChild('parentPhone'), equalTo(phone));
                     
-                    const div = document.createElement('div');
-                    div.className = 'result-item';
-                    div.innerHTML = `
-                        <strong>${courseName}</strong><br>
-                        座位：${b.seatId}<br>
-                        訂單編號：${b.orderId || '-'}<br>
-                        劃位時間：${b.soldTime}
-                    `;
-                    resultDiv.appendChild(div);
-                });
+                    const snapshot = await get(q);
+                    if (snapshot.exists()) {
+                        const data = snapshot.val();
+                        // Firebase 回傳的是該電話的所有訂單，我們在前端再過濾一次姓名以求精確
+                        Object.values(data).forEach(order => {
+                            if (order.studentName === name) {
+                                foundOrders.push(order);
+                            }
+                        });
+                    }
+                } else {
+                    alert("請輸入「訂單編號」或「姓名+電話」！");
+                    btn.disabled = false;
+                    btn.textContent = "查詢";
+                    return;
+                }
+
+                // 顯示結果
+                if (foundOrders.length === 0) {
+                    resultDiv.innerHTML = "<p style='color:red; text-align:center;'>查無資料，請確認輸入是否正確。</p>";
+                } else {
+                    foundOrders.forEach(b => {
+                        const c = coursesData[b.courseId];
+                        const courseName = c ? `${c.subject} ${c.classType || ''}` : "未知課程";
+                        const displayTime = b.displayTime || b.soldTime || "未知時間"; // 相容舊資料
+                        
+                        const div = document.createElement('div');
+                        div.className = 'result-item';
+                        div.innerHTML = `
+                            <strong>${courseName}</strong><br>
+                            座位：${b.seatId}<br>
+                            訂單編號：${b.orderId || '-'}<br>
+                            劃位時間：${displayTime}
+                        `;
+                        resultDiv.appendChild(div);
+                    });
+                }
+
+            } catch (error) {
+                console.error(error);
+                resultDiv.innerHTML = "<p style='color:red; text-align:center;'>查詢發生錯誤，請稍後再試。</p>";
+            } finally {
+                btn.disabled = false;
+                btn.textContent = "查詢";
             }
         };
     </script>

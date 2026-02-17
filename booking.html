@@ -1,49 +1,41 @@
-<!-- 檔案：booking.html -->
-<!-- 版本：V28.0 (修正回首頁連結) -->
 <!DOCTYPE html>
 <html lang="zh-TW">
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>🐻 山熊科學 - 劃位系統</title>
-    <link rel="icon" href="logo1.png">
+    <link rel="icon" href="icon.png" type="image/png">
+    <link rel="apple-touch-icon" href="icon.png">
     <script src="https://www.google.com/recaptcha/api.js?hl=zh-TW" async defer></script>
     <style>
         body { font-family: "Microsoft JhengHei", sans-serif; background-color: #f4f4f9; text-align: center; margin: 0; padding: 0; }
-        
-        /* Header */
         header { background: #2c3e50; padding: 15px 20px; display: flex; justify-content: center; align-items: center; gap: 20px; color: white; box-shadow: 0 2px 5px rgba(0,0,0,0.1); margin-bottom: 20px; }
         header img { height: 60px; }
         header h1 { margin: 0; font-size: 24px; letter-spacing: 1px; text-align: center; }
-        
-        /* 容器與按鈕 */
         .main-container { background: white; max-width: 1000px; margin: 20px auto; padding: 30px; border-radius: 15px; box-shadow: 0 5px 15px rgba(0,0,0,0.1); position: relative; }
         .back-btn { position: absolute; top: 20px; left: 20px; text-decoration: none; color: #3498db; font-weight: bold; font-size: 16px; border: 1px solid #3498db; padding: 5px 15px; border-radius: 20px; transition: 0.3s; z-index: 100; }
         .back-btn:hover { background: #3498db; color: white; }
-
-        /* 課程資訊 */
         .course-info-header { margin-bottom: 20px; text-align: center; border-bottom: 1px solid #eee; padding-bottom: 20px; }
         .course-info-header h2 { margin: 0 0 10px 0; color: #2c3e50; font-size: 28px; }
         .course-info-header p { margin: 5px 0; color: #555; font-size: 16px; display: inline-block; margin: 0 10px; }
+        
+        #deadlineTimer { background: #e74c3c; color: white; padding: 10px; border-radius: 5px; margin-bottom: 20px; font-weight: bold; display: none; }
 
-        /* 座位表 */
         .classroom-wrapper { overflow-x: auto; padding-bottom: 20px; }
         .stage-box { width: 80%; margin: 0 auto 30px auto; padding: 12px; border: 3px solid #333; background-color: #fff; font-weight: bold; font-size: 22px; letter-spacing: 8px; text-align: center; }
         .row { display: flex; justify-content: center; gap: 8px; margin-bottom: 15px; }
         .seat { width: 45px; height: 55px; background-color: #4CAF50; color: white; display: flex; align-items: center; justify-content: center; border-radius: 6px; cursor: pointer; font-weight: bold; font-size: 13px; user-select: none; position: relative; transition: 0.2s; }
         .seat:hover { transform: scale(1.1); z-index: 10; }
-        .seat.sold { background-color: #e74c3c; cursor: not-allowed; transform: none; }
-        .seat.locked { background-color: #f39c12; border: 2px solid #333; transform: scale(1.05); }
+        .seat.sold { background-color: #e74c3c; cursor: not-allowed; transform: none; pointer-events: none; }
+        .seat.locked { background-color: #f39c12; border: 2px solid #333; transform: scale(1.05); pointer-events: none; }
+        .seat.mylocked { background-color: #3498db; border: 2px solid #2980b9; transform: scale(1.1); z-index: 20; cursor: pointer; pointer-events: auto; }
         .seat.blocked { background-color: #95a5a6; cursor: not-allowed; transform: none; }
         .seat.aisle { background-color: transparent; color: transparent; pointer-events: none; cursor: default; }
         .seat.door { background-color: #fff; color: #333; border: 2px solid #333; font-size: 16px; writing-mode: vertical-rl; cursor: default; pointer-events: none; transform: none; }
         .seat.pillar { background-color: #7f8c8d; color: white; cursor: default; pointer-events: none; transform: none; border-radius: 2px; }
         .seat.loading { opacity: 0.5; pointer-events: none; }
-        
         .status-bar { margin: 10px 0; }
         .dot { height: 12px; width: 12px; display: inline-block; border-radius: 50%; margin-right: 5px; }
-        
-        /* Modal */
         .modal-overlay { position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0, 0, 0, 0.5); display: none; justify-content: center; align-items: center; z-index: 999; }
         .modal-box { background: white; padding: 25px; border-radius: 15px; width: 90%; max-width: 420px; box-shadow: 0 10px 25px rgba(0,0,0,0.2); text-align: left; border-top: 5px solid #f39c12; max-height: 90vh; overflow-y: auto; }
         .modal-title { font-size: 20px; font-weight: bold; margin-bottom: 5px; color: #333; }
@@ -59,23 +51,18 @@
         .btn-confirm { background-color: #4CAF50; color: white; }
         .btn-confirm:disabled { background-color: #ccc; cursor: not-allowed; } 
         .btn-cancel { background-color: #e74c3c; color: white; }
-        
         #loadingMask { position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: white; z-index: 9999; display: flex; justify-content: center; align-items: center; font-size: 24px; color: #555; flex-direction: column; }
         .waitlist-area { margin-top: 30px; padding: 20px; background: #fff3e0; border-radius: 10px; display: none; }
         .btn-waitlist { background-color: #e67e22; color: white; padding: 12px 30px; font-size: 18px; border: none; border-radius: 30px; cursor: pointer; box-shadow: 0 4px 6px rgba(230, 126, 34, 0.3); transition: 0.3s; }
         .btn-waitlist:hover { background-color: #d35400; transform: translateY(-2px); }
+        .btn-waitlist:disabled { background-color: #95a5a6; cursor: not-allowed; transform: none; box-shadow: none; }
         .modal-course-info { background: #f0f2f5; padding: 12px; border-radius: 8px; margin-bottom: 15px; font-size: 14px; color: #555; line-height: 1.6; }
         .modal-course-info strong { color: #2c3e50; font-size: 16px; display: block; margin-bottom: 5px; }
         .warning-text { color: #e74c3c; font-size: 13px; margin-bottom: 15px; line-height: 1.5; font-weight: bold; background: #fff5f5; padding: 10px; border-radius: 5px; border: 1px dashed #e74c3c; }
-        
-        /* ★★★ V27.1 新增：超時訊息樣式 ★★★ */
         #expirationMessage { display: none; text-align: center; padding: 20px; }
         #expirationMessage h3 { color: #e74c3c; font-size: 24px; margin-bottom: 10px; }
         #expirationMessage p { font-size: 16px; color: #555; margin-bottom: 20px; }
-        
         footer { text-align: center; padding: 40px; color: #999; font-size: 14px; background-color: #2c3e50; color: white; margin-top: 80px; }
-
-        /* 浮動 LINE 按鈕 */
         .float-line-btn { position: fixed; bottom: 25px; right: 20px; width: 60px; height: 60px; border-radius: 50%; background-color: #06C755; box-shadow: 0 4px 12px rgba(0,0,0,0.3); z-index: 9999; cursor: pointer; transition: transform 0.2s; animation: bounce 2s ease-in-out infinite; display: flex; align-items: center; justify-content: center; text-decoration: none; color: white; font-weight: 900; font-size: 1.2rem; font-family: Arial, sans-serif; letter-spacing: 0.5px; }
         .float-line-btn:active { transform: scale(0.9); animation: none; }
         @keyframes bounce { 0%, 20%, 50%, 80%, 100% { transform: translateY(0); } 40% { transform: translateY(-10px); } 60% { transform: translateY(-5px); } }
@@ -95,7 +82,6 @@
     </header>
 
     <div class="main-container">
-        <!-- ★★★ 修正連結：回到首頁 (index.html) ★★★ -->
         <a href="index.html" class="back-btn">⬅ 回上一頁</a>
 
         <div id="courseInfoHeader" class="course-info-header">
@@ -105,11 +91,13 @@
             <p>📍 上課教室：<span id="pageClassroom">-</span></p>
         </div>
         
+        <div id="deadlineTimer"></div>
+
         <div class="status-bar">
             <span class="dot" style="background:#4CAF50;"></span>可選
-            <span class="dot" style="background:#e74c3c;"></span>已售出
-            <span class="dot" style="background:#f39c12;"></span>填寫中
-            <span class="dot" style="background:#95a5a6;"></span>不開放
+            <span class="dot" style="background:#e74c3c;"></span>已額滿
+            <span class="dot" style="background:#f39c12;"></span>有人填寫中
+            <span class="dot" style="background:#3498db;"></span>您的保留位
         </div>
 
         <div class="classroom-wrapper">
@@ -119,29 +107,22 @@
 
         <div id="waitlistArea" class="waitlist-area">
             <p style="color:#d35400; font-weight:bold; margin-bottom:10px;">⚠️ 座位已滿？您可以登記候補：</p>
-            <button class="btn-waitlist" onclick="openWaitlistModal()">📝 登記候補</button>
+            <button id="btnWaitlist" class="btn-waitlist" onclick="openWaitlistModal()">📝 登記候補</button>
         </div>
     </div>
 
-    <!-- 劃位彈出視窗 -->
     <div id="bookingModal" class="modal-overlay">
         <div class="modal-box">
-            
-            <!-- ★★★ V27.1：正常填寫區塊 ★★★ -->
             <div id="bookingFormContent">
                 <div class="modal-title">⚠️ 報名尚未完成，請填寫學生資料</div>
-                
                 <div id="modalCourseInfo" class="modal-course-info"></div>
-
                 <div class="warning-text">
                     ⚠️ 請在倒數時間內完成資訊，送出才算劃位完成。<br>
                     ⚠️ 學生姓名送出後無法更改，請確認後再送出。<br>
                     ⚠️ 重覆劃位會被系統隨機取消第二個以上的座位。
                 </div>
-
                 <div class="modal-desc">您目前選擇的座位是：<span id="modalSeatLabel" style="color:#e74c3c; font-size:24px;"></span></div>
                 <div id="timerDisplay" class="timer-box">計算剩餘時間中...</div>
-                
                 <div class="form-group">
                     <label>學生姓名：</label>
                     <input type="text" id="studentName" placeholder="例如：王小明">
@@ -151,7 +132,6 @@
                     <input type="tel" id="parentPhone" placeholder="09xxxxxxxx" maxlength="10">
                     <div class="input-hint">請輸入 10 碼手機號碼</div>
                 </div>
-                
                 <div style="display: none;">
                     <label>請勿填寫此欄位 (機器人陷阱)：</label>
                     <input type="text" id="honeyPotField" value="" tabindex="-1" autocomplete="off">
@@ -164,19 +144,15 @@
                     <button class="btn btn-confirm" id="confirmBtn" disabled>確認送出</button>
                 </div>
             </div>
-
-            <!-- ★★★ V27.1：超時警告區塊 (預設隱藏) ★★★ -->
             <div id="expirationMessage">
                 <div style="font-size:50px;">⏰</div>
                 <h3>填寫時間已到</h3>
                 <p>座位已釋出給其他人，請重新選位。</p>
                 <button class="btn btn-cancel" onclick="closeModal()">關閉視窗</button>
             </div>
-
         </div>
     </div>
 
-    <!-- 候補彈出視窗 (維持不變) -->
     <div id="waitlistModal" class="modal-overlay">
         <div class="modal-box" style="border-top: 5px solid #e67e22;">
             <div class="modal-title">📝 登記候補</div>
@@ -221,7 +197,13 @@
         let isVerified1 = false; 
         let isVerified2 = false; 
         let serverTimeOffset = 0; 
+        let courseSettings = null; 
+        let waitlistCount = 0;
+        let totalSeats = 0;
+        let soldCount = 0;
+        let isClassroomRendered = false;
 
+        // 全域 callback 供 ReCAPTCHA 使用
         window.onloadCallback = function() {
             widgetId1 = grecaptcha.render('recaptcha1', {
                 'sitekey': '6LdkWVwsAAAAAKBQSZKiPxOQ7E3ZbL0V-zaclqt5',
@@ -235,7 +217,6 @@
             });
         };
 
-        // (教室設定維持不變，省略)
         const classrooms = {
             "high_red": { name: "高中紅教室", hasStage: true, layout: [ ["1-1:X", "1-2:X", "_", "1-3", "1-4", "1-5", "_", "1-6", "1-7", "1-8", "_", "1-9:X", "1-10:X"], ["2-1", "2-2", "_", "2-3", "2-4", "2-5", "_", "2-6", "2-7", "2-8", "_", "2-9", "2-10"], ["3-1", "3-2", "_", "3-3", "3-4", "3-5", "_", "3-6", "3-7", "3-8", "_", "3-9", "3-10"], ["4-1", "4-2", "_", "4-3", "4-4", "4-5", "_", "4-6", "4-7", "4-8", "_", "4-9", "4-10"], ["5-1", "5-2", "_", "5-3", "5-4", "5-5", "_", "5-6", "5-7", "5-8", "_", "5-9", "5-10"], ["6-1", "6-2", "_", "6-3", "6-4", "6-5", "_", "6-6", "6-7", "6-8", "_", "6-9", "6-10"], ["7-1:X", "7-2:X", "_", "7-3:X", "7-4:X", "7-5:X", "_", "7-6:X", "7-7:X", "7-8:X", "_", "7-9:X", "7-10:X"], ["8-1:X", "8-2:X", "_", "8-3:X", "8-4:X", "8-5:X", "_", "8-6:X", "8-7:X", "8-8:X", "_", "_", "DOOR"] ] },
             "high_orange": { name: "高中橘教室", hasStage: true, layout: [ ["1-1:X", "1-2", "_", "1-3", "1-4", "1-5", "_", "1-6", "1-7", "1-8", "_", "1-9:X", "1-10:X"], ["2-1", "2-2", "_", "2-3", "2-4", "2-5", "_", "2-6", "2-7", "2-8", "_", "2-9", "2-10"], ["3-1", "3-2", "_", "3-3", "3-4", "3-5", "_", "3-6", "3-7", "3-8", "_", "3-9", "3-10"], ["4-1", "4-2", "_", "4-3", "4-4", "4-5", "_", "4-6", "4-7", "4-8", "_", "4-9", "4-10"], ["5-1", "5-2", "_", "5-3", "5-4", "5-5", "_", "5-6", "5-7", "5-8", "_", "5-9", "5-10"], ["6-1", "6-2", "_", "6-3", "6-4", "6-5", "_", "6-6", "6-7", "6-8", "_", "6-9", "6-10"], ["_","_","_","_","_","_","_","_","_","_","_","_","DOOR"] ] },
@@ -248,7 +229,15 @@
             "middle_new_red": { name: "國中新紅教室", hasStage: true, layout: [ ["1-1", "1-2:X", "1-3", "_", "1-4", "1-5", "1-6", "1-7", "_", "1-8", "1-9:X", "1-10:X"], ["2-1", "2-2", "2-3", "_", "2-4", "2-5", "2-6", "2-7", "_", "2-8", "2-9", "2-10"], ["3-1", "3-2", "3-3", "_", "3-4", "3-5", "3-6", "3-7", "_", "3-8", "3-9", "3-10"], ["DOOR", "_", "_", "_", "_", "_", "_", "_", "_", "_", "_", "_"], ["4-1", "4-2", "4-3", "_", "4-4", "4-5", "4-6", "4-7", "_", "4-8", "4-9", "4-10"], ["5-1", "5-2", "5-3", "_", "5-4", "5-5", "5-6", "5-7", "_", "5-8", "5-9", "5-10"], ["6-1", "6-2", "6-3", "_", "6-4", "6-5", "6-6", "6-7", "_", "6-8", "6-9", "6-10"], ["7-1", "7-2", "7-3", "_", "7-4", "7-5", "7-6", "7-7", "_", "7-8", "7-9", "7-10"], ["8-1:X", "8-2:X", "8-3:X","_","8-4:X", "8-5:X", "8-6:X", "8-7:X", "_", "8-8:X", "8-9:X", "8-10:X"] ] },
             "middle_big_red": { name: "國中大紅教室", hasStage: true, layout: [ ["1-1:X", "1-2", "_", "1-3", "1-4", "1-5", "_", "1-6", "1-7", "1-8", "_", "1-9", "1-10:X"], ["2-1", "2-2", "_", "2-3", "2-4", "2-5", "_", "2-6", "2-7", "2-8", "_", "2-9", "2-10"], ["3-1", "3-2", "_", "3-3", "3-4", "3-5", "_", "3-6", "3-7", "3-8", "_", "3-9", "3-10"], ["4-1", "4-2", "_", "4-3", "4-4", "4-5", "_", "4-6", "4-7", "4-8", "_", "4-9", "4-10"], ["5-1", "5-2", "_", "5-3", "5-4", "5-5", "_", "5-6", "5-7", "5-8", "_", "5-9", "5-10"], ["6-1", "6-2", "_", "6-3", "6-4", "6-5", "_", "6-6", "6-7", "6-8", "_", "6-9", "6-10"], ["7-1", "7-2", "_", "7-3", "7-4", "7-5", "_", "7-6", "7-7", "7-8", "_", "7-9", "7-10"], ["_","_","_","_","_","_","_","_","_","_","_","_","DOOR"] ] },
             "middle_da_chiao": { name: "國中大橋教室", hasStage: true, layout: [ ["1-1:X", "1-2:X", "1-3", "_", "1-4", "1-5", "1-6", "_", "1-7", "1-8:X"], ["2-1", "2-2", "2-3", "_", "2-4", "2-5", "2-6", "_", "2-7", "2-8"], ["3-1", "3-2", "3-3", "_", "3-4", "3-5", "3-6", "_", "3-7", "3-8"], ["4-1", "4-2", "4-3", "_", "4-4", "4-5", "4-6", "_", "4-7", "4-8:X"], ["5-1", "5-2", "5-3", "_", "5-4", "5-5", "5-6", "_", "5-7", "5-8"], ["_","_","_","_","_","_","_","_","_","DOOR"] ] },
-            "middle_big_green": { name: "國中大綠教室", hasStage: true, layout: [ ["DOOR", "_", "_", "_", "_", "_"], ["1-1", "1-2", "1-3", "_", "1-4", "1-5"], ["2-1", "2-2", "2-3", "_", "2-4", "2-5"], ["3-1", "3-2", "3-3", "_", "3-4", "3-5"], ["PILLAR", "4-2", "4-3", "_", "4-4", "4-5"] ] }
+            "middle_big_green": { name: "國中大綠教室", hasStage: true, layout: [ ["DOOR", "_", "_", "_", "_", "_"], ["1-1", "1-2", "1-3", "_", "1-4", "1-5"], ["2-1", "2-2", "2-3", "_", "2-4", "2-5"], ["3-1", "3-2", "3-3", "_", "3-4", "3-5"], ["PILLAR", "4-2", "4-3", "_", "4-4", "4-5"] ] },
+            
+            "test_room": { 
+                name: "測試專用教室", 
+                hasStage: true, 
+                layout: [ 
+                    ["1-1", "1-2"]
+                ] 
+            }
         };
 
         let currentClassId = null;
@@ -263,6 +252,8 @@
         const stageArea = document.getElementById('stageArea');
         const loadingMask = document.getElementById('loadingMask');
         const waitlistArea = document.getElementById('waitlistArea');
+        const deadlineTimer = document.getElementById('deadlineTimer');
+        const btnWaitlist = document.getElementById('btnWaitlist');
         let currentSeatId = null;
         let timerInterval = null;
         const TIMEOUT_SECONDS = 60;
@@ -274,71 +265,155 @@
 
             if (!courseId) {
                 alert("無效的課程連結！");
-                window.location.href = "index.html"; // ★★★ 修正連結：回到首頁 (index.html) ★★★
+                window.location.href = "index.html"; 
                 return;
             }
 
-            try {
-                const courseSnapshot = await get(child(ref(db), `courses/${courseId}`));
-                if (!courseSnapshot.exists()) throw new Error("課程不存在");
-                
-                currentCourseData = courseSnapshot.val();
-                const classroomType = currentCourseData.classroom; 
-                
-                if (!classrooms[classroomType]) throw new Error("教室設定錯誤");
+            currentClassId = courseId;
 
-                currentClassId = courseId; 
-                document.getElementById('pageTitle').textContent = `🐻 ${currentCourseData.subject} ${currentCourseData.classType || ''} - 劃位`;
+            onValue(ref(db, `courses/${courseId}`), (snapshot) => {
+                if (!snapshot.exists()) {
+                    alert("課程不存在");
+                    window.location.href = "index.html";
+                    return;
+                }
+                currentCourseData = snapshot.val();
                 
+                document.getElementById('pageTitle').textContent = `🐻 ${currentCourseData.subject} ${currentCourseData.classType || ''} - 劃位`;
                 document.getElementById('pageTeacher').textContent = currentCourseData.teacher;
                 document.getElementById('pageTime').textContent = currentCourseData.timeDescription;
-                document.getElementById('pageClassroom').textContent = classrooms[classroomType].name;
+                
+                const classroomType = currentCourseData.classroom;
+                if (classrooms[classroomType]) {
+                    document.getElementById('pageClassroom').textContent = classrooms[classroomType].name;
+                }
+            });
 
-                const settingsSnapshot = await get(child(ref(db), `seats/${courseId}/_settings`));
-                if (!settingsSnapshot.exists()) throw new Error("尚未設定開放時間");
+            onValue(ref(db, `seats/${courseId}/_settings`), (snapshot) => {
+                if (!snapshot.exists()) return;
+                courseSettings = snapshot.val();
                 
-                const settings = settingsSnapshot.val();
-                
-                const offsetRef = ref(db, ".info/serverTimeOffset");
-                onValue(offsetRef, (snap) => {
+                onValue(ref(db, ".info/serverTimeOffset"), (snap) => {
                     serverTimeOffset = snap.val() || 0;
                     const serverTime = Date.now() + serverTimeOffset;
-                    checkTimeAndRender(serverTime, settings, classroomType);
+                    
+                    if (currentCourseData) {
+                        checkTimeAndRender(serverTime, courseSettings, currentCourseData.classroom);
+                    } else {
+                        setTimeout(() => {
+                            if (currentCourseData) checkTimeAndRender(serverTime, courseSettings, currentCourseData.classroom);
+                        }, 500);
+                    }
+                    
+                    setInterval(() => checkExpiration(courseSettings), 1000);
                 }, { onlyOnce: true });
+            });
 
-            } catch (err) {
-                alert(err.message);
-                window.location.href = "index.html"; // ★★★ 修正連結：回到首頁 (index.html) ★★★
-            }
+            onValue(ref(db, `waitlist/${courseId}`), (snapshot) => {
+                const data = snapshot.val() || {};
+                waitlistCount = Object.keys(data).length;
+                updateWaitlistButton();
+            });
         }
 
         function checkTimeAndRender(now, settings, classroomType) {
-            const { start1, end1, start2 } = settings;
+            const { start1, end1, start2, end2 } = settings;
             const isOpen1 = (now >= start1 && now < end1);
-            const isOpen2 = (now >= start2);
+            const isOpen2 = (now >= start2 && (!end2 || now < end2));
 
             if (!isOpen1 && !isOpen2) {
                 let msg = "⛔ 目前非開放劃位時間！";
                 if (now < start1) msg = "⛔ 劃位尚未開始！請勿偷跑！";
                 if (now >= end1 && now < start2) msg = "⛔ 系統整理中，暫停開放！";
                 alert(msg);
-                window.location.href = "index.html"; // ★★★ 修正連結：回到首頁 (index.html) ★★★
+                window.location.href = "index.html"; 
                 return;
             }
 
-            if (isOpen2) {
-                waitlistArea.style.display = "block";
+            const hasPhase2 = (start2 && start2 < 9999999999999);
+            const isPhase2 = (now >= start2);
+
+            if (currentCourseData && currentCourseData.waitlistEnabled && soldCount >= totalSeats) {
+                if (!hasPhase2 || (hasPhase2 && isPhase2)) {
+                    waitlistArea.style.display = "block";
+                    updateWaitlistButton();
+                } else {
+                    waitlistArea.style.display = "none";
+                }
+            } else {
+                waitlistArea.style.display = "none";
+            }
+
+            let targetTime = null;
+            if (isOpen1) {
+                if (end1 < 9999999999999) targetTime = end1;
+            } else if (isOpen2) {
+                if (end2 && end2 < 9999999999999) targetTime = end2;
+            }
+
+            if (targetTime) {
+                deadlineTimer.style.display = "block";
+                updateDeadlineTimer(targetTime);
+                setInterval(() => updateDeadlineTimer(targetTime), 1000);
+            } else {
+                deadlineTimer.style.display = "none";
             }
 
             loadingMask.style.display = "none";
-            renderClassroom(classroomType);
-            startRealtimeListener();
+            
+            if (!isClassroomRendered) {
+                renderClassroom(classroomType);
+                startRealtimeListener();
+                isClassroomRendered = true;
+            }
+        }
+
+        function updateWaitlistButton() {
+            if (!currentCourseData) return;
+            const limit = currentCourseData.waitlistLimit || 0;
+            
+            if (limit > 0 && waitlistCount >= limit) {
+                btnWaitlist.textContent = "🔴 候補已額滿";
+                btnWaitlist.disabled = true;
+                btnWaitlist.style.backgroundColor = "#e74c3c";
+            } else {
+                btnWaitlist.textContent = "📝 登記候補";
+                btnWaitlist.disabled = false;
+                btnWaitlist.style.backgroundColor = "#e67e22";
+            }
+        }
+
+        function updateDeadlineTimer(targetTime) {
+            const now = Date.now() + serverTimeOffset;
+            const diff = targetTime - now;
+            if (diff <= 0) {
+                deadlineTimer.textContent = "劃位時間已結束";
+            } else {
+                const m = Math.floor(diff / 60000);
+                const s = Math.floor((diff % 60000) / 1000);
+                deadlineTimer.textContent = `⏳ 距離劃位結束還有：${m}分 ${s}秒`;
+            }
+        }
+
+        function checkExpiration(settings) {
+            const now = Date.now() + serverTimeOffset;
+            const { start1, end1, start2, end2 } = settings;
+            
+            if (now >= end1 && now < start2) {
+                alert("⏰ 第一階段劃位時間已結束！\n系統整理中，請稍後再回來。");
+                window.location.href = "index.html";
+            }
+            if (end2 && end2 < 9999999999999 && now >= end2) {
+                alert("⏰ 劃位時間已全部結束！");
+                window.location.href = "index.html";
+            }
         }
 
         function renderClassroom(type) {
             const config = classrooms[type];
             stageArea.innerHTML = config.hasStage ? '<div class="stage-box">講　台</div>' : '';
             classroomDiv.innerHTML = "";
+            totalSeats = 0; 
             
             config.layout.forEach((row) => {
                 const rowDiv = document.createElement('div');
@@ -358,7 +433,10 @@
                         seat.dataset.id = code;
                         seat.id = `seat-${code}`;
                         if (isBlocked) seat.classList.add('blocked');
-                        else seat.addEventListener('click', () => tryLockSeat(code));
+                        else {
+                            seat.addEventListener('click', () => tryLockSeat(code));
+                            totalSeats++; 
+                        }
                     }
                     rowDiv.appendChild(seat);
                 });
@@ -372,32 +450,56 @@
             
             unsubscribe = onValue(classRef, (snapshot) => {
                 const data = snapshot.val() || {};
+                soldCount = 0; 
+
                 document.querySelectorAll('.seat').forEach(seatEl => {
                     const seatId = seatEl.dataset.id;
                     if (!seatId || seatEl.classList.contains('blocked')) return;
 
                     const seatInfo = data[seatId];
-                    seatEl.classList.remove('sold', 'locked');
+                    seatEl.classList.remove('sold', 'locked', 'mylocked'); 
                     seatEl.style.backgroundColor = ""; 
                     
                     if (seatInfo) {
-                        if (seatInfo.status === 'sold') seatEl.classList.add('sold');
-                        else if (seatInfo.status === 'locked') {
+                        if (seatInfo.status === 'sold') {
+                            seatEl.classList.add('sold'); 
+                            soldCount++; 
+                        } else if (seatInfo.status === 'locked') {
                             if (seatInfo.user === myUserId) {
-                                seatEl.classList.add('locked');
+                                seatEl.classList.add('mylocked'); 
                                 checkAndRestoreSession(seatId, seatInfo.timestamp);
                             } else if (seatInfo.user === 'admin_reserved') {
-                                seatEl.classList.add('locked');
+                                seatEl.classList.add('locked'); 
+                                soldCount++; 
                             } else {
-                                seatEl.classList.add('sold'); 
+                                seatEl.classList.add('locked'); 
                             }
                         }
                     }
                 });
+
+                const now = Date.now() + serverTimeOffset;
+                if (courseSettings) {
+                    const { start2 } = courseSettings;
+                    const hasPhase2 = (start2 && start2 < 9999999999999);
+                    const isPhase2 = (now >= start2);
+
+                    if (currentCourseData && currentCourseData.waitlistEnabled && soldCount >= totalSeats) {
+                        if (!hasPhase2 || (hasPhase2 && isPhase2)) {
+                            waitlistArea.style.display = "block";
+                            updateWaitlistButton();
+                        } else {
+                            waitlistArea.style.display = "none";
+                        }
+                    } else {
+                        waitlistArea.style.display = "none";
+                    }
+                }
             });
         }
 
-        window.openWaitlistModal = function() {
+        // 定義為區域函式，稍後掛載到 window
+        function openWaitlistModal() {
             document.getElementById('waitlistModal').style.display = 'flex';
             
             if (currentCourseData) {
@@ -408,12 +510,12 @@
                      📅 開課：${currentCourseData.startDate || ''}`;
             }
 
-            try { if(grecaptcha && grecaptcha.reset) grecaptcha.reset(widgetId2); } catch(e) {}
-        };
+            try { if(grecaptcha && grecaptcha.reset && widgetId2 !== undefined) grecaptcha.reset(widgetId2); } catch(e) { console.log("ReCAPTCHA reset skipped"); }
+        }
 
-        window.closeWaitlistModal = function() {
+        function closeWaitlistModal() {
             document.getElementById('waitlistModal').style.display = 'none';
-        };
+        }
 
         document.getElementById('w_confirmBtn').addEventListener('click', () => {
             if (!isVerified2) { alert("🤖 請勾選「我不是機器人」！"); return; } 
@@ -434,21 +536,24 @@
                 timestamp: serverTimestamp()
             }).then(() => {
                 alert("✅ 候補登記成功！\n若有座位釋出，將依序通知。");
-                closeWaitlistModal();
+                closeWaitlistModal(); // 現在可以正確呼叫了
             }).catch(err => alert("錯誤：" + err));
         });
 
         function tryLockSeat(seatId) {
             if (currentSeatId && currentSeatId !== seatId) { alert("您已經有一個座位正在保留中！"); return; }
             const seatEl = document.getElementById(`seat-${seatId}`);
+            
             if (seatEl.classList.contains('sold') || seatEl.classList.contains('locked') || seatEl.classList.contains('blocked')) {
-                if (seatEl.classList.contains('locked')) openBookingModal(seatId, Date.now());
+                return; 
+            }
+            if (seatEl.classList.contains('mylocked')) {
                 return;
             }
+
             seatEl.classList.add('loading');
             const seatRef = ref(db, `seats/${currentClassId}/${seatId}`);
             
-            // ★★★ V27.1 修正：使用校準後的伺服器時間 ★★★
             const nowTimestamp = Date.now() + serverTimeOffset;
             
             runTransaction(seatRef, (currentData) => {
@@ -477,7 +582,6 @@
             const modal = document.getElementById('bookingModal');
             if (currentSeatId === seatId && modal.style.display === "flex") return;
             
-            // ★★★ V27.1 修正：使用校準時間計算倒數 ★★★
             const now = Date.now() + serverTimeOffset;
             const elapsedSeconds = Math.floor((now - lockTimestamp) / 1000);
             const remaining = TIMEOUT_SECONDS - elapsedSeconds;
@@ -497,7 +601,6 @@
                      📅 開課：${currentCourseData.startDate || ''}`;
             }
 
-            // ★★★ V27.1 重置 UI 狀態 ★★★
             document.getElementById('bookingFormContent').style.display = 'block';
             document.getElementById('expirationMessage').style.display = 'none';
 
@@ -505,7 +608,7 @@
             isVerified1 = false; 
             confirmBtn.disabled = true; 
             honeyPotInput.value = ""; 
-            try { if(grecaptcha && grecaptcha.reset) grecaptcha.reset(widgetId1); } catch(e) {}
+            try { if(grecaptcha && grecaptcha.reset && widgetId1 !== undefined) grecaptcha.reset(widgetId1); } catch(e) { console.log("ReCAPTCHA reset skipped"); }
             startPrecisionTimer(lockTimestamp);
         }
 
@@ -516,26 +619,21 @@
         }
 
         function updateTimerLoop(startTimestamp) {
-            // ★★★ V27.1 修正：使用校準時間 ★★★
             const now = Date.now() + serverTimeOffset;
             const elapsed = Math.floor((now - startTimestamp) / 1000);
             const remaining = TIMEOUT_SECONDS - elapsed;
             
             if (remaining <= 0) {
                 clearInterval(timerInterval);
-                handleTimeout(); // ★★★ V27.1 呼叫超時處理 ★★★
+                handleTimeout(); 
             } else { 
                 updateTimerDisplay(remaining); 
             }
         }
 
-        // ★★★ V27.1 新增：超時處理函式 ★★★
         function handleTimeout() {
-            // 1. 切換 UI
             document.getElementById('bookingFormContent').style.display = 'none';
             document.getElementById('expirationMessage').style.display = 'block';
-            
-            // 2. 釋出座位 (不關閉視窗)
             releaseSeat(true);
         }
 
@@ -551,19 +649,18 @@
             if (!currentSeatId) return;
             const seatToRelease = currentSeatId;
             
-            // ★★★ V27.1 修正：如果是自動釋出，只清空 ID，不關閉視窗 ★★★
             if (isAuto) {
                 currentSeatId = null;
                 set(ref(db, `seats/${currentClassId}/${seatToRelease}`), null);
             } else {
                 set(ref(db, `seats/${currentClassId}/${seatToRelease}`), null).then(() => {
-                    closeModal();
+                    closeModal(); // 使用區域函式
                     if (!isAuto) { alert("已取消保留。"); }
                 }).catch(err => { console.error("釋出失敗", err); closeModal(); });
             }
         }
         
-        window.closeModal = function() {
+        function closeModal() {
             modal.style.display = "none";
             currentSeatId = null;
             clearInterval(timerInterval);
@@ -574,6 +671,8 @@
 
         confirmBtn.addEventListener('click', () => {
             if (honeyPotInput.value !== "") { alert("系統偵測到異常操作。"); return; }
+            if (!currentSeatId) { alert("⚠️ 座位保留時間已到，請重新選位！"); closeModal(); return; } // 防呆：避免倒數結束後的點擊
+            
             const name = nameInput.value.trim();
             const phone = phoneInput.value.trim();
             if (!isVerified1) { alert("🤖 請勾選「我不是機器人」！"); return; } 
@@ -582,18 +681,47 @@
             if (!phoneRegex.test(phone)) { alert("❌ 手機號碼格式錯誤！"); return; }
             
             const orderId = Date.now().toString().slice(-6) + Math.floor(Math.random() * 100);
+            const timestamp = new Date().toLocaleString();
 
-            update(ref(db, `seats/${currentClassId}/${currentSeatId}`), {
+            const seatData = {
                 status: 'sold', 
                 studentName: name, 
                 parentPhone: phone, 
-                soldTime: new Date().toLocaleString(),
+                soldTime: timestamp,
                 orderId: orderId 
-            }).then(() => {
+            };
+
+            const orderData = {
+                orderId: orderId,
+                courseId: currentClassId,
+                seatId: currentSeatId,
+                studentName: name,
+                parentPhone: phone,
+                timestamp: serverTimestamp(), 
+                displayTime: timestamp
+            };
+
+            const updates = {};
+            updates[`seats/${currentClassId}/${currentSeatId}`] = seatData;
+            updates[`orders/${orderId}`] = orderData;
+
+            update(ref(db), updates).then(() => {
                 alert(`✅ 劃位成功！\n座位：${currentSeatId}\n訂單編號：${orderId}\n請截圖留存！`);
-                closeModal();
-            }).catch((err) => alert("送出失敗：" + err));
+                closeModal(); // 使用區域函式
+            }).catch((err) => {
+                if (err.message.includes("PERMISSION_DENIED")) {
+                    alert("送出失敗：⛔ 目前非劃位時段或已被搶走！");
+                } else {
+                    alert("送出失敗：" + err.message);
+                }
+                console.error(err);
+            });
         });
+
+        // 將區域函式掛載到 Window 讓 HTML onclick 可以呼叫
+        window.openWaitlistModal = openWaitlistModal;
+        window.closeWaitlistModal = closeWaitlistModal;
+        window.closeModal = closeModal;
 
         init();
     </script>
