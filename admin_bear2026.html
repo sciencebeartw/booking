@@ -16,9 +16,15 @@
         .nav-right { display: flex; align-items: center; }
         .btn-home { background: #e74c3c; color: white; text-decoration: none; padding: 8px 15px; border-radius: 5px; font-weight: bold; font-size: 14px; margin-left: 20px; }
         
-        /* ★★★ 全域密碼框樣式 ★★★ */
         .global-pwd-bar { background: #fff3e0; padding: 10px 20px; border-radius: 10px; border: 2px solid #f39c12; margin-bottom: 20px; display: flex; align-items: center; gap: 10px; font-weight: bold; color: #d35400; box-shadow: 0 2px 5px rgba(0,0,0,0.1); }
         
+        #btnAddCourseBtn { width: 100%; padding: 15px; font-size: 18px; display: block; }
+
+        @media (min-width: 768px) {
+            .global-pwd-bar { max-width: 800px; margin-left: auto; margin-right: auto; }
+            #btnAddCourseBtn { max-width: 800px; margin-left: auto; margin-right: auto; }
+        }
+
         .page-section { display: none; }
         .page-section.active { display: block; }
         .form-container { background: white; padding: 30px; border-radius: 10px; box-shadow: 0 2px 10px rgba(0,0,0,0.1); max-width: 900px; margin: 0 auto; }
@@ -32,10 +38,12 @@
         button.danger { background-color: #e74c3c; }
         button.success { background-color: #27ae60; }
         button.warning { background-color: #f39c12; }
-        button.dark { background-color: #34495e; } /* 永久刪除按鈕 */
+        button.dark { background-color: #34495e; } 
         
-        .course-list { margin-top: 30px; display: grid; grid-template-columns: repeat(auto-fill, minmax(300px, 1fr)); gap: 20px; }
-        .admin-course-card { background: white; border-radius: 10px; box-shadow: 0 2px 5px rgba(0,0,0,0.1); overflow: hidden; cursor: pointer; transition: 0.2s; position: relative; }
+        .course-list { margin-top: 30px; display: grid; grid-template-columns: repeat(auto-fill, minmax(300px, 1fr)); gap: 20px; justify-content: center; }
+        .course-list { display: flex; flex-wrap: wrap; justify-content: center; gap: 20px; }
+        .admin-course-card { width: 300px; background: white; border-radius: 10px; box-shadow: 0 2px 5px rgba(0,0,0,0.1); overflow: hidden; cursor: pointer; transition: 0.2s; position: relative; }
+
         .admin-course-card:hover { transform: translateY(-3px); box-shadow: 0 5px 15px rgba(0,0,0,0.1); }
         .card-thumb { height: 150px; background-size: cover; background-position: center; }
         .card-content { padding: 15px; }
@@ -46,18 +54,14 @@
         .table-container { overflow-x: auto; background: white; border-radius: 10px; box-shadow: 0 2px 10px rgba(0,0,0,0.1); margin-top: 20px; }
         table { width: 100%; border-collapse: collapse; min-width: 800px; }
         
-        /* 強制表格不換行 */
         th, td { padding: 12px 15px; text-align: left; border-bottom: 1px solid #ddd; white-space: nowrap; }
-        
         th { background-color: #34495e; color: white; }
         
-        /* 狀態標籤樣式 */
         .badge { padding: 5px 10px; border-radius: 15px; font-size: 12px; font-weight: bold; color: white; }
         .badge.sold { background-color: #27ae60; }
         .badge.locked { background-color: #f39c12; }
         .badge.deleted { background-color: #95a5a6; text-decoration: line-through; } 
         
-        /* 軟刪除行樣式 */
         tr.row-deleted { background-color: #f2f2f2; color: #999; }
         tr.row-deleted td { text-decoration: line-through; }
         tr.row-deleted button { text-decoration: none !important; }
@@ -65,9 +69,11 @@
         #imgPreview { max-width: 200px; margin-top: 10px; display: none; border-radius: 5px; }
         .big-selector { font-size: 18px; padding: 15px; width: 100%; max-width: 500px; margin: 0 auto; display: block; border: 2px solid #3498db; }
         .center-box { text-align: center; margin-bottom: 20px; background: white; padding: 20px; border-radius: 10px; }
-        .banner-list { display: flex; flex-wrap: wrap; gap: 20px; margin-top: 20px; }
+        
+        .banner-list { display: flex; flex-wrap: wrap; gap: 20px; margin-top: 20px; justify-content: center; }
         .banner-item { width: 300px; background: white; padding: 10px; border-radius: 10px; box-shadow: 0 2px 5px rgba(0,0,0,0.1); position: relative; }
         .banner-item img { width: 100%; height: 150px; object-fit: cover; border-radius: 5px; }
+        
         .visual-map-container { margin-top: 30px; background: white; padding: 20px; border-radius: 10px; overflow-x: auto; text-align: center; display: none; }
         .row { display: flex; justify-content: center; gap: 5px; margin-bottom: 5px; }
         .seat { width: 40px; height: 40px; background: #eee; border-radius: 4px; display: flex; align-items: center; justify-content: center; font-size: 12px; cursor: pointer; position: relative; }
@@ -77,11 +83,16 @@
         .seat.aisle { background: transparent; cursor: default; }
         .seat-tooltip { position: absolute; bottom: 100%; left: 50%; transform: translateX(-50%); background: #333; color: white; padding: 5px; border-radius: 3px; font-size: 12px; white-space: nowrap; display: none; z-index: 10; }
         .seat:hover .seat-tooltip { display: block; }
+        
         .classroom-preview-list { display: grid; grid-template-columns: repeat(auto-fill, minmax(250px, 1fr)); gap: 20px; }
         .classroom-card { background: white; padding: 15px; border-radius: 10px; text-align: center; box-shadow: 0 2px 5px rgba(0,0,0,0.1); cursor: pointer; transition: 0.2s; }
         .classroom-card:hover { transform: translateY(-3px); box-shadow: 0 5px 15px rgba(0,0,0,0.2); }
+        
         .preview-modal { position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.5); display: none; justify-content: center; align-items: center; z-index: 999; }
-        .preview-box { background: white; padding: 20px; border-radius: 10px; max-width: 90%; max-height: 90%; overflow: auto; text-align: center; }
+        .preview-box { background: white; padding: 25px; border-radius: 10px; max-width: 90%; max-height: 90%; overflow: auto; text-align: center; box-shadow: 0 5px 20px rgba(0,0,0,0.2); }
+        .preview-box h3 { margin-top: 0; color: #2c3e50; }
+        .preview-box p { font-size: 16px; color: #555; margin-bottom: 20px; }
+
         #sweeperStatus { position: fixed; bottom: 10px; left: 10px; background: rgba(0,0,0,0.7); color: white; padding: 5px 10px; border-radius: 5px; font-size: 12px; z-index: 9999; }
     </style>
 </head>
@@ -135,7 +146,7 @@
 
     <div id="tab-courses" class="page-section">
         <div id="courseListView">
-            <button onclick="showCourseForm()" class="success" style="width:100%; padding:15px; font-size:18px;">➕ 新增課程</button>
+            <button onclick="showCourseForm()" class="success" id="btnAddCourseBtn">➕ 新增課程</button>
             <div id="courseList" class="course-list"></div>
         </div>
 
@@ -305,13 +316,24 @@
         </div>
     </div>
 
+    <div id="opModal" class="preview-modal">
+        <div class="preview-box" style="text-align: center; max-width: 400px;">
+            <h3>管理員保留位操作</h3>
+            <p id="opTarget" style="font-weight:bold; color:#8e44ad;"></p>
+            <div style="display:flex; gap:20px; justify-content:center; margin-top:20px;">
+                <button class="danger" onclick="confirmOpRelease()">🗑️ 釋出座位</button>
+                <button class="success" onclick="confirmOpSell()">💰 轉為售出</button>
+            </div>
+            <button onclick="closeOpModal()" style="margin-top:20px; background:#7f8c8d;">取消</button>
+        </div>
+    </div>
+
     <script type="module">
         import { db, ref, set, remove, push, update, storage, storageRef, uploadBytes, getDownloadURL, get } from './firebase-config.js';
         import { onValue } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-database.js";
 
         tinymce.init({ selector: '#c_desc', plugins: 'image link lists media table', toolbar: 'undo redo | formatselect | bold italic backcolor | alignleft aligncenter alignright alignjustify | bullist numlist outdent indent | removeformat | image', height: 400, menubar: true });
 
-        // ★★★ 完整的教室佈局設定 (絕無省略) ★★★
         const classrooms = {
             "high_red": { name: "高中紅教室", layout: [ ["1-1:X", "1-2:X", "_", "1-3", "1-4", "1-5", "_", "1-6", "1-7", "1-8", "_", "1-9:X", "1-10:X"], ["2-1", "2-2", "_", "2-3", "2-4", "2-5", "_", "2-6", "2-7", "2-8", "_", "2-9", "2-10"], ["3-1", "3-2", "_", "3-3", "3-4", "3-5", "_", "3-6", "3-7", "3-8", "_", "3-9", "3-10"], ["4-1", "4-2", "_", "4-3", "4-4", "4-5", "_", "4-6", "4-7", "4-8", "_", "4-9", "4-10"], ["5-1", "5-2", "_", "5-3", "5-4", "5-5", "_", "5-6", "5-7", "5-8", "_", "5-9", "5-10"], ["6-1", "6-2", "_", "6-3", "6-4", "6-5", "_", "6-6", "6-7", "6-8", "_", "6-9", "6-10"], ["7-1:X", "7-2:X", "_", "7-3:X", "7-4:X", "7-5:X", "_", "7-6:X", "7-7:X", "7-8:X", "_", "7-9:X", "7-10:X"], ["8-1:X", "8-2:X", "_", "8-3:X", "8-4:X", "8-5:X", "_", "8-6:X", "8-7:X", "8-8:X", "_", "_", "DOOR"] ] },
             "high_orange": { name: "高中橘教室", layout: [ ["1-1:X", "1-2", "_", "1-3", "1-4", "1-5", "_", "1-6", "1-7", "1-8", "_", "1-9:X", "1-10:X"], ["2-1", "2-2", "_", "2-3", "2-4", "2-5", "_", "2-6", "2-7", "2-8", "_", "2-9", "2-10"], ["3-1", "3-2", "_", "3-3", "3-4", "3-5", "_", "3-6", "3-7", "3-8", "_", "3-9", "3-10"], ["4-1", "4-2", "_", "4-3", "4-4", "4-5", "_", "4-6", "4-7", "4-8", "_", "4-9", "4-10"], ["5-1", "5-2", "_", "5-3", "5-4", "5-5", "_", "5-6", "5-7", "5-8", "_", "5-9", "5-10"], ["6-1", "6-2", "_", "6-3", "6-4", "6-5", "_", "6-6", "6-7", "6-8", "_", "6-9", "6-10"], ["_","_","_","_","_","_","_","_","_","_","_","_","DOOR"] ] },
@@ -332,6 +354,9 @@
         let coursesData = {};
         let waitlistData = {};
         let seatsData = {}; 
+
+        let opCourseId = null;
+        let opSeatId = null;
 
         window.switchTab = function(tabName) {
             document.querySelectorAll('.page-section').forEach(el => el.classList.remove('active'));
@@ -563,7 +588,7 @@
                 Object.keys(seats).forEach(seatId => {
                     if (seatId === '_settings') return;
                     const info = seats[seatId];
-                    if (info.status === 'sold' || info.status === 'locked' || info.status === 'deleted') { // 顯示所有狀態
+                    if (info.status === 'sold' || info.status === 'locked' || info.status === 'deleted') { 
                         allBookings.push({
                             courseId, courseName, seatId, status: info.status,
                             studentName: info.studentName || '-', parentPhone: info.parentPhone || '-',
@@ -579,7 +604,6 @@
             loadVisualMap();
         });
 
-        // ★★★ 修改：renderTable 支援顯示 'deleted' 狀態 ★★★
         function renderTable() {
             const filterId = document.getElementById('classSelector').value;
             const searchText = document.getElementById('searchInput').value.trim().toLowerCase();
@@ -600,9 +624,9 @@
                     statusBadge = '<span class="badge locked">填寫中</span>';
                 } else if (b.status === 'deleted') {
                     statusBadge = '<span class="badge deleted">已釋出(保留)</span>';
-                    tr.classList.add('row-deleted'); // 變灰
+                    tr.classList.add('row-deleted'); 
                     btnText = '永久刪除';
-                    btnClass = 'dark'; // 深色按鈕
+                    btnClass = 'dark'; 
                 }
                 
                 tr.innerHTML = `<td>${b.orderId}</td><td>${b.courseName}</td><td>${b.seatId}</td><td>${statusBadge}</td><td>${b.studentName}</td><td>${b.parentPhone}</td><td>${b.time}</td>
@@ -671,52 +695,22 @@
             });
         };
 
-        // ★★★ 修改：toggleReserve 支援黑箱轉售出 (使用全域密碼) ★★★
+        // ★★★ 修改：toggleReserve 修正邏輯 ★★★
         window.toggleReserve = async function(courseId, seatId, info) {
             const pwd = document.getElementById('adminPwd').value.trim();
+            if (!pwd) { alert("⚠️ 請先輸入管理員密碼才能進行操作！"); return; }
 
             if (info && info.status === 'sold') {
-                // 如果已經是 sold，詢問釋出
                 if (confirm(`確定要釋出 ${seatId} (${info.studentName}) 嗎？`)) {
-                    // ★★★ 改為軟刪除 ★★★
                     update(ref(db, `seats/${courseId}/${seatId}`), {
                         status: 'deleted',
                         adminPwd: pwd
                     });
                 }
-            } else if (info && info.status === 'deleted') {
-                // 如果是已軟刪除，詢問永久刪除
-                if (confirm(`確定要【永久刪除】${seatId} 的紀錄嗎？\n此操作無法復原。`)) {
-                    set(ref(db, `seats/${courseId}/${seatId}`), null);
-                }
             } else if (info && info.status === 'locked' && info.user === 'admin_reserved') {
-                const action = prompt("此為【管理員保留位】。請選擇操作：\n輸入 'D' 釋出座位 (變回綠色)\n輸入 'S' 轉為已售出 (變紅色)", "D");
-                
-                if (action && action.toUpperCase() === 'D') {
-                    set(ref(db, `seats/${courseId}/${seatId}`), null);
-                } else if (action && action.toUpperCase() === 'S') {
-                    if (!pwd) { alert("請輸入管理員密碼才能轉為售出！"); return; }
-                    
-                    const name = prompt("請輸入學生姓名 (留空則為'現場保留')", "現場保留");
-                    const phone = prompt("請輸入家長電話 (留空則為'0000000000')", "0000000000");
-                    
-                    const orderId = "ADMIN_" + Date.now();
-                    const seatData = {
-                        status: 'sold',
-                        studentName: name,
-                        parentPhone: phone,
-                        soldTime: new Date().toLocaleString(),
-                        orderId: orderId,
-                        adminPwd: pwd 
-                    };
-                    
-                    set(ref(db, `seats/${courseId}/${seatId}`), seatData).then(() => {
-                        alert("已成功轉為已售出！");
-                    }).catch(err => alert("失敗：" + err.message));
-                }
-            } else if (!info) {
-                if (!pwd) { alert("⚠️ 請先輸入管理員密碼才能進行黑箱保留！"); return; }
-                
+                openOpModal(courseId, seatId);
+            } else if (!info || (info && info.status === 'deleted')) {
+                // ★★★ 修正：將 deleted 狀態視為空位，觸發保留詢問 ★★★
                 const snap = await get(ref(db, `seats/${courseId}/${seatId}`));
                 if (snap.exists() && snap.val().status === 'sold') {
                      if (!confirm("⚠️ 警告：這個位子剛剛被學生搶走了！確定要強制覆蓋嗎？")) return;
@@ -735,6 +729,49 @@
             }
         };
 
+        window.openOpModal = function(courseId, seatId) {
+            opCourseId = courseId;
+            opSeatId = seatId;
+            document.getElementById('opTarget').textContent = `座位：${seatId}`;
+            document.getElementById('opModal').style.display = 'flex';
+        };
+
+        window.closeOpModal = function() {
+            document.getElementById('opModal').style.display = 'none';
+            opCourseId = null;
+            opSeatId = null;
+        };
+
+        window.confirmOpRelease = function() {
+            if (!opCourseId || !opSeatId) return;
+            set(ref(db, `seats/${opCourseId}/${opSeatId}`), null).then(() => {
+                closeOpModal();
+            });
+        };
+
+        window.confirmOpSell = function() {
+            if (!opCourseId || !opSeatId) return;
+            const pwd = document.getElementById('adminPwd').value.trim();
+            
+            const name = prompt("請輸入學生姓名 (留空則為'現場保留')", "現場保留");
+            const phone = prompt("請輸入家長電話 (留空則為'0000000000')", "0000000000");
+            
+            const orderId = "ADMIN_" + Date.now();
+            const seatData = {
+                status: 'sold',
+                studentName: name,
+                parentPhone: phone,
+                soldTime: new Date().toLocaleString(),
+                orderId: orderId,
+                adminPwd: pwd 
+            };
+            
+            set(ref(db, `seats/${opCourseId}/${opSeatId}`), seatData).then(() => {
+                alert("已成功轉為已售出！");
+                closeOpModal();
+            }).catch(err => alert("失敗：" + err.message));
+        };
+
         function updateClassSelector() {
             const selector = document.getElementById('classSelector');
             const currentVal = selector.value;
@@ -749,19 +786,18 @@
             selector.value = currentVal;
         }
 
-        // ★★★ 修改：releaseSeat 支援軟刪除/硬刪除邏輯 ★★★
         window.releaseSeat = function(courseId, seatId, currentStatus) {
             const pwd = document.getElementById('adminPwd').value.trim();
             if (!pwd) return alert("請先輸入管理員密碼！");
 
             if (currentStatus === 'deleted') {
                 if (confirm("⚠️ 確定要【永久刪除】此紀錄嗎？刪除後無法復原。")) {
-                    set(ref(db, `seats/${courseId}/${seatId}`), null); // 硬刪除
+                    set(ref(db, `seats/${courseId}/${seatId}`), null); 
                 }
             } else {
                 if (confirm("確定釋出座位？(資料將保留並標記為已釋出)")) {
                     update(ref(db, `seats/${courseId}/${seatId}`), {
-                        status: 'deleted', // 軟刪除
+                        status: 'deleted', 
                         adminPwd: pwd
                     });
                 }
@@ -885,7 +921,6 @@
             selector.value = currentVal;
         }
 
-        // ★★★ 修改：renderWaitlistTable 支援顯示 'deleted' 狀態 ★★★
         function renderWaitlistTable() {
             const filterId = document.getElementById('waitlistSelector').value;
             const tbody = document.getElementById('waitlistTable');
@@ -902,7 +937,7 @@
                 let btnClass = 'danger';
                 
                 if (w.status === 'deleted') {
-                    tr.classList.add('row-deleted'); // 變灰
+                    tr.classList.add('row-deleted'); 
                     btnText = '永久刪除';
                     btnClass = 'dark';
                 }
@@ -921,7 +956,6 @@
             });
         }
 
-        // ★★★ 修改：deleteWaitlist 支援軟刪除/硬刪除邏輯 ★★★
         window.deleteWaitlist = function(courseId, waitlistId, currentStatus) {
             const pwd = document.getElementById('adminPwd').value.trim();
             if (!pwd) return alert("請先輸入管理員密碼！");

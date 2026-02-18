@@ -1,5 +1,5 @@
 <!-- 檔案：index.html -->
-<!-- 版本：V28.12 (候補標籤邏輯修正 + Icon更新) -->
+<!-- 版本：V28.23 (燈號邏輯修正) -->
 <!DOCTYPE html>
 <html lang="zh-TW">
 <head>
@@ -50,8 +50,16 @@
         .status-closed { background: #95a5a6; }
         .loading { text-align: center; padding: 50px; font-size: 20px; color: #999; grid-column: 1 / -1; }
         footer { text-align: center; padding: 40px; color: #999; font-size: 14px; background-color: #2c3e50; color: white; margin-top: 80px; }
-        .float-line-btn { position: fixed; bottom: 25px; right: 20px; width: 60px; height: 60px; border-radius: 50%; background-color: #06C755; box-shadow: 0 4px 12px rgba(0,0,0,0.3); z-index: 9999; cursor: pointer; transition: transform 0.2s; animation: bounce 2s ease-in-out infinite; display: flex; align-items: center; justify-content: center; text-decoration: none; color: white; font-weight: 900; font-size: 1.2rem; font-family: Arial, sans-serif; letter-spacing: 0.5px; }
-        .float-line-btn:active { transform: scale(0.9); animation: none; }
+        
+        .float-line-container { position: fixed; bottom: 20px; right: 20px; display: flex; flex-direction: column; gap: 15px; z-index: 9999; align-items: center; }
+        .line-btn { width: 65px; height: 65px; border-radius: 50%; box-shadow: 0 4px 12px rgba(0,0,0,0.3); cursor: pointer; display: flex; flex-direction: column; align-items: center; justify-content: center; text-decoration: none; color: white; font-family: Arial, sans-serif; transition: transform 0.2s; animation: bounce 2s ease-in-out infinite; }
+        .line-btn:active { transform: scale(0.9); animation: none; }
+        .line-btn span.small { font-size: 10px; font-weight: bold; margin-bottom: 2px; letter-spacing: 0px; }
+        .line-btn span.large { font-size: 18px; font-weight: 900; letter-spacing: 1px; }
+        
+        .btn-bear { background-color: #06C755; } 
+        .btn-high { background-color: #0077CC; animation-delay: 1s; } 
+
         @keyframes bounce { 0%, 20%, 50%, 80%, 100% { transform: translateY(0); } 40% { transform: translateY(-10px); } 60% { transform: translateY(-5px); } }
     </style>
 </head>
@@ -88,7 +96,16 @@
         &copy; 2024 山熊科學補習班 | 系統開發：Sciencebear Tech Team
     </footer>
 
-    <a href="https://lin.ee/FDQ1BLD" target="_blank" class="float-line-btn" title="聯繫官方LINE">LINE</a>
+    <div class="float-line-container">
+        <a href="https://lin.ee/FDQ1BLD" target="_blank" class="line-btn btn-bear" title="山熊科學官方LINE">
+            <span class="small">山熊科學</span>
+            <span class="large">LINE</span>
+        </a>
+        <a href="https://lin.ee/kzE9NrI" target="_blank" class="line-btn btn-high" title="山熊升大官方LINE">
+            <span class="small">山熊升大</span>
+            <span class="large">LINE</span>
+        </a>
+    </div>
 
     <script type="module">
         import { db, ref } from './firebase-config.js';
@@ -217,7 +234,12 @@
             const data = snapshot.val() || {};
             waitlistStatus = {};
             Object.keys(data).forEach(courseId => {
-                waitlistStatus[courseId] = Object.keys(data[courseId]).length;
+                // ★★★ 修正：計算候補人數時，排除已軟刪除 (deleted) 的項目 ★★★
+                let count = 0;
+                Object.values(data[courseId]).forEach(w => {
+                    if (w.status !== 'deleted') count++;
+                });
+                waitlistStatus[courseId] = count;
             });
             refreshDisplay();
         });
@@ -242,6 +264,7 @@
 
         setInterval(refreshDisplay, 1000);
 
+        // ★★★ 核心修正：getStatusBadge 嚴格邏輯 ★★★
         function getStatusBadge(c, now) {
             const start1 = new Date(c.start1).getTime();
             const end1 = c.end1 ? new Date(c.end1).getTime() : 9999999999999;
@@ -260,40 +283,50 @@
             const waitlistLimit = c.waitlistLimit || 0;
             const isWaitlistFull = (waitlistLimit > 0 && waitlistCount >= waitlistLimit);
 
-            // 1. 尚未開始
+            // 1. 一階開始前
             if (now < start1) return '<div class="status-badge status-closed">尚未開放</div>';
 
-            // 2. 第一階段
+            // 2. 一階期間 (Start1 ~ End1)
             if (now >= start1 && now < end1) {
-                if (isFull) return '<div class="status-badge status-full">🔴 此階段已額滿</div>';
-                return '<div class="status-badge status-open">🟢 開放劃位中</div>';
-            }
-
-            // 3. 一階結束，二階未開始 (暫停)
-            if (hasEnd1 && hasStart2 && now >= end1 && now < start2) {
-                return '<div class="status-badge status-closed">⛔ 系統整理中</div>';
-            }
-
-            // 4. 第二階段 (或只有一階且無結束時間)
-            if ((hasStart2 && now >= start2 && now < end2) || (!hasEnd1 && now >= start1)) {
                 if (isFull) {
-                    if (c.waitlistEnabled) {
-                        // ★★★ 修正：如果沒有二階，直接顯示候補；如果有二階，必須二階開始才顯示 ★★★
-                        if (!hasStart2 || (hasStart2 && now >= start2)) {
+                    // 若有二階，一階額滿不顯示候補
+                    if (hasStart2) {
+                        return '<div class="status-badge status-full">🔴 此階段已額滿</div>';
+                    } else {
+                        // 若無二階，視同最後階段，可顯示候補
+                        if (c.waitlistEnabled) {
                             if (isWaitlistFull) return '<div class="status-badge status-full">🔴 候補已額滿</div>';
                             return '<div class="status-badge status-wait">🟡 開放候補中</div>';
                         }
+                        return '<div class="status-badge status-full">🔴 此階段已額滿</div>';
                     }
-                    return '<div class="status-badge status-full">🔴 已額滿</div>';
                 }
                 return '<div class="status-badge status-open">🟢 開放劃位中</div>';
             }
 
-            // 5. 全部結束
-            if (hasEnd2 && now >= end2) {
+            // 3. 一階結束 ~ 二階開始前 (整理中)
+            if (hasEnd1 && hasStart2 && now >= end1 && now < start2) {
+                return '<div class="status-badge status-closed">⛔ 座位整理中</div>';
+            }
+
+            // 4. 二階期間 (Start2 ~ End2)
+            if (hasStart2 && now >= start2 && now < end2) {
+                if (isFull) {
+                    if (c.waitlistEnabled) {
+                        if (isWaitlistFull) return '<div class="status-badge status-full">🔴 候補已額滿</div>';
+                        return '<div class="status-badge status-wait">🟡 開放候補中</div>';
+                    }
+                    return '<div class="status-badge status-full">🔴 此階段已額滿</div>';
+                }
+                return '<div class="status-badge status-open">🟢 開放劃位中</div>';
+            }
+
+            // 5. 全部結束 (End2 之後，或無二階且 End1 之後)
+            if ((hasEnd2 && now >= end2) || (!hasStart2 && hasEnd1 && now >= end1)) {
                 return '<div class="status-badge status-full">🔴 劃位已結束</div>';
             }
             
+            // 預設 (理論上不會執行到這)
             return '<div class="status-badge status-closed">尚未開放</div>';
         }
 

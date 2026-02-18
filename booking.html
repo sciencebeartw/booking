@@ -10,7 +10,7 @@
     <style>
         body { font-family: "Microsoft JhengHei", sans-serif; background-color: #f4f4f9; text-align: center; margin: 0; padding: 0; }
         header { background: #2c3e50; padding: 15px 20px; display: flex; justify-content: center; align-items: center; gap: 20px; color: white; box-shadow: 0 2px 5px rgba(0,0,0,0.1); margin-bottom: 20px; }
-        header img { height: 60px; cursor: pointer; } /* Added cursor pointer for secret knock */
+        header img { height: 60px; cursor: pointer; } 
         header h1 { margin: 0; font-size: 24px; letter-spacing: 1px; text-align: center; }
         
         .main-container { background: white; max-width: 1000px; margin: 20px auto; padding: 30px; border-radius: 15px; box-shadow: 0 5px 15px rgba(0,0,0,0.1); position: relative; }
@@ -32,10 +32,8 @@
         .seat:hover { transform: scale(1.1); z-index: 10; }
         .seat.sold { background-color: #e74c3c; cursor: not-allowed; transform: none; pointer-events: none; }
         
-        /* 修正：移除了 border: 2px solid #333，讓黃色座位更乾淨 */
         .seat.locked { background-color: #f39c12; transform: scale(1.05); pointer-events: none; }
         
-        /* 手機版優化：自己選到的位置不需要放大，避免跑版 */
         .seat.mylocked { background-color: #3498db; border: 2px solid #2980b9; z-index: 20; cursor: pointer; pointer-events: auto; }
         
         .seat.blocked { background-color: #95a5a6; cursor: not-allowed; transform: none; }
@@ -48,15 +46,19 @@
         .status-group { display: inline-block; white-space: nowrap; }
         .dot { height: 12px; width: 12px; display: inline-block; border-radius: 50%; margin-right: 5px; }
         
+        /* ★★★ 修改：Modal 文字置中 ★★★ */
         .modal-overlay { position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0, 0, 0, 0.5); display: none; justify-content: center; align-items: center; z-index: 999; }
-        .modal-box { background: white; padding: 25px; border-radius: 15px; width: 90%; max-width: 420px; box-shadow: 0 10px 25px rgba(0,0,0,0.2); text-align: left; border-top: 5px solid #f39c12; max-height: 90vh; overflow-y: auto; }
+        .modal-box { background: white; padding: 25px; border-radius: 15px; width: 90%; max-width: 420px; box-shadow: 0 10px 25px rgba(0,0,0,0.2); text-align: center; border-top: 5px solid #f39c12; max-height: 90vh; overflow-y: auto; }
         .modal-title { font-size: 20px; font-weight: bold; margin-bottom: 5px; color: #333; }
         .modal-desc { font-size: 20px; color: #333; margin-bottom: 15px; font-weight: bold; text-align: center; background: #fdf2e9; padding: 10px; border-radius: 5px; }
         .timer-box { background-color: #fff3cd; color: #856404; padding: 10px; border-radius: 5px; text-align: center; font-weight: bold; margin-bottom: 15px; border: 1px solid #ffeeba; }
-        .form-group { margin-bottom: 15px; }
+        
+        /* 表單輸入框保持靠左，方便輸入 */
+        .form-group { margin-bottom: 15px; text-align: left; }
         .form-group label { display: block; margin-bottom: 5px; font-weight: bold; }
         .form-group input { width: 100%; padding: 10px; border: 1px solid #ddd; border-radius: 5px; font-size: 16px; box-sizing: border-box; }
         .input-hint { font-size: 12px; color: #999; margin-top: 3px; }
+        
         .recaptcha-wrapper { display: flex; justify-content: center; margin-bottom: 15px; margin-top: 10px; }
         .btn-group { display: flex; justify-content: space-between; gap: 10px; margin-top: 10px; }
         .btn { padding: 10px 20px; border: none; border-radius: 5px; cursor: pointer; font-size: 16px; flex: 1; transition: 0.3s; }
@@ -68,30 +70,31 @@
         .btn-waitlist { background-color: #e67e22; color: white; padding: 12px 30px; font-size: 18px; border: none; border-radius: 30px; cursor: pointer; box-shadow: 0 4px 6px rgba(230, 126, 34, 0.3); transition: 0.3s; }
         .btn-waitlist:hover { background-color: #d35400; transform: translateY(-2px); }
         .btn-waitlist:disabled { background-color: #95a5a6; cursor: not-allowed; transform: none; box-shadow: none; }
-        .modal-course-info { background: #f0f2f5; padding: 12px; border-radius: 8px; margin-bottom: 15px; font-size: 14px; color: #555; line-height: 1.6; }
+        .modal-course-info { background: #f0f2f5; padding: 12px; border-radius: 8px; margin-bottom: 15px; font-size: 14px; color: #555; line-height: 1.6; text-align: center; }
         .modal-course-info strong { color: #2c3e50; font-size: 16px; display: block; margin-bottom: 5px; }
-        .warning-text { color: #e74c3c; font-size: 13px; margin-bottom: 15px; line-height: 1.5; font-weight: bold; background: #fff5f5; padding: 10px; border-radius: 5px; border: 1px dashed #e74c3c; }
+        .warning-text { color: #e74c3c; font-size: 13px; margin-bottom: 15px; line-height: 1.5; font-weight: bold; background: #fff5f5; padding: 10px; border-radius: 5px; border: 1px dashed #e74c3c; text-align: center; }
         #expirationMessage { display: none; text-align: center; padding: 20px; }
         #expirationMessage h3 { color: #e74c3c; font-size: 24px; margin-bottom: 10px; }
         #expirationMessage p { font-size: 16px; color: #555; margin-bottom: 20px; }
         footer { text-align: center; padding: 40px; color: #999; font-size: 14px; background-color: #2c3e50; color: white; margin-top: 80px; }
-        .float-line-btn { position: fixed; bottom: 25px; right: 20px; width: 60px; height: 60px; border-radius: 50%; background-color: #06C755; box-shadow: 0 4px 12px rgba(0,0,0,0.3); z-index: 9999; cursor: pointer; transition: transform 0.2s; animation: bounce 2s ease-in-out infinite; display: flex; align-items: center; justify-content: center; text-decoration: none; color: white; font-weight: 900; font-size: 1.2rem; font-family: Arial, sans-serif; letter-spacing: 0.5px; }
-        .float-line-btn:active { transform: scale(0.9); animation: none; }
+
+        /* ★★★ 雙 LINE 按鈕樣式 ★★★ */
+        .float-line-container { position: fixed; bottom: 20px; right: 20px; display: flex; flex-direction: column; gap: 15px; z-index: 9999; align-items: center; }
+        .line-btn { width: 65px; height: 65px; border-radius: 50%; box-shadow: 0 4px 12px rgba(0,0,0,0.3); cursor: pointer; display: flex; flex-direction: column; align-items: center; justify-content: center; text-decoration: none; color: white; font-family: Arial, sans-serif; transition: transform 0.2s; animation: bounce 2s ease-in-out infinite; }
+        .line-btn:active { transform: scale(0.9); animation: none; }
+        .line-btn span.small { font-size: 10px; font-weight: bold; margin-bottom: 2px; letter-spacing: 0px; }
+        .line-btn span.large { font-size: 18px; font-weight: 900; letter-spacing: 1px; }
+        
+        .btn-bear { background-color: #06C755; } /* 山熊科學 - 綠色 */
+        .btn-high { background-color: #0077CC; animation-delay: 1s; } /* 山熊升大 - 深水藍 */
+
         @keyframes bounce { 0%, 20%, 50%, 80%, 100% { transform: translateY(0); } 40% { transform: translateY(-10px); } 60% { transform: translateY(-5px); } }
 
-        /* 手機版面優化 CSS */
         @media (max-width: 768px) {
             .main-container { padding-top: 60px; }
             .back-btn { top: 15px; left: 15px; padding: 5px 10px; font-size: 14px; }
             .course-info-header h2 { font-size: 20px; margin-top: 10px; }
-            
-            /* 座位文字強制不換行並縮小，確保塞得進格子 */
-            .seat {
-                font-size: 10px !important;
-                white-space: nowrap;
-            }
-            
-            /* 手機版強制圖例換行 */
+            .seat { font-size: 10px !important; white-space: nowrap; }
             .status-bar { flex-direction: column; align-items: center; gap: 5px; }
         }
     </style>
@@ -220,7 +223,17 @@
         &copy; 2024 山熊科學補習班 | 系統開發：Sciencebear Tech Team
     </footer>
 
-    <a href="https://lin.ee/FDQ1BLD" target="_blank" class="float-line-btn" title="聯繫官方LINE">LINE</a>
+    <!-- ★★★ 雙 LINE 按鈕 ★★★ -->
+    <div class="float-line-container">
+        <a href="https://lin.ee/FDQ1BLD" target="_blank" class="line-btn btn-bear" title="山熊科學官方LINE">
+            <span class="small">山熊科學</span>
+            <span class="large">LINE</span>
+        </a>
+        <a href="https://lin.ee/kzE9NrI" target="_blank" class="line-btn btn-high" title="山熊升大官方LINE">
+            <span class="small">山熊升大</span>
+            <span class="large">LINE</span>
+        </a>
+    </div>
 
     <script type="module">
         import { db, ref, set, update, get, child, push } from './firebase-config.js';
@@ -236,10 +249,8 @@
         let soldCount = 0;
         let isClassroomRendered = false;
         
-        // 修正：統一在此宣告，避免重複宣告或 Scope 問題
         let isManualRelease = false; 
         
-        // 隱藏入口變數
         let knockCount = 0;
         let knockTimer;
 
@@ -298,7 +309,6 @@
         const TIMEOUT_SECONDS = 60;
         let unsubscribe = null; 
 
-        // 隱藏入口監聽
         document.getElementById('logoKnock').addEventListener('click', () => {
             knockCount++;
             clearTimeout(knockTimer);
@@ -336,6 +346,9 @@
                 if (classrooms[classroomType]) {
                     document.getElementById('pageClassroom').textContent = classrooms[classroomType].name;
                 }
+                
+                // ★★★ 修正：當課程資料更新(如後台修改候補名額)時，即時更新按鈕狀態 ★★★
+                updateWaitlistButton();
             });
 
             onValue(ref(db, `seats/${courseId}/_settings`), (snapshot) => {
@@ -360,7 +373,13 @@
 
             onValue(ref(db, `waitlist/${courseId}`), (snapshot) => {
                 const data = snapshot.val() || {};
-                waitlistCount = Object.keys(data).length;
+                // ★★★ 修正：計算候補人數時，排除已軟刪除 (deleted) 的項目 ★★★
+                waitlistCount = 0;
+                Object.values(data).forEach(w => {
+                    if (w.status !== 'deleted') {
+                        waitlistCount++;
+                    }
+                });
                 updateWaitlistButton();
             });
         }
@@ -503,7 +522,6 @@
                 const data = snapshot.val() || {};
                 soldCount = 0; 
 
-                // 殭屍殺手監聽邏輯
                 if (currentSeatId) {
                     const currentSeatData = data[currentSeatId];
                     if (!currentSeatData || (currentSeatData.user !== myUserId && currentSeatData.status !== 'sold')) {
@@ -532,7 +550,6 @@
                             } else {
                                 seatEl.classList.add('sold'); 
                             }
-                            // ★★★ 只有當狀態為 sold 時，才算入 soldCount (候補依據) ★★★
                             soldCount++; 
                         } else if (seatInfo.status === 'locked') {
                             if (seatInfo.user === myUserId) {
@@ -540,7 +557,6 @@
                                 checkAndRestoreSession(seatId, seatInfo.timestamp);
                             } else if (seatInfo.user === 'admin_reserved') {
                                 seatEl.classList.add('locked'); 
-                                // 管理員保留不計入 soldCount
                             } else {
                                 seatEl.classList.add('locked'); 
                             }
@@ -626,8 +642,6 @@
             const nowTimestamp = Date.now() + serverTimeOffset;
             
             runTransaction(seatRef, (currentData) => {
-                // 如果是 null (全新空位) 或 deleted (軟刪除空位)，允許鎖定
-                // 修正：增加 status 為 deleted 的檢查，允許覆蓋殭屍座位
                 if (currentData === null || (currentData && currentData.status === 'deleted')) { 
                     return { status: 'locked', user: myUserId, timestamp: nowTimestamp }; 
                 } else { 
@@ -724,7 +738,6 @@
             const seatToRelease = currentSeatId;
             
             if (!isAuto) {
-                // 如果是手動釋出，設定旗標，避免被監聽器誤判為「被管理員刪除」
                 isManualRelease = true;
             }
 
@@ -733,7 +746,7 @@
                 set(ref(db, `seats/${currentClassId}/${seatToRelease}`), null);
             } else {
                 set(ref(db, `seats/${currentClassId}/${seatToRelease}`), null).then(() => {
-                    closeModal(); // 使用區域函式
+                    closeModal(); 
                     if (!isAuto) { alert("已取消保留。"); }
                 }).catch(err => { console.error("釋出失敗", err); closeModal(); });
             }

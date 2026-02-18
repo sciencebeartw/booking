@@ -25,8 +25,17 @@
         .back-btn { display: inline-block; margin-bottom: 20px; color: #3498db; text-decoration: none; font-size: 16px; font-weight: bold; border: 1px solid #3498db; padding: 8px 20px; border-radius: 20px; transition: 0.3s; float: left; }
         .back-btn:hover { background: #3498db; color: white; }
         footer { text-align: center; padding: 40px; color: #999; font-size: 14px; background-color: #2c3e50; color: white; margin-top: 80px; }
-        .float-line-btn { position: fixed; bottom: 25px; right: 20px; width: 60px; height: 60px; border-radius: 50%; background-color: #06C755; box-shadow: 0 4px 12px rgba(0,0,0,0.3); z-index: 9999; cursor: pointer; transition: transform 0.2s; animation: bounce 2s ease-in-out infinite; display: flex; align-items: center; justify-content: center; text-decoration: none; color: white; font-weight: 900; font-size: 1.2rem; font-family: Arial, sans-serif; letter-spacing: 0.5px; }
-        .float-line-btn:active { transform: scale(0.9); animation: none; }
+        
+        /* ★★★ 雙 LINE 按鈕樣式 ★★★ */
+        .float-line-container { position: fixed; bottom: 20px; right: 20px; display: flex; flex-direction: column; gap: 15px; z-index: 9999; align-items: center; }
+        .line-btn { width: 65px; height: 65px; border-radius: 50%; box-shadow: 0 4px 12px rgba(0,0,0,0.3); cursor: pointer; display: flex; flex-direction: column; align-items: center; justify-content: center; text-decoration: none; color: white; font-family: Arial, sans-serif; transition: transform 0.2s; animation: bounce 2s ease-in-out infinite; }
+        .line-btn:active { transform: scale(0.9); animation: none; }
+        .line-btn span.small { font-size: 10px; font-weight: bold; margin-bottom: 2px; letter-spacing: 0px; }
+        .line-btn span.large { font-size: 18px; font-weight: 900; letter-spacing: 1px; }
+        
+        .btn-bear { background-color: #06C755; } /* 山熊科學 - 綠色 */
+        .btn-high { background-color: #0077CC; animation-delay: 1s; } /* 山熊升大 - 深水藍 */
+
         @keyframes bounce { 0%, 20%, 50%, 80%, 100% { transform: translateY(0); } 40% { transform: translateY(-10px); } 60% { transform: translateY(-5px); } }
     </style>
 </head>
@@ -69,15 +78,23 @@
         &copy; 2024 山熊科學補習班 | 系統開發：Sciencebear Tech Team
     </footer>
 
-    <a href="https://lin.ee/FDQ1BLD" target="_blank" class="float-line-btn" title="聯繫官方LINE">LINE</a>
+    <!-- ★★★ 雙 LINE 按鈕 ★★★ -->
+    <div class="float-line-container">
+        <a href="https://lin.ee/FDQ1BLD" target="_blank" class="line-btn btn-bear" title="山熊科學官方LINE">
+            <span class="small">山熊科學</span>
+            <span class="large">LINE</span>
+        </a>
+        <a href="https://lin.ee/kzE9NrI" target="_blank" class="line-btn btn-high" title="山熊升大官方LINE">
+            <span class="small">山熊升大</span>
+            <span class="large">LINE</span>
+        </a>
+    </div>
 
     <script type="module">
         import { db, ref, get, child } from './firebase-config.js';
 
-        // 預先載入課程資料，用於顯示課程名稱
         let coursesData = {};
         
-        // 修正：加上 .catch() 處理錯誤，消除黃色警告
         get(ref(db, 'courses')).then(snap => {
             coursesData = snap.val() || {};
         }).catch(err => {
@@ -101,16 +118,13 @@
             }
 
             try {
-                // 修正：確保使用反引號 (Backticks) 進行字串組合 `orders/${phone}`
                 const snapshot = await get(child(ref(db), `orders/${phone}`));
                 
                 if (snapshot.exists()) {
                     const orders = snapshot.val();
                     let foundAny = false;
 
-                    // orders 是一個物件，key 是訂單 ID，value 是訂單資料
                     Object.values(orders).forEach(b => {
-                        // 二次驗證姓名，確保不是打錯電話看到別人的 (雖然機率低，但為了隱私雙重確認)
                         if (b.studentName === name) {
                             foundAny = true;
                             const c = coursesData[b.courseId];
@@ -138,7 +152,6 @@
 
             } catch (error) {
                 console.error(error);
-                // 錯誤通常是因為權限不足 (Permission Denied) 或是網路問題
                 resultDiv.innerHTML = "<p style='color:red; text-align:center;'>查詢發生錯誤，請稍後再試。</p>";
             } finally {
                 btn.disabled = false;
