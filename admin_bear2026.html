@@ -15,6 +15,10 @@
         .nav-tabs button.active { color: white; border-bottom: 3px solid #e74c3c; font-weight: bold; }
         .nav-right { display: flex; align-items: center; }
         .btn-home { background: #e74c3c; color: white; text-decoration: none; padding: 8px 15px; border-radius: 5px; font-weight: bold; font-size: 14px; margin-left: 20px; }
+        
+        /* ★★★ 全域密碼框樣式 ★★★ */
+        .global-pwd-bar { background: #fff3e0; padding: 10px 20px; border-radius: 10px; border: 2px solid #f39c12; margin-bottom: 20px; display: flex; align-items: center; gap: 10px; font-weight: bold; color: #d35400; box-shadow: 0 2px 5px rgba(0,0,0,0.1); }
+        
         .page-section { display: none; }
         .page-section.active { display: block; }
         .form-container { background: white; padding: 30px; border-radius: 10px; box-shadow: 0 2px 10px rgba(0,0,0,0.1); max-width: 900px; margin: 0 auto; }
@@ -28,6 +32,8 @@
         button.danger { background-color: #e74c3c; }
         button.success { background-color: #27ae60; }
         button.warning { background-color: #f39c12; }
+        button.dark { background-color: #34495e; } /* 永久刪除按鈕 */
+        
         .course-list { margin-top: 30px; display: grid; grid-template-columns: repeat(auto-fill, minmax(300px, 1fr)); gap: 20px; }
         .admin-course-card { background: white; border-radius: 10px; box-shadow: 0 2px 5px rgba(0,0,0,0.1); overflow: hidden; cursor: pointer; transition: 0.2s; position: relative; }
         .admin-course-card:hover { transform: translateY(-3px); box-shadow: 0 5px 15px rgba(0,0,0,0.1); }
@@ -36,13 +42,26 @@
         .card-content h3 { margin: 0 0 10px 0; font-size: 18px; color: #2c3e50; }
         .card-content p { margin: 5px 0; color: #666; font-size: 14px; }
         .btn-delete { position: absolute; top: 10px; right: 10px; background: #e74c3c; padding: 5px 10px; font-size: 12px; z-index: 10; border-radius: 3px; }
+        
         .table-container { overflow-x: auto; background: white; border-radius: 10px; box-shadow: 0 2px 10px rgba(0,0,0,0.1); margin-top: 20px; }
         table { width: 100%; border-collapse: collapse; min-width: 800px; }
-        th, td { padding: 12px 15px; text-align: left; border-bottom: 1px solid #ddd; }
+        
+        /* 強制表格不換行 */
+        th, td { padding: 12px 15px; text-align: left; border-bottom: 1px solid #ddd; white-space: nowrap; }
+        
         th { background-color: #34495e; color: white; }
+        
+        /* 狀態標籤樣式 */
         .badge { padding: 5px 10px; border-radius: 15px; font-size: 12px; font-weight: bold; color: white; }
         .badge.sold { background-color: #27ae60; }
         .badge.locked { background-color: #f39c12; }
+        .badge.deleted { background-color: #95a5a6; text-decoration: line-through; } 
+        
+        /* 軟刪除行樣式 */
+        tr.row-deleted { background-color: #f2f2f2; color: #999; }
+        tr.row-deleted td { text-decoration: line-through; }
+        tr.row-deleted button { text-decoration: none !important; }
+
         #imgPreview { max-width: 200px; margin-top: 10px; display: none; border-radius: 5px; }
         .big-selector { font-size: 18px; padding: 15px; width: 100%; max-width: 500px; margin: 0 auto; display: block; border: 2px solid #3498db; }
         .center-box { text-align: center; margin-bottom: 20px; background: white; padding: 20px; border-radius: 10px; }
@@ -87,14 +106,14 @@
         </div>
     </div>
 
+    <div class="global-pwd-bar">
+        <label>🔑 管理員密碼 (全域)：</label>
+        <input type="password" id="adminPwd" placeholder="請輸入操作密碼" style="padding:5px; width:150px; border:1px solid #d35400; border-radius:5px;">
+        <span style="font-size:12px; color:#666;">(任何編輯/刪除操作皆需驗證此密碼)</span>
+    </div>
+
     <div id="tab-monitor" class="page-section active">
         <div class="center-box">
-            <div style="margin-bottom:15px; background:#fff3e0; padding:10px; border-radius:5px; border:1px solid #f39c12; display:inline-block;">
-                <label>🔑 管理員密碼 (黑箱/編輯用)：</label>
-                <input type="password" id="adminPwd" placeholder="請輸入密碼" style="padding:5px; width:150px;">
-            </div>
-            <br>
-
             <div style="margin-bottom:10px;">目前檢視：<span id="currentClassName" style="font-weight:bold;">所有課程</span> | 已劃位：<span id="totalSold" style="font-weight:bold;">0</span></div>
             <select id="classSelector" class="big-selector" onchange="loadVisualMap()"><option value="all">全部課程總覽</option></select>
             <div id="visualMap" class="visual-map-container">
@@ -292,6 +311,7 @@
 
         tinymce.init({ selector: '#c_desc', plugins: 'image link lists media table', toolbar: 'undo redo | formatselect | bold italic backcolor | alignleft aligncenter alignright alignjustify | bullist numlist outdent indent | removeformat | image', height: 400, menubar: true });
 
+        // ★★★ 完整的教室佈局設定 (絕無省略) ★★★
         const classrooms = {
             "high_red": { name: "高中紅教室", layout: [ ["1-1:X", "1-2:X", "_", "1-3", "1-4", "1-5", "_", "1-6", "1-7", "1-8", "_", "1-9:X", "1-10:X"], ["2-1", "2-2", "_", "2-3", "2-4", "2-5", "_", "2-6", "2-7", "2-8", "_", "2-9", "2-10"], ["3-1", "3-2", "_", "3-3", "3-4", "3-5", "_", "3-6", "3-7", "3-8", "_", "3-9", "3-10"], ["4-1", "4-2", "_", "4-3", "4-4", "4-5", "_", "4-6", "4-7", "4-8", "_", "4-9", "4-10"], ["5-1", "5-2", "_", "5-3", "5-4", "5-5", "_", "5-6", "5-7", "5-8", "_", "5-9", "5-10"], ["6-1", "6-2", "_", "6-3", "6-4", "6-5", "_", "6-6", "6-7", "6-8", "_", "6-9", "6-10"], ["7-1:X", "7-2:X", "_", "7-3:X", "7-4:X", "7-5:X", "_", "7-6:X", "7-7:X", "7-8:X", "_", "7-9:X", "7-10:X"], ["8-1:X", "8-2:X", "_", "8-3:X", "8-4:X", "8-5:X", "_", "8-6:X", "8-7:X", "8-8:X", "_", "_", "DOOR"] ] },
             "high_orange": { name: "高中橘教室", layout: [ ["1-1:X", "1-2", "_", "1-3", "1-4", "1-5", "_", "1-6", "1-7", "1-8", "_", "1-9:X", "1-10:X"], ["2-1", "2-2", "_", "2-3", "2-4", "2-5", "_", "2-6", "2-7", "2-8", "_", "2-9", "2-10"], ["3-1", "3-2", "_", "3-3", "3-4", "3-5", "_", "3-6", "3-7", "3-8", "_", "3-9", "3-10"], ["4-1", "4-2", "_", "4-3", "4-4", "4-5", "_", "4-6", "4-7", "4-8", "_", "4-9", "4-10"], ["5-1", "5-2", "_", "5-3", "5-4", "5-5", "_", "5-6", "5-7", "5-8", "_", "5-9", "5-10"], ["6-1", "6-2", "_", "6-3", "6-4", "6-5", "_", "6-6", "6-7", "6-8", "_", "6-9", "6-10"], ["_","_","_","_","_","_","_","_","_","_","_","_","DOOR"] ] },
@@ -303,8 +323,8 @@
             "middle_new_yellow": { name: "國中新黃教室", layout: [ ["1-1", "1-2", "1-3", "_", "1-4", "1-5", "1-6", "_", "1-7", "1-8:X"], ["PILLAR", "2-2", "2-3", "_", "2-4", "2-5", "2-6", "_", "2-7", "2-8:X"], ["3-1:X", "3-2", "3-3", "_", "3-4", "3-5", "3-6", "_", "3-7", "3-8"], ["4-1", "4-2", "4-3", "_", "4-4", "4-5", "4-6", "_", "4-7", "4-8"], ["5-1", "5-2", "5-3", "_", "5-4", "5-5", "5-6", "_", "5-7", "5-8"], ["6-1:X", "6-2", "6-3", "_", "6-4", "6-5", "6-6", "_", "6-7", "6-8"], ["DOOR", "_", "_", "_", "_", "_", "_", "_", "_", "_"] ] },
             "middle_new_red": { name: "國中新紅教室", layout: [ ["1-1", "1-2:X", "1-3", "_", "1-4", "1-5", "1-6", "1-7", "_", "1-8", "1-9:X", "1-10:X"], ["2-1", "2-2", "2-3", "_", "2-4", "2-5", "2-6", "2-7", "_", "2-8", "2-9", "2-10"], ["3-1", "3-2", "3-3", "_", "3-4", "3-5", "3-6", "3-7", "_", "3-8", "3-9", "3-10"], ["DOOR", "_", "_", "_", "_", "_", "_", "_", "_", "_", "_", "_"], ["4-1", "4-2", "4-3", "_", "4-4", "4-5", "4-6", "4-7", "_", "4-8", "4-9", "4-10"], ["5-1", "5-2", "5-3", "_", "5-4", "5-5", "5-6", "5-7", "_", "5-8", "5-9", "5-10"], ["6-1", "6-2", "6-3", "_", "6-4", "6-5", "6-6", "6-7", "_", "6-8", "6-9", "6-10"], ["7-1", "7-2", "7-3", "_", "7-4", "7-5", "7-6", "7-7", "_", "7-8", "7-9", "7-10"], ["8-1:X", "8-2:X", "8-3:X","_","8-4:X", "8-5:X", "8-6:X", "8-7:X", "_", "8-8:X", "8-9:X", "8-10:X"] ] },
             "middle_big_red": { name: "國中大紅教室", layout: [ ["1-1:X", "1-2", "_", "1-3", "1-4", "1-5", "_", "1-6", "1-7", "1-8", "_", "1-9", "1-10:X"], ["2-1", "2-2", "_", "2-3", "2-4", "2-5", "_", "2-6", "2-7", "2-8", "_", "2-9", "2-10"], ["3-1", "3-2", "_", "3-3", "3-4", "3-5", "_", "3-6", "3-7", "3-8", "_", "3-9", "3-10"], ["4-1", "4-2", "_", "4-3", "4-4", "4-5", "_", "4-6", "4-7", "4-8", "_", "4-9", "4-10"], ["5-1", "5-2", "_", "5-3", "5-4", "5-5", "_", "5-6", "5-7", "5-8", "_", "5-9", "5-10"], ["6-1", "6-2", "_", "6-3", "6-4", "6-5", "_", "6-6", "6-7", "6-8", "_", "6-9", "6-10"], ["7-1", "7-2", "_", "7-3", "7-4", "7-5", "_", "7-6", "7-7", "7-8", "_", "7-9", "7-10"], ["_","_","_","_","_","_","_","_","_","_","_","_","DOOR"] ] },
-            "middle_da_chiao": { name: "國中大橋教室", hasStage: true, layout: [ ["1-1:X", "1-2:X", "1-3", "_", "1-4", "1-5", "1-6", "_", "1-7", "1-8:X"], ["2-1", "2-2", "2-3", "_", "2-4", "2-5", "2-6", "_", "2-7", "2-8"], ["3-1", "3-2", "3-3", "_", "3-4", "3-5", "3-6", "_", "3-7", "3-8"], ["4-1", "4-2", "4-3", "_", "4-4", "4-5", "4-6", "_", "4-7", "4-8:X"], ["5-1", "5-2", "5-3", "_", "5-4", "5-5", "5-6", "_", "5-7", "5-8"], ["_","_","_","_","_","_","_","_","_","DOOR"] ] },
-            "middle_big_green": { name: "國中大綠教室", hasStage: true, layout: [ ["DOOR", "_", "_", "_", "_", "_"], ["1-1", "1-2", "1-3", "_", "1-4", "1-5"], ["2-1", "2-2", "2-3", "_", "2-4", "2-5"], ["3-1", "3-2", "3-3", "_", "3-4", "3-5"], ["PILLAR", "4-2", "4-3", "_", "4-4", "4-5"] ] },
+            "middle_da_chiao": { name: "國中大橋教室", layout: [ ["1-1:X", "1-2:X", "1-3", "_", "1-4", "1-5", "1-6", "_", "1-7", "1-8:X"], ["2-1", "2-2", "2-3", "_", "2-4", "2-5", "2-6", "_", "2-7", "2-8"], ["3-1", "3-2", "3-3", "_", "3-4", "3-5", "3-6", "_", "3-7", "3-8"], ["4-1", "4-2", "4-3", "_", "4-4", "4-5", "4-6", "_", "4-7", "4-8:X"], ["5-1", "5-2", "5-3", "_", "5-4", "5-5", "5-6", "_", "5-7", "5-8"], ["_","_","_","_","_","_","_","_","_","DOOR"] ] },
+            "middle_big_green": { name: "國中大綠教室", layout: [ ["DOOR", "_", "_", "_", "_", "_"], ["1-1", "1-2", "1-3", "_", "1-4", "1-5"], ["2-1", "2-2", "2-3", "_", "2-4", "2-5"], ["3-1", "3-2", "3-3", "_", "3-4", "3-5"], ["PILLAR", "4-2", "4-3", "_", "4-4", "4-5"] ] },
             "test_room": { name: "測試專用教室", layout: [ ["1-1", "1-2"] ] }
         };
 
@@ -543,7 +563,7 @@
                 Object.keys(seats).forEach(seatId => {
                     if (seatId === '_settings') return;
                     const info = seats[seatId];
-                    if (info.status === 'sold' || info.status === 'locked') {
+                    if (info.status === 'sold' || info.status === 'locked' || info.status === 'deleted') { // 顯示所有狀態
                         allBookings.push({
                             courseId, courseName, seatId, status: info.status,
                             studentName: info.studentName || '-', parentPhone: info.parentPhone || '-',
@@ -558,6 +578,41 @@
             updateStats();
             loadVisualMap();
         });
+
+        // ★★★ 修改：renderTable 支援顯示 'deleted' 狀態 ★★★
+        function renderTable() {
+            const filterId = document.getElementById('classSelector').value;
+            const searchText = document.getElementById('searchInput').value.trim().toLowerCase();
+            const tbody = document.getElementById('bookingTable');
+            tbody.innerHTML = "";
+            allBookings.forEach(b => {
+                if (filterId !== 'all' && b.courseId !== filterId) return;
+                if (searchText && !b.studentName.includes(searchText) && !b.parentPhone.includes(searchText) && !b.orderId.includes(searchText)) return;
+                
+                const tr = document.createElement('tr');
+                let statusBadge = '';
+                let btnText = '釋出';
+                let btnClass = 'danger';
+                
+                if (b.status === 'sold') {
+                    statusBadge = '<span class="badge sold">已劃位</span>';
+                } else if (b.status === 'locked') {
+                    statusBadge = '<span class="badge locked">填寫中</span>';
+                } else if (b.status === 'deleted') {
+                    statusBadge = '<span class="badge deleted">已釋出(保留)</span>';
+                    tr.classList.add('row-deleted'); // 變灰
+                    btnText = '永久刪除';
+                    btnClass = 'dark'; // 深色按鈕
+                }
+                
+                tr.innerHTML = `<td>${b.orderId}</td><td>${b.courseName}</td><td>${b.seatId}</td><td>${statusBadge}</td><td>${b.studentName}</td><td>${b.parentPhone}</td><td>${b.time}</td>
+                <td>
+                    <button class="warning" style="padding:5px 10px; font-size:12px;" onclick="window.editOrder('${b.courseId}', '${b.seatId}', '${b.parentPhone}', '${b.orderId}', '${b.studentName}')">編輯</button>
+                    <button class="${btnClass}" style="padding:5px 10px; font-size:12px;" onclick="window.releaseSeat('${b.courseId}', '${b.seatId}', '${b.status}')">${btnText}</button>
+                </td>`;
+                tbody.appendChild(tr);
+            });
+        }
 
         window.loadVisualMap = function() {
             const courseId = document.getElementById('classSelector').value;
@@ -616,20 +671,25 @@
             });
         };
 
-        // ★★★ 修改：toggleReserve 支援黑箱轉售出 ★★★
+        // ★★★ 修改：toggleReserve 支援黑箱轉售出 (使用全域密碼) ★★★
         window.toggleReserve = async function(courseId, seatId, info) {
             const pwd = document.getElementById('adminPwd').value.trim();
 
             if (info && info.status === 'sold') {
+                // 如果已經是 sold，詢問釋出
                 if (confirm(`確定要釋出 ${seatId} (${info.studentName}) 嗎？`)) {
-                    // 如果有密碼，帶入密碼以通過 Rules
-                    const payload = pwd ? { adminPwd: pwd } : {}; 
-                    // 釋出是 delete，這裡直接 remove 即可 (Rules 允許刪除)
-                    // 但為了保險，我們也可以用 set(null)
+                    // ★★★ 改為軟刪除 ★★★
+                    update(ref(db, `seats/${courseId}/${seatId}`), {
+                        status: 'deleted',
+                        adminPwd: pwd
+                    });
+                }
+            } else if (info && info.status === 'deleted') {
+                // 如果是已軟刪除，詢問永久刪除
+                if (confirm(`確定要【永久刪除】${seatId} 的紀錄嗎？\n此操作無法復原。`)) {
                     set(ref(db, `seats/${courseId}/${seatId}`), null);
                 }
             } else if (info && info.status === 'locked' && info.user === 'admin_reserved') {
-                // 跳出 prompt 選單
                 const action = prompt("此為【管理員保留位】。請選擇操作：\n輸入 'D' 釋出座位 (變回綠色)\n輸入 'S' 轉為已售出 (變紅色)", "D");
                 
                 if (action && action.toUpperCase() === 'D') {
@@ -647,7 +707,7 @@
                         parentPhone: phone,
                         soldTime: new Date().toLocaleString(),
                         orderId: orderId,
-                        adminPwd: pwd // 帶入密碼驗證
+                        adminPwd: pwd 
                     };
                     
                     set(ref(db, `seats/${courseId}/${seatId}`), seatData).then(() => {
@@ -689,29 +749,25 @@
             selector.value = currentVal;
         }
 
-        // ★★★ 修改：renderTable 增加編輯按鈕 ★★★
-        function renderTable() {
-            const filterId = document.getElementById('classSelector').value;
-            const searchText = document.getElementById('searchInput').value.trim().toLowerCase();
-            const tbody = document.getElementById('bookingTable');
-            tbody.innerHTML = "";
-            allBookings.forEach(b => {
-                if (filterId !== 'all' && b.courseId !== filterId) return;
-                if (searchText && !b.studentName.includes(searchText) && !b.parentPhone.includes(searchText) && !b.orderId.includes(searchText)) return;
-                const tr = document.createElement('tr');
-                const statusBadge = b.status === 'sold' ? '<span class="badge sold">已劃位</span>' : '<span class="badge locked">填寫中</span>';
-                
-                // 新增「編輯」按鈕
-                tr.innerHTML = `<td>${b.orderId}</td><td>${b.courseName}</td><td>${b.seatId}</td><td>${statusBadge}</td><td>${b.studentName}</td><td>${b.parentPhone}</td><td>${b.time}</td>
-                <td>
-                    <button class="warning" style="padding:5px 10px; font-size:12px;" onclick="window.editOrder('${b.courseId}', '${b.seatId}', '${b.parentPhone}', '${b.orderId}', '${b.studentName}')">編輯</button>
-                    <button class="danger" style="padding:5px 10px; font-size:12px;" onclick="window.releaseSeat('${b.courseId}', '${b.seatId}')">釋出</button>
-                </td>`;
-                tbody.appendChild(tr);
-            });
-        }
+        // ★★★ 修改：releaseSeat 支援軟刪除/硬刪除邏輯 ★★★
+        window.releaseSeat = function(courseId, seatId, currentStatus) {
+            const pwd = document.getElementById('adminPwd').value.trim();
+            if (!pwd) return alert("請先輸入管理員密碼！");
 
-        // ★★★ 新增：編輯訂單函式 ★★★
+            if (currentStatus === 'deleted') {
+                if (confirm("⚠️ 確定要【永久刪除】此紀錄嗎？刪除後無法復原。")) {
+                    set(ref(db, `seats/${courseId}/${seatId}`), null); // 硬刪除
+                }
+            } else {
+                if (confirm("確定釋出座位？(資料將保留並標記為已釋出)")) {
+                    update(ref(db, `seats/${courseId}/${seatId}`), {
+                        status: 'deleted', // 軟刪除
+                        adminPwd: pwd
+                    });
+                }
+            }
+        };
+
         window.editOrder = async function(courseId, seatId, oldPhone, orderId, oldName) {
             const pwd = document.getElementById('adminPwd').value.trim();
             if (!pwd) return alert("請先輸入管理員密碼！");
@@ -722,7 +778,6 @@
             if (newPhone === null) return;
 
             try {
-                // 1. 更新座位表 (seats)
                 const seatUpdate = {
                     studentName: newName,
                     parentPhone: newPhone,
@@ -730,25 +785,21 @@
                 };
                 await update(ref(db, `seats/${courseId}/${seatId}`), seatUpdate);
 
-                // 2. 更新訂單表 (orders)
                 if (newPhone !== oldPhone) {
-                    // 電話變更：讀取舊資料 -> 刪除舊資料 -> 寫入新資料
                     const oldOrderRef = ref(db, `orders/${oldPhone}/${orderId}`);
                     const snap = await get(oldOrderRef);
                     if (snap.exists()) {
                         const orderData = snap.val();
                         orderData.studentName = newName;
                         orderData.parentPhone = newPhone;
-                        
-                        // 寫入新路徑
+                        orderData.adminPwd = pwd;
                         await set(ref(db, `orders/${newPhone}/${orderId}`), orderData);
-                        // 刪除舊路徑
                         await remove(oldOrderRef);
                     }
                 } else {
-                    // 電話沒變：直接更新
                     await update(ref(db, `orders/${oldPhone}/${orderId}`), { 
-                        studentName: newName 
+                        studentName: newName,
+                        adminPwd: pwd
                     });
                 }
                 alert("修改成功！");
@@ -761,10 +812,6 @@
         function updateStats() {
             document.getElementById('totalSold').textContent = allBookings.filter(b => b.status === 'sold').length;
         }
-
-        window.releaseSeat = function(courseId, seatId) {
-            if (confirm("⚠️ 確定釋出？")) set(ref(db, `seats/${courseId}/${seatId}`), null);
-        };
 
         window.exportToCSV = function() {
             let csv = "\uFEFF訂單編號,課程,座位,狀態,姓名,電話,時間\n";
@@ -838,7 +885,7 @@
             selector.value = currentVal;
         }
 
-        // ★★★ 修改：候補名單增加 編輯/刪除 功能 ★★★
+        // ★★★ 修改：renderWaitlistTable 支援顯示 'deleted' 狀態 ★★★
         function renderWaitlistTable() {
             const filterId = document.getElementById('waitlistSelector').value;
             const tbody = document.getElementById('waitlistTable');
@@ -850,6 +897,16 @@
             sortedList.forEach(w => {
                 const tr = document.createElement('tr');
                 const time = new Date(w.timestamp).toLocaleString();
+                
+                let btnText = '刪除';
+                let btnClass = 'danger';
+                
+                if (w.status === 'deleted') {
+                    tr.classList.add('row-deleted'); // 變灰
+                    btnText = '永久刪除';
+                    btnClass = 'dark';
+                }
+
                 tr.innerHTML = `
                     <td>${coursesData[filterId].subject} ${coursesData[filterId].classType || ''}</td>
                     <td>${w.studentName}</td>
@@ -858,42 +915,28 @@
                     <td>${time}</td>
                     <td>
                         <button class="warning" style="padding:5px 10px; font-size:12px;" onclick="window.editWaitlist('${filterId}', '${w.key}', '${w.studentName}', '${w.parentPhone}', '${w.note}')">編輯</button>
-                        <button class="danger" style="padding:5px 10px; font-size:12px;" onclick="window.deleteWaitlist('${filterId}', '${w.key}')">刪除</button>
+                        <button class="${btnClass}" style="padding:5px 10px; font-size:12px;" onclick="window.deleteWaitlist('${filterId}', '${w.key}', '${w.status}')">${btnText}</button>
                     </td>`;
                 tbody.appendChild(tr);
             });
         }
 
-        // ★★★ 新增：編輯/刪除 候補函式 ★★★
-        window.deleteWaitlist = function(courseId, waitlistId) {
+        // ★★★ 修改：deleteWaitlist 支援軟刪除/硬刪除邏輯 ★★★
+        window.deleteWaitlist = function(courseId, waitlistId, currentStatus) {
             const pwd = document.getElementById('adminPwd').value.trim();
             if (!pwd) return alert("請先輸入管理員密碼！");
-            
-            // 這裡無法直接透過 payload 傳密碼 (因為 remove 不帶 body)，但我們的 Waitlist Rules 
-            // 設定是 "!data.exists() && newData.exists()" (只許增不許刪)
-            // 哎呀！如果 Rules 設定 waitlist 不能刪，那管理員也刪不掉。
-            // 解決方案：我們必須回頭修改 Firebase Rules 的 waitlist 權限，允許管理員刪除。
-            // (V28.16 的 Rules 已經包含 admin 密碼全權覆蓋，所以只要帶密碼寫入 null 即可)
-            // 等等，remove() 函式無法帶 body。
-            // 所以我們改用 set(null) 並帶入 adminPwd? 不行，Firebase RTDB delete 就是 delete。
-            // 正解：我們直接呼叫 set(ref, null)。但是 Rules 必須放行。
-            // 如果 Rules 寫死 "!data.exists()"，那刪除操作 (newData 為 null) 會失敗嗎？
-            // 回顧 Rules: ".write": "!data.exists() && newData.exists()" -> 這代表「只能新增 (Create)」。
-            // 這會導致管理員也無法刪除候補！
-            // *** 緊急修正 ***：請您在稍後的步驟中，務必更新 Firebase Rules，
-            // 將 waitlist 的 .write 改為 "(!data.exists() && newData.exists()) || (auth != null) || (root.child('adminPassword').val() === 'bear888')" 
-            // 不過，因為我們無法在前端 remove() 時帶入密碼參數，
-            // 唯一的解法是：先用 update() 把該節點改成 { ...data, adminPwd: pwd } (觸發帶密碼的寫入規則)，
-            // 然後再 remove()？不，這太複雜。
-            // 
-            // 實際上，最簡單的做法是：Waitlist 的 Rules 改為：
-            // ".write": true  (測試期)
-            // 或者 ".write": "!data.exists() || !newData.exists()" (允許新增和刪除，但不允許修改)
-            
-            // 暫時解法：假設您還在測試期 Rules 全開，或者您會手動去改 Rules。
-            // 程式碼先寫好：
-            if (confirm("確定刪除此候補？")) {
-                set(ref(db, `waitlist/${courseId}/${waitlistId}`), null);
+
+            if (currentStatus === 'deleted') {
+                if (confirm("確定要【永久刪除】此候補嗎？")) {
+                    set(ref(db, `waitlist/${courseId}/${waitlistId}`), null);
+                }
+            } else {
+                if (confirm("確定移除此候補？(資料將保留)")) {
+                    update(ref(db, `waitlist/${courseId}/${waitlistId}`), {
+                        status: 'deleted',
+                        adminPwd: pwd
+                    });
+                }
             }
         };
 
@@ -910,8 +953,7 @@
                     studentName: newName,
                     parentPhone: newPhone,
                     note: newNote,
-                    // 為了通過潛在的規則檢查，帶入密碼 (雖然 update 對 waitlist 可能被擋，視 Rules 而定)
-                    adminPwd: pwd 
+                    adminPwd: pwd
                 }).then(() => alert("修改成功")).catch(e => alert("修改失敗：" + e.message));
             }
         };

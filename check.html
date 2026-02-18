@@ -76,8 +76,12 @@
 
         // 預先載入課程資料，用於顯示課程名稱
         let coursesData = {};
+        
+        // 修正：加上 .catch() 處理錯誤，消除黃色警告
         get(ref(db, 'courses')).then(snap => {
             coursesData = snap.val() || {};
+        }).catch(err => {
+            console.error("載入課程資料失敗:", err);
         });
 
         window.checkBooking = async function() {
@@ -97,8 +101,7 @@
             }
 
             try {
-                // ★★★ 關鍵修改：直接使用電話號碼讀取路徑，這是唯一合法的讀取方式 ★★★
-                // 嘗試讀取 /orders/{phone}
+                // 修正：確保使用反引號 (Backticks) 進行字串組合 `orders/${phone}`
                 const snapshot = await get(child(ref(db), `orders/${phone}`));
                 
                 if (snapshot.exists()) {
@@ -135,8 +138,7 @@
 
             } catch (error) {
                 console.error(error);
-                // 如果發生錯誤，通常是因為 Rules 禁止讀取 (Permission Denied)
-                // 但在這個架構下，只要電話對了就能讀，所以錯誤通常是系統問題
+                // 錯誤通常是因為權限不足 (Permission Denied) 或是網路問題
                 resultDiv.innerHTML = "<p style='color:red; text-align:center;'>查詢發生錯誤，請稍後再試。</p>";
             } finally {
                 btn.disabled = false;

@@ -10,12 +10,11 @@
     <style>
         body { font-family: "Microsoft JhengHei", sans-serif; background-color: #f4f4f9; text-align: center; margin: 0; padding: 0; }
         header { background: #2c3e50; padding: 15px 20px; display: flex; justify-content: center; align-items: center; gap: 20px; color: white; box-shadow: 0 2px 5px rgba(0,0,0,0.1); margin-bottom: 20px; }
-        header img { height: 60px; }
+        header img { height: 60px; cursor: pointer; } /* Added cursor pointer for secret knock */
         header h1 { margin: 0; font-size: 24px; letter-spacing: 1px; text-align: center; }
         
         .main-container { background: white; max-width: 1000px; margin: 20px auto; padding: 30px; border-radius: 15px; box-shadow: 0 5px 15px rgba(0,0,0,0.1); position: relative; }
         
-        /* 回上一頁按鈕樣式 */
         .back-btn { position: absolute; top: 20px; left: 20px; text-decoration: none; color: #3498db; font-weight: bold; font-size: 16px; border: 1px solid #3498db; padding: 5px 15px; border-radius: 20px; transition: 0.3s; z-index: 100; }
         .back-btn:hover { background: #3498db; color: white; }
 
@@ -29,19 +28,24 @@
         .stage-box { width: 80%; margin: 0 auto 30px auto; padding: 12px; border: 3px solid #333; background-color: #fff; font-weight: bold; font-size: 22px; letter-spacing: 8px; text-align: center; }
         .row { display: flex; justify-content: center; gap: 8px; margin-bottom: 15px; }
         
-        /* 座位基礎樣式 */
         .seat { width: 45px; height: 55px; background-color: #4CAF50; color: white; display: flex; align-items: center; justify-content: center; border-radius: 6px; cursor: pointer; font-weight: bold; font-size: 13px; user-select: none; position: relative; transition: 0.2s; }
         .seat:hover { transform: scale(1.1); z-index: 10; }
         .seat.sold { background-color: #e74c3c; cursor: not-allowed; transform: none; pointer-events: none; }
-        .seat.locked { background-color: #f39c12; border: 2px solid #333; transform: scale(1.05); pointer-events: none; }
-        .seat.mylocked { background-color: #3498db; border: 2px solid #2980b9; transform: scale(1.1); z-index: 20; cursor: pointer; pointer-events: auto; }
+        
+        /* 修正：移除了 border: 2px solid #333，讓黃色座位更乾淨 */
+        .seat.locked { background-color: #f39c12; transform: scale(1.05); pointer-events: none; }
+        
+        /* 手機版優化：自己選到的位置不需要放大，避免跑版 */
+        .seat.mylocked { background-color: #3498db; border: 2px solid #2980b9; z-index: 20; cursor: pointer; pointer-events: auto; }
+        
         .seat.blocked { background-color: #95a5a6; cursor: not-allowed; transform: none; }
         .seat.aisle { background-color: transparent; color: transparent; pointer-events: none; cursor: default; }
         .seat.door { background-color: #fff; color: #333; border: 2px solid #333; font-size: 16px; writing-mode: vertical-rl; cursor: default; pointer-events: none; transform: none; }
         .seat.pillar { background-color: #7f8c8d; color: white; cursor: default; pointer-events: none; transform: none; border-radius: 2px; }
         .seat.loading { opacity: 0.5; pointer-events: none; }
         
-        .status-bar { margin: 10px 0; }
+        .status-bar { margin: 10px 0; display: flex; justify-content: center; flex-wrap: wrap; gap: 10px; line-height: 2; }
+        .status-group { display: inline-block; white-space: nowrap; }
         .dot { height: 12px; width: 12px; display: inline-block; border-radius: 50%; margin-right: 5px; }
         
         .modal-overlay { position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0, 0, 0, 0.5); display: none; justify-content: center; align-items: center; z-index: 999; }
@@ -75,18 +79,20 @@
         .float-line-btn:active { transform: scale(0.9); animation: none; }
         @keyframes bounce { 0%, 20%, 50%, 80%, 100% { transform: translateY(0); } 40% { transform: translateY(-10px); } 60% { transform: translateY(-5px); } }
 
-        /* ★★★ 手機版面優化 CSS ★★★ */
+        /* 手機版面優化 CSS */
         @media (max-width: 768px) {
-            /* 解決標題重疊與過長問題：增加上方內距，將內容往下推 */
             .main-container { padding-top: 60px; }
             .back-btn { top: 15px; left: 15px; padding: 5px 10px; font-size: 14px; }
-            .course-info-header h2 { font-size: 20px; margin-top: 10px; } /* 縮小標題字體 */
+            .course-info-header h2 { font-size: 20px; margin-top: 10px; }
             
             /* 座位文字強制不換行並縮小，確保塞得進格子 */
             .seat {
                 font-size: 10px !important;
                 white-space: nowrap;
             }
+            
+            /* 手機版強制圖例換行 */
+            .status-bar { flex-direction: column; align-items: center; gap: 5px; }
         }
     </style>
 </head>
@@ -98,7 +104,7 @@
     </div>
 
     <header>
-        <img src="logo1.png" alt="山熊科學">
+        <img src="logo1.png" alt="山熊科學" id="logoKnock">
         <h1>山熊科學 / 山熊升大</h1>
         <img src="logo2.png" alt="山熊升大">
     </header>
@@ -116,11 +122,15 @@
         <div id="deadlineTimer"></div>
 
         <div class="status-bar">
-            <span class="dot" style="background:#4CAF50;"></span>可選擇
-            <span class="dot" style="background:#e74c3c;"></span>已被選取
-            <span class="dot" style="background:#f39c12;"></span>有人填寫中
-            <span class="dot" style="background:#3498db;"></span>您的座位
-            <span class="dot" style="background:#95a5a6;"></span>不開放
+            <span class="status-group">
+                <span class="dot" style="background:#4CAF50;"></span>可選擇
+                <span class="dot" style="background:#e74c3c;"></span>已被選取
+                <span class="dot" style="background:#f39c12;"></span>有人填寫中
+            </span>
+            <span class="status-group">
+                <span class="dot" style="background:#3498db;"></span>您的座位
+                <span class="dot" style="background:#95a5a6;"></span>不開放
+            </span>
         </div>
 
         <div class="classroom-wrapper">
@@ -225,6 +235,13 @@
         let totalSeats = 0;
         let soldCount = 0;
         let isClassroomRendered = false;
+        
+        // 修正：統一在此宣告，避免重複宣告或 Scope 問題
+        let isManualRelease = false; 
+        
+        // 隱藏入口變數
+        let knockCount = 0;
+        let knockTimer;
 
         window.onloadCallback = function() {
             widgetId1 = grecaptcha.render('recaptcha1', {
@@ -280,6 +297,16 @@
         let timerInterval = null;
         const TIMEOUT_SECONDS = 60;
         let unsubscribe = null; 
+
+        // 隱藏入口監聽
+        document.getElementById('logoKnock').addEventListener('click', () => {
+            knockCount++;
+            clearTimeout(knockTimer);
+            knockTimer = setTimeout(() => { knockCount = 0; }, 1000);
+            if (knockCount >= 5) {
+                window.location.href = "admin_bear2026.html";
+            }
+        });
 
         async function init() {
             const params = new URLSearchParams(window.location.search);
@@ -411,7 +438,6 @@
             if (diff <= 0) {
                 deadlineTimer.textContent = "劃位時間已結束";
             } else {
-                // ★★★ 修改：倒數計時增加「小時」 ★★★
                 const totalSec = Math.floor(diff / 1000);
                 const h = Math.floor(totalSec / 3600);
                 const m = Math.floor((totalSec % 3600) / 60);
@@ -477,14 +503,17 @@
                 const data = snapshot.val() || {};
                 soldCount = 0; 
 
-                // 殭屍殺手監聽邏輯 (與 V28.16 相同)
+                // 殭屍殺手監聽邏輯
                 if (currentSeatId) {
                     const currentSeatData = data[currentSeatId];
                     if (!currentSeatData || (currentSeatData.user !== myUserId && currentSeatData.status !== 'sold')) {
-                         if (!currentSeatData || currentSeatData.user !== myUserId) {
-                             alert("⚠️ 您的保留位已被釋出或由管理員移除！請重新劃位。");
-                             closeModal(); 
+                         if (!isManualRelease) {
+                             if (!currentSeatData || currentSeatData.user !== myUserId) {
+                                 alert("⚠️ 您的保留位已被釋出或由管理員移除！請重新劃位。");
+                                 closeModal(); 
+                             }
                          }
+                         isManualRelease = false; 
                     }
                 }
 
@@ -498,7 +527,12 @@
                     
                     if (seatInfo) {
                         if (seatInfo.status === 'sold') {
-                            seatEl.classList.add('sold'); 
+                            if (seatInfo.user === myUserId) {
+                                seatEl.classList.add('mylocked'); 
+                            } else {
+                                seatEl.classList.add('sold'); 
+                            }
+                            // ★★★ 只有當狀態為 sold 時，才算入 soldCount (候補依據) ★★★
                             soldCount++; 
                         } else if (seatInfo.status === 'locked') {
                             if (seatInfo.user === myUserId) {
@@ -506,10 +540,9 @@
                                 checkAndRestoreSession(seatId, seatInfo.timestamp);
                             } else if (seatInfo.user === 'admin_reserved') {
                                 seatEl.classList.add('locked'); 
-                                soldCount++; // ★★★ 關鍵：管理員保留視為已售出 (佔用名額) ★★★
+                                // 管理員保留不計入 soldCount
                             } else {
                                 seatEl.classList.add('locked'); 
-                                // 注意：一般人的 locked 不算在 soldCount，這樣才符合「全紅才候補」的邏輯
                             }
                         }
                     }
@@ -593,8 +626,13 @@
             const nowTimestamp = Date.now() + serverTimeOffset;
             
             runTransaction(seatRef, (currentData) => {
-                if (currentData === null) { return { status: 'locked', user: myUserId, timestamp: nowTimestamp }; } 
-                else { return; }
+                // 如果是 null (全新空位) 或 deleted (軟刪除空位)，允許鎖定
+                // 修正：增加 status 為 deleted 的檢查，允許覆蓋殭屍座位
+                if (currentData === null || (currentData && currentData.status === 'deleted')) { 
+                    return { status: 'locked', user: myUserId, timestamp: nowTimestamp }; 
+                } else { 
+                    return; 
+                }
             }).then((result) => {
                 seatEl.classList.remove('loading');
                 if (result.committed) { openBookingModal(seatId, nowTimestamp); } 
@@ -685,6 +723,11 @@
             if (!currentSeatId) return;
             const seatToRelease = currentSeatId;
             
+            if (!isAuto) {
+                // 如果是手動釋出，設定旗標，避免被監聽器誤判為「被管理員刪除」
+                isManualRelease = true;
+            }
+
             if (isAuto) {
                 currentSeatId = null;
                 set(ref(db, `seats/${currentClassId}/${seatToRelease}`), null);
@@ -724,7 +767,8 @@
                 studentName: name, 
                 parentPhone: phone, 
                 soldTime: timestamp,
-                orderId: orderId 
+                orderId: orderId,
+                user: myUserId 
             };
 
             const orderData = {
@@ -739,7 +783,7 @@
 
             const updates = {};
             updates[`seats/${currentClassId}/${currentSeatId}`] = seatData;
-            updates[`orders/${phone}/${orderId}`] = orderData; // 電話分流結構
+            updates[`orders/${phone}/${orderId}`] = orderData; 
 
             update(ref(db), updates).then(() => {
                 alert(`✅ 劃位成功！\n座位：${currentSeatId}\n訂單編號：${orderId}\n請截圖留存！`);
