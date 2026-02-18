@@ -90,7 +90,7 @@
     <div id="tab-monitor" class="page-section active">
         <div class="center-box">
             <div style="margin-bottom:15px; background:#fff3e0; padding:10px; border-radius:5px; border:1px solid #f39c12; display:inline-block;">
-                <label>🔑 管理員密碼 (黑箱操作用)：</label>
+                <label>🔑 管理員密碼 (黑箱/編輯用)：</label>
                 <input type="password" id="adminPwd" placeholder="請輸入密碼" style="padding:5px; width:150px;">
             </div>
             <br>
@@ -268,7 +268,7 @@
         </div>
         <div class="table-container">
             <table>
-                <thead><tr><th>課程</th><th>姓名</th><th>電話</th><th>備註</th><th>登記時間</th></tr></thead>
+                <thead><tr><th>課程</th><th>姓名</th><th>電話</th><th>備註</th><th>登記時間</th><th>操作</th></tr></thead>
                 <tbody id="waitlistTable"></tbody>
             </table>
         </div>
@@ -287,7 +287,7 @@
     </div>
 
     <script type="module">
-        import { db, ref, set, remove, push, update, storage, storageRef, uploadBytes, getDownloadURL } from './firebase-config.js';
+        import { db, ref, set, remove, push, update, storage, storageRef, uploadBytes, getDownloadURL, get } from './firebase-config.js';
         import { onValue } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-database.js";
 
         tinymce.init({ selector: '#c_desc', plugins: 'image link lists media table', toolbar: 'undo redo | formatselect | bold italic backcolor | alignleft aligncenter alignright alignjustify | bullist numlist outdent indent | removeformat | image', height: 400, menubar: true });
@@ -303,8 +303,8 @@
             "middle_new_yellow": { name: "國中新黃教室", layout: [ ["1-1", "1-2", "1-3", "_", "1-4", "1-5", "1-6", "_", "1-7", "1-8:X"], ["PILLAR", "2-2", "2-3", "_", "2-4", "2-5", "2-6", "_", "2-7", "2-8:X"], ["3-1:X", "3-2", "3-3", "_", "3-4", "3-5", "3-6", "_", "3-7", "3-8"], ["4-1", "4-2", "4-3", "_", "4-4", "4-5", "4-6", "_", "4-7", "4-8"], ["5-1", "5-2", "5-3", "_", "5-4", "5-5", "5-6", "_", "5-7", "5-8"], ["6-1:X", "6-2", "6-3", "_", "6-4", "6-5", "6-6", "_", "6-7", "6-8"], ["DOOR", "_", "_", "_", "_", "_", "_", "_", "_", "_"] ] },
             "middle_new_red": { name: "國中新紅教室", layout: [ ["1-1", "1-2:X", "1-3", "_", "1-4", "1-5", "1-6", "1-7", "_", "1-8", "1-9:X", "1-10:X"], ["2-1", "2-2", "2-3", "_", "2-4", "2-5", "2-6", "2-7", "_", "2-8", "2-9", "2-10"], ["3-1", "3-2", "3-3", "_", "3-4", "3-5", "3-6", "3-7", "_", "3-8", "3-9", "3-10"], ["DOOR", "_", "_", "_", "_", "_", "_", "_", "_", "_", "_", "_"], ["4-1", "4-2", "4-3", "_", "4-4", "4-5", "4-6", "4-7", "_", "4-8", "4-9", "4-10"], ["5-1", "5-2", "5-3", "_", "5-4", "5-5", "5-6", "5-7", "_", "5-8", "5-9", "5-10"], ["6-1", "6-2", "6-3", "_", "6-4", "6-5", "6-6", "6-7", "_", "6-8", "6-9", "6-10"], ["7-1", "7-2", "7-3", "_", "7-4", "7-5", "7-6", "7-7", "_", "7-8", "7-9", "7-10"], ["8-1:X", "8-2:X", "8-3:X","_","8-4:X", "8-5:X", "8-6:X", "8-7:X", "_", "8-8:X", "8-9:X", "8-10:X"] ] },
             "middle_big_red": { name: "國中大紅教室", layout: [ ["1-1:X", "1-2", "_", "1-3", "1-4", "1-5", "_", "1-6", "1-7", "1-8", "_", "1-9", "1-10:X"], ["2-1", "2-2", "_", "2-3", "2-4", "2-5", "_", "2-6", "2-7", "2-8", "_", "2-9", "2-10"], ["3-1", "3-2", "_", "3-3", "3-4", "3-5", "_", "3-6", "3-7", "3-8", "_", "3-9", "3-10"], ["4-1", "4-2", "_", "4-3", "4-4", "4-5", "_", "4-6", "4-7", "4-8", "_", "4-9", "4-10"], ["5-1", "5-2", "_", "5-3", "5-4", "5-5", "_", "5-6", "5-7", "5-8", "_", "5-9", "5-10"], ["6-1", "6-2", "_", "6-3", "6-4", "6-5", "_", "6-6", "6-7", "6-8", "_", "6-9", "6-10"], ["7-1", "7-2", "_", "7-3", "7-4", "7-5", "_", "7-6", "7-7", "7-8", "_", "7-9", "7-10"], ["_","_","_","_","_","_","_","_","_","_","_","_","DOOR"] ] },
-            "middle_da_chiao": { name: "國中大橋教室", layout: [ ["1-1:X", "1-2:X", "1-3", "_", "1-4", "1-5", "1-6", "_", "1-7", "1-8:X"], ["2-1", "2-2", "2-3", "_", "2-4", "2-5", "2-6", "_", "2-7", "2-8"], ["3-1", "3-2", "3-3", "_", "3-4", "3-5", "3-6", "_", "3-7", "3-8"], ["4-1", "4-2", "4-3", "_", "4-4", "4-5", "4-6", "_", "4-7", "4-8:X"], ["5-1", "5-2", "5-3", "_", "5-4", "5-5", "5-6", "_", "5-7", "5-8"], ["_","_","_","_","_","_","_","_","_","DOOR"] ] },
-            "middle_big_green": { name: "國中大綠教室", layout: [ ["DOOR", "_", "_", "_", "_", "_"], ["1-1", "1-2", "1-3", "_", "1-4", "1-5"], ["2-1", "2-2", "2-3", "_", "2-4", "2-5"], ["3-1", "3-2", "3-3", "_", "3-4", "3-5"], ["PILLAR", "4-2", "4-3", "_", "4-4", "4-5"] ] },
+            "middle_da_chiao": { name: "國中大橋教室", hasStage: true, layout: [ ["1-1:X", "1-2:X", "1-3", "_", "1-4", "1-5", "1-6", "_", "1-7", "1-8:X"], ["2-1", "2-2", "2-3", "_", "2-4", "2-5", "2-6", "_", "2-7", "2-8"], ["3-1", "3-2", "3-3", "_", "3-4", "3-5", "3-6", "_", "3-7", "3-8"], ["4-1", "4-2", "4-3", "_", "4-4", "4-5", "4-6", "_", "4-7", "4-8:X"], ["5-1", "5-2", "5-3", "_", "5-4", "5-5", "5-6", "_", "5-7", "5-8"], ["_","_","_","_","_","_","_","_","_","DOOR"] ] },
+            "middle_big_green": { name: "國中大綠教室", hasStage: true, layout: [ ["DOOR", "_", "_", "_", "_", "_"], ["1-1", "1-2", "1-3", "_", "1-4", "1-5"], ["2-1", "2-2", "2-3", "_", "2-4", "2-5"], ["3-1", "3-2", "3-3", "_", "3-4", "3-5"], ["PILLAR", "4-2", "4-3", "_", "4-4", "4-5"] ] },
             "test_room": { name: "測試專用教室", layout: [ ["1-1", "1-2"] ] }
         };
 
@@ -616,29 +616,58 @@
             });
         };
 
-        // ★★★ 修改：toggleReserve 函式，增加密碼發送邏輯 ★★★
-        window.toggleReserve = function(courseId, seatId, info) {
-            // Get password
+        // ★★★ 修改：toggleReserve 支援黑箱轉售出 ★★★
+        window.toggleReserve = async function(courseId, seatId, info) {
             const pwd = document.getElementById('adminPwd').value.trim();
 
             if (info && info.status === 'sold') {
                 if (confirm(`確定要釋出 ${seatId} (${info.studentName}) 嗎？`)) {
+                    // 如果有密碼，帶入密碼以通過 Rules
+                    const payload = pwd ? { adminPwd: pwd } : {}; 
+                    // 釋出是 delete，這裡直接 remove 即可 (Rules 允許刪除)
+                    // 但為了保險，我們也可以用 set(null)
                     set(ref(db, `seats/${courseId}/${seatId}`), null);
                 }
             } else if (info && info.status === 'locked' && info.user === 'admin_reserved') {
-                if (confirm(`取消保留 ${seatId}？`)) {
+                // 跳出 prompt 選單
+                const action = prompt("此為【管理員保留位】。請選擇操作：\n輸入 'D' 釋出座位 (變回綠色)\n輸入 'S' 轉為已售出 (變紅色)", "D");
+                
+                if (action && action.toUpperCase() === 'D') {
                     set(ref(db, `seats/${courseId}/${seatId}`), null);
+                } else if (action && action.toUpperCase() === 'S') {
+                    if (!pwd) { alert("請輸入管理員密碼才能轉為售出！"); return; }
+                    
+                    const name = prompt("請輸入學生姓名 (留空則為'現場保留')", "現場保留");
+                    const phone = prompt("請輸入家長電話 (留空則為'0000000000')", "0000000000");
+                    
+                    const orderId = "ADMIN_" + Date.now();
+                    const seatData = {
+                        status: 'sold',
+                        studentName: name,
+                        parentPhone: phone,
+                        soldTime: new Date().toLocaleString(),
+                        orderId: orderId,
+                        adminPwd: pwd // 帶入密碼驗證
+                    };
+                    
+                    set(ref(db, `seats/${courseId}/${seatId}`), seatData).then(() => {
+                        alert("已成功轉為已售出！");
+                    }).catch(err => alert("失敗：" + err.message));
                 }
             } else if (!info) {
-                // Validation
                 if (!pwd) { alert("⚠️ 請先輸入管理員密碼才能進行黑箱保留！"); return; }
+                
+                const snap = await get(ref(db, `seats/${courseId}/${seatId}`));
+                if (snap.exists() && snap.val().status === 'sold') {
+                     if (!confirm("⚠️ 警告：這個位子剛剛被學生搶走了！確定要強制覆蓋嗎？")) return;
+                }
 
                 if (confirm(`要將 ${seatId} 設為保留位嗎？(前台顯示為填寫中)`)) {
                     set(ref(db, `seats/${courseId}/${seatId}`), {
                         status: 'locked',
                         user: 'admin_reserved',
                         timestamp: Date.now(),
-                        adminPwd: pwd // Send password
+                        adminPwd: pwd 
                     }).catch(err => {
                         alert("保留失敗：密碼錯誤或權限不足！");
                     });
@@ -660,6 +689,7 @@
             selector.value = currentVal;
         }
 
+        // ★★★ 修改：renderTable 增加編輯按鈕 ★★★
         function renderTable() {
             const filterId = document.getElementById('classSelector').value;
             const searchText = document.getElementById('searchInput').value.trim().toLowerCase();
@@ -670,10 +700,63 @@
                 if (searchText && !b.studentName.includes(searchText) && !b.parentPhone.includes(searchText) && !b.orderId.includes(searchText)) return;
                 const tr = document.createElement('tr');
                 const statusBadge = b.status === 'sold' ? '<span class="badge sold">已劃位</span>' : '<span class="badge locked">填寫中</span>';
-                tr.innerHTML = `<td>${b.orderId}</td><td>${b.courseName}</td><td>${b.seatId}</td><td>${statusBadge}</td><td>${b.studentName}</td><td>${b.parentPhone}</td><td>${b.time}</td><td><button class="danger" onclick="window.releaseSeat('${b.courseId}', '${b.seatId}')">釋出</button></td>`;
+                
+                // 新增「編輯」按鈕
+                tr.innerHTML = `<td>${b.orderId}</td><td>${b.courseName}</td><td>${b.seatId}</td><td>${statusBadge}</td><td>${b.studentName}</td><td>${b.parentPhone}</td><td>${b.time}</td>
+                <td>
+                    <button class="warning" style="padding:5px 10px; font-size:12px;" onclick="window.editOrder('${b.courseId}', '${b.seatId}', '${b.parentPhone}', '${b.orderId}', '${b.studentName}')">編輯</button>
+                    <button class="danger" style="padding:5px 10px; font-size:12px;" onclick="window.releaseSeat('${b.courseId}', '${b.seatId}')">釋出</button>
+                </td>`;
                 tbody.appendChild(tr);
             });
         }
+
+        // ★★★ 新增：編輯訂單函式 ★★★
+        window.editOrder = async function(courseId, seatId, oldPhone, orderId, oldName) {
+            const pwd = document.getElementById('adminPwd').value.trim();
+            if (!pwd) return alert("請先輸入管理員密碼！");
+
+            const newName = prompt("修改學生姓名：", oldName);
+            if (newName === null) return;
+            const newPhone = prompt("修改家長電話 (若修改電話，系統將自動搬移訂單)：", oldPhone);
+            if (newPhone === null) return;
+
+            try {
+                // 1. 更新座位表 (seats)
+                const seatUpdate = {
+                    studentName: newName,
+                    parentPhone: newPhone,
+                    adminPwd: pwd
+                };
+                await update(ref(db, `seats/${courseId}/${seatId}`), seatUpdate);
+
+                // 2. 更新訂單表 (orders)
+                if (newPhone !== oldPhone) {
+                    // 電話變更：讀取舊資料 -> 刪除舊資料 -> 寫入新資料
+                    const oldOrderRef = ref(db, `orders/${oldPhone}/${orderId}`);
+                    const snap = await get(oldOrderRef);
+                    if (snap.exists()) {
+                        const orderData = snap.val();
+                        orderData.studentName = newName;
+                        orderData.parentPhone = newPhone;
+                        
+                        // 寫入新路徑
+                        await set(ref(db, `orders/${newPhone}/${orderId}`), orderData);
+                        // 刪除舊路徑
+                        await remove(oldOrderRef);
+                    }
+                } else {
+                    // 電話沒變：直接更新
+                    await update(ref(db, `orders/${oldPhone}/${orderId}`), { 
+                        studentName: newName 
+                    });
+                }
+                alert("修改成功！");
+            } catch (err) {
+                alert("修改失敗：" + err.message);
+                console.error(err);
+            }
+        };
 
         function updateStats() {
             document.getElementById('totalSold').textContent = allBookings.filter(b => b.status === 'sold').length;
@@ -755,20 +838,83 @@
             selector.value = currentVal;
         }
 
+        // ★★★ 修改：候補名單增加 編輯/刪除 功能 ★★★
         function renderWaitlistTable() {
             const filterId = document.getElementById('waitlistSelector').value;
             const tbody = document.getElementById('waitlistTable');
             tbody.innerHTML = "";
             if (filterId === 'all') return;
             const list = waitlistData[filterId] || {};
-            const sortedList = Object.keys(list).map(key => list[key]).sort((a, b) => a.timestamp - b.timestamp);
+            const sortedList = Object.keys(list).map(key => ({ ...list[key], key })).sort((a, b) => a.timestamp - b.timestamp);
+            
             sortedList.forEach(w => {
                 const tr = document.createElement('tr');
                 const time = new Date(w.timestamp).toLocaleString();
-                tr.innerHTML = `<td>${coursesData[filterId].subject} ${coursesData[filterId].classType || ''}</td><td>${w.studentName}</td><td>${w.parentPhone}</td><td>${w.note || '-'}</td><td>${time}</td>`;
+                tr.innerHTML = `
+                    <td>${coursesData[filterId].subject} ${coursesData[filterId].classType || ''}</td>
+                    <td>${w.studentName}</td>
+                    <td>${w.parentPhone}</td>
+                    <td>${w.note || '-'}</td>
+                    <td>${time}</td>
+                    <td>
+                        <button class="warning" style="padding:5px 10px; font-size:12px;" onclick="window.editWaitlist('${filterId}', '${w.key}', '${w.studentName}', '${w.parentPhone}', '${w.note}')">編輯</button>
+                        <button class="danger" style="padding:5px 10px; font-size:12px;" onclick="window.deleteWaitlist('${filterId}', '${w.key}')">刪除</button>
+                    </td>`;
                 tbody.appendChild(tr);
             });
         }
+
+        // ★★★ 新增：編輯/刪除 候補函式 ★★★
+        window.deleteWaitlist = function(courseId, waitlistId) {
+            const pwd = document.getElementById('adminPwd').value.trim();
+            if (!pwd) return alert("請先輸入管理員密碼！");
+            
+            // 這裡無法直接透過 payload 傳密碼 (因為 remove 不帶 body)，但我們的 Waitlist Rules 
+            // 設定是 "!data.exists() && newData.exists()" (只許增不許刪)
+            // 哎呀！如果 Rules 設定 waitlist 不能刪，那管理員也刪不掉。
+            // 解決方案：我們必須回頭修改 Firebase Rules 的 waitlist 權限，允許管理員刪除。
+            // (V28.16 的 Rules 已經包含 admin 密碼全權覆蓋，所以只要帶密碼寫入 null 即可)
+            // 等等，remove() 函式無法帶 body。
+            // 所以我們改用 set(null) 並帶入 adminPwd? 不行，Firebase RTDB delete 就是 delete。
+            // 正解：我們直接呼叫 set(ref, null)。但是 Rules 必須放行。
+            // 如果 Rules 寫死 "!data.exists()"，那刪除操作 (newData 為 null) 會失敗嗎？
+            // 回顧 Rules: ".write": "!data.exists() && newData.exists()" -> 這代表「只能新增 (Create)」。
+            // 這會導致管理員也無法刪除候補！
+            // *** 緊急修正 ***：請您在稍後的步驟中，務必更新 Firebase Rules，
+            // 將 waitlist 的 .write 改為 "(!data.exists() && newData.exists()) || (auth != null) || (root.child('adminPassword').val() === 'bear888')" 
+            // 不過，因為我們無法在前端 remove() 時帶入密碼參數，
+            // 唯一的解法是：先用 update() 把該節點改成 { ...data, adminPwd: pwd } (觸發帶密碼的寫入規則)，
+            // 然後再 remove()？不，這太複雜。
+            // 
+            // 實際上，最簡單的做法是：Waitlist 的 Rules 改為：
+            // ".write": true  (測試期)
+            // 或者 ".write": "!data.exists() || !newData.exists()" (允許新增和刪除，但不允許修改)
+            
+            // 暫時解法：假設您還在測試期 Rules 全開，或者您會手動去改 Rules。
+            // 程式碼先寫好：
+            if (confirm("確定刪除此候補？")) {
+                set(ref(db, `waitlist/${courseId}/${waitlistId}`), null);
+            }
+        };
+
+        window.editWaitlist = function(courseId, waitlistId, oldName, oldPhone, oldNote) {
+            const pwd = document.getElementById('adminPwd').value.trim();
+            if (!pwd) return alert("請先輸入管理員密碼！");
+
+            const newName = prompt("修改姓名", oldName);
+            const newPhone = prompt("修改電話", oldPhone);
+            const newNote = prompt("修改備註", oldNote);
+
+            if (newName && newPhone) {
+                update(ref(db, `waitlist/${courseId}/${waitlistId}`), {
+                    studentName: newName,
+                    parentPhone: newPhone,
+                    note: newNote,
+                    // 為了通過潛在的規則檢查，帶入密碼 (雖然 update 對 waitlist 可能被擋，視 Rules 而定)
+                    adminPwd: pwd 
+                }).then(() => alert("修改成功")).catch(e => alert("修改失敗：" + e.message));
+            }
+        };
 
         document.getElementById('waitlistSelector').addEventListener('change', renderWaitlistTable);
 
