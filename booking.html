@@ -130,7 +130,7 @@
                 <div class="form-group">
                     <label>家長手機：</label>
                     <input type="tel" id="parentPhone" placeholder="09xxxxxxxx" maxlength="10">
-                    <div class="input-hint">請輸入 10 碼手機號碼</div>
+                    <div class="input-hint">請輸入 10 碼手機號碼 (將作為查詢依據)</div>
                 </div>
                 <div style="display: none;">
                     <label>請勿填寫此欄位 (機器人陷阱)：</label>
@@ -703,7 +703,8 @@
 
             const updates = {};
             updates[`seats/${currentClassId}/${currentSeatId}`] = seatData;
-            updates[`orders/${orderId}`] = orderData;
+            // ★★★ 修改：將訂單寫入路徑改為 /orders/電話/訂單ID ★★★
+            updates[`orders/${phone}/${orderId}`] = orderData;
 
             update(ref(db), updates).then(() => {
                 alert(`✅ 劃位成功！\n座位：${currentSeatId}\n訂單編號：${orderId}\n請截圖留存！`);

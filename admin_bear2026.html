@@ -1,5 +1,3 @@
-<!-- 檔案：admin_bear2026.html -->
-<!-- 版本：V28.11 (自動計算並寫入總座位數) -->
 <!DOCTYPE html>
 <html lang="zh-TW">
 <head>
@@ -91,6 +89,12 @@
 
     <div id="tab-monitor" class="page-section active">
         <div class="center-box">
+            <div style="margin-bottom:15px; background:#fff3e0; padding:10px; border-radius:5px; border:1px solid #f39c12; display:inline-block;">
+                <label>🔑 管理員密碼 (黑箱操作用)：</label>
+                <input type="password" id="adminPwd" placeholder="請輸入密碼" style="padding:5px; width:150px;">
+            </div>
+            <br>
+
             <div style="margin-bottom:10px;">目前檢視：<span id="currentClassName" style="font-weight:bold;">所有課程</span> | 已劃位：<span id="totalSold" style="font-weight:bold;">0</span></div>
             <select id="classSelector" class="big-selector" onchange="loadVisualMap()"><option value="all">全部課程總覽</option></select>
             <div id="visualMap" class="visual-map-container">
@@ -390,7 +394,6 @@
 
                 if (!grade || !subject || !start1) throw new Error("請填寫完整資料！");
 
-                // ★★★ 計算總座位數 ★★★
                 let totalSeats = 0;
                 if (classrooms[classroom]) {
                     classrooms[classroom].layout.forEach(row => {
@@ -421,7 +424,7 @@
                     image: imageUrl, updatedAt: Date.now(),
                     waitlistEnabled: waitlistEnabled,
                     waitlistLimit: parseInt(waitlistLimit) || 0,
-                    totalSeats: totalSeats // ★★★ 寫入總座位數 ★★★
+                    totalSeats: totalSeats 
                 };
 
                 let courseId = id;
@@ -613,7 +616,11 @@
             });
         };
 
+        // ★★★ 修改：toggleReserve 函式，增加密碼發送邏輯 ★★★
         window.toggleReserve = function(courseId, seatId, info) {
+            // Get password
+            const pwd = document.getElementById('adminPwd').value.trim();
+
             if (info && info.status === 'sold') {
                 if (confirm(`確定要釋出 ${seatId} (${info.studentName}) 嗎？`)) {
                     set(ref(db, `seats/${courseId}/${seatId}`), null);
@@ -623,15 +630,17 @@
                     set(ref(db, `seats/${courseId}/${seatId}`), null);
                 }
             } else if (!info) {
+                // Validation
+                if (!pwd) { alert("⚠️ 請先輸入管理員密碼才能進行黑箱保留！"); return; }
+
                 if (confirm(`要將 ${seatId} 設為保留位嗎？(前台顯示為填寫中)`)) {
-                    // ★★★ 加入 isAdmin: true 以繞過時間鎖 ★★★
                     set(ref(db, `seats/${courseId}/${seatId}`), {
                         status: 'locked',
                         user: 'admin_reserved',
                         timestamp: Date.now(),
-                        isAdmin: true 
+                        adminPwd: pwd // Send password
                     }).catch(err => {
-                        alert("保留失敗：" + err.message);
+                        alert("保留失敗：密碼錯誤或權限不足！");
                     });
                 }
             }

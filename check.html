@@ -1,44 +1,30 @@
-<!-- 檔案：check.html -->
-<!-- 版本：V28.2 (資安加固：伺服器端精準查詢 + Icon更新) -->
 <!DOCTYPE html>
 <html lang="zh-TW">
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>查詢劃位 - 山熊科學</title>
-    
-    <!-- ★★★ 修改：使用 icon.png 作為網頁與手機圖示 ★★★ -->
     <link rel="icon" href="icon.png" type="image/png">
     <link rel="apple-touch-icon" href="icon.png">
-
     <style>
         body { font-family: "Microsoft JhengHei", sans-serif; background-color: #f8f9fa; margin: 0; padding: 0; }
-        
         header { background: #2c3e50; box-shadow: 0 2px 5px rgba(0,0,0,0.1); position: sticky; top: 0; z-index: 1000; }
         .header-container { max-width: 1200px; margin: 0 auto; padding: 10px 20px; display: flex; justify-content: center; align-items: center; gap: 20px; }
         .header-container img { height: 60px; }
         .header-container h1 { margin: 0; font-size: 24px; letter-spacing: 1px; color: white; }
-
         .container { max-width: 600px; margin: 40px auto; background: white; padding: 40px; border-radius: 15px; box-shadow: 0 5px 20px rgba(0,0,0,0.1); text-align: center; }
-        
         h1.page-title { color: #2c3e50; margin-top: 0; margin-bottom: 30px; }
-        
         .form-group { margin-bottom: 15px; text-align: left; }
         label { display: block; margin-bottom: 5px; font-weight: bold; }
         input { padding: 10px; width: 100%; font-size: 16px; border: 1px solid #ddd; border-radius: 5px; box-sizing: border-box; }
         button { padding: 10px 20px; background: #3498db; color: white; border: none; border-radius: 5px; cursor: pointer; font-size: 16px; width: 100%; margin-top: 10px; }
         button:hover { background: #2980b9; }
         button:disabled { background: #ccc; cursor: not-allowed; }
-        
         #result { margin-top: 30px; text-align: left; }
         .result-item { background: #f0f2f5; padding: 15px; border-radius: 8px; margin-bottom: 10px; border-left: 5px solid #27ae60; }
-        
         .back-btn { display: inline-block; margin-bottom: 20px; color: #3498db; text-decoration: none; font-size: 16px; font-weight: bold; border: 1px solid #3498db; padding: 8px 20px; border-radius: 20px; transition: 0.3s; float: left; }
         .back-btn:hover { background: #3498db; color: white; }
-
         footer { text-align: center; padding: 40px; color: #999; font-size: 14px; background-color: #2c3e50; color: white; margin-top: 80px; }
-
-        /* 浮動 LINE 按鈕 */
         .float-line-btn { position: fixed; bottom: 25px; right: 20px; width: 60px; height: 60px; border-radius: 50%; background-color: #06C755; box-shadow: 0 4px 12px rgba(0,0,0,0.3); z-index: 9999; cursor: pointer; transition: transform 0.2s; animation: bounce 2s ease-in-out infinite; display: flex; align-items: center; justify-content: center; text-decoration: none; color: white; font-weight: 900; font-size: 1.2rem; font-family: Arial, sans-serif; letter-spacing: 0.5px; }
         .float-line-btn:active { transform: scale(0.9); animation: none; }
         @keyframes bounce { 0%, 20%, 50%, 80%, 100% { transform: translateY(0); } 40% { transform: translateY(-10px); } 60% { transform: translateY(-5px); } }
@@ -60,11 +46,11 @@
         
         <h1 class="page-title">🔍 查詢劃位結果</h1>
         
-        <div class="form-group">
-            <label>訂單編號 (選填)</label>
-            <input type="text" id="orderInput" placeholder="請輸入訂單編號">
-        </div>
-        <div style="text-align:center; margin:10px 0; color:#999;">--- 或 ---</div>
+        <p style="text-align:left; color:#e74c3c; font-size:14px; background:#fff5f5; padding:10px; border-radius:5px;">
+            🔒 為了保護學生個資，系統已升級安全架構。<br>
+            現在必須輸入「家長手機」才能查詢訂單。
+        </p>
+
         <div class="form-group">
             <label>學生姓名</label>
             <input type="text" id="nameInput" placeholder="請輸入學生姓名">
@@ -83,21 +69,18 @@
         &copy; 2024 山熊科學補習班 | 系統開發：Sciencebear Tech Team
     </footer>
 
-    <a href="https://lin.ee/oGKweky" target="_blank" class="float-line-btn" title="聯繫官方LINE">LINE</a>
+    <a href="https://lin.ee/atx6KUQd" target="_blank" class="float-line-btn" title="聯繫官方LINE">LINE</a>
 
     <script type="module">
-        // ★★★ 資安升級：引入 query, orderByChild, equalTo ★★★
         import { db, ref, get, child } from './firebase-config.js';
-        import { query, orderByChild, equalTo } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-database.js";
 
-        // 預先載入課程資料 (這是公開資料，可以安全下載)
+        // 預先載入課程資料，用於顯示課程名稱
         let coursesData = {};
         get(ref(db, 'courses')).then(snap => {
             coursesData = snap.val() || {};
         });
 
         window.checkBooking = async function() {
-            const orderId = document.getElementById('orderInput').value.trim();
             const name = document.getElementById('nameInput').value.trim();
             const phone = document.getElementById('phoneInput').value.trim();
             const resultDiv = document.getElementById('result');
@@ -107,64 +90,53 @@
             btn.disabled = true;
             btn.textContent = "查詢中...";
 
+            if (!name || !phone) {
+                alert("請輸入「學生姓名」與「家長手機」！");
+                btn.disabled = false; btn.textContent = "查詢";
+                return;
+            }
+
             try {
-                let foundOrders = [];
+                // ★★★ 關鍵修改：直接使用電話號碼讀取路徑，這是唯一合法的讀取方式 ★★★
+                // 嘗試讀取 /orders/{phone}
+                const snapshot = await get(child(ref(db), `orders/${phone}`));
+                
+                if (snapshot.exists()) {
+                    const orders = snapshot.val();
+                    let foundAny = false;
 
-                // ★★★ 策略 A：使用訂單編號查詢 (最快、最安全) ★★★
-                if (orderId) {
-                    // 直接讀取 orders/訂單號，完全不搜尋其他資料
-                    const snapshot = await get(child(ref(db), `orders/${orderId}`));
-                    if (snapshot.exists()) {
-                        foundOrders.push(snapshot.val());
-                    }
-                } 
-                // ★★★ 策略 B：使用電話+姓名查詢 (伺服器端過濾) ★★★
-                else if (name && phone) {
-                    // 建立查詢：只向 Firebase 請求「parentPhone 等於 輸入電話」的資料
-                    // 這需要 Firebase Rules 設定 .indexOn: ["parentPhone"]
-                    const ordersRef = ref(db, 'orders');
-                    const q = query(ordersRef, orderByChild('parentPhone'), equalTo(phone));
-                    
-                    const snapshot = await get(q);
-                    if (snapshot.exists()) {
-                        const data = snapshot.val();
-                        // Firebase 回傳的是該電話的所有訂單，我們在前端再過濾一次姓名以求精確
-                        Object.values(data).forEach(order => {
-                            if (order.studentName === name) {
-                                foundOrders.push(order);
-                            }
-                        });
-                    }
-                } else {
-                    alert("請輸入「訂單編號」或「姓名+電話」！");
-                    btn.disabled = false;
-                    btn.textContent = "查詢";
-                    return;
-                }
-
-                // 顯示結果
-                if (foundOrders.length === 0) {
-                    resultDiv.innerHTML = "<p style='color:red; text-align:center;'>查無資料，請確認輸入是否正確。</p>";
-                } else {
-                    foundOrders.forEach(b => {
-                        const c = coursesData[b.courseId];
-                        const courseName = c ? `${c.subject} ${c.classType || ''}` : "未知課程";
-                        const displayTime = b.displayTime || b.soldTime || "未知時間"; // 相容舊資料
-                        
-                        const div = document.createElement('div');
-                        div.className = 'result-item';
-                        div.innerHTML = `
-                            <strong>${courseName}</strong><br>
-                            座位：${b.seatId}<br>
-                            訂單編號：${b.orderId || '-'}<br>
-                            劃位時間：${displayTime}
-                        `;
-                        resultDiv.appendChild(div);
+                    // orders 是一個物件，key 是訂單 ID，value 是訂單資料
+                    Object.values(orders).forEach(b => {
+                        // 二次驗證姓名，確保不是打錯電話看到別人的 (雖然機率低，但為了隱私雙重確認)
+                        if (b.studentName === name) {
+                            foundAny = true;
+                            const c = coursesData[b.courseId];
+                            const courseName = c ? `${c.subject} ${c.classType || ''}` : "未知課程";
+                            const displayTime = b.displayTime || b.soldTime || "未知時間";
+                            
+                            const div = document.createElement('div');
+                            div.className = 'result-item';
+                            div.innerHTML = `
+                                <strong>${courseName}</strong><br>
+                                座位：${b.seatId}<br>
+                                訂單編號：${b.orderId || '-'}<br>
+                                劃位時間：${displayTime}
+                            `;
+                            resultDiv.appendChild(div);
+                        }
                     });
+
+                    if (!foundAny) {
+                        resultDiv.innerHTML = "<p style='color:red; text-align:center;'>查無此姓名的訂單，請確認輸入資料是否正確。</p>";
+                    }
+                } else {
+                    resultDiv.innerHTML = "<p style='color:red; text-align:center;'>此手機號碼無訂單紀錄。</p>";
                 }
 
             } catch (error) {
                 console.error(error);
+                // 如果發生錯誤，通常是因為 Rules 禁止讀取 (Permission Denied)
+                // 但在這個架構下，只要電話對了就能讀，所以錯誤通常是系統問題
                 resultDiv.innerHTML = "<p style='color:red; text-align:center;'>查詢發生錯誤，請稍後再試。</p>";
             } finally {
                 btn.disabled = false;
