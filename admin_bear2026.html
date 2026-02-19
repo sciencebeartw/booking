@@ -7,6 +7,7 @@
     <link rel="icon" href="icon.png" type="image/png">
     <link rel="apple-touch-icon" href="icon.png">
     <script src="https://cdn.tiny.cloud/1/2nwvnffdvbvf93d6ry0sov7w0d7yabtr1d6tp8l38cb6hoh1/tinymce/6/tinymce.min.js" referrerpolicy="origin"></script>
+    <script src="https://html2canvas.hertzen.com/dist/html2canvas.min.js"></script>
     <style>
         body { font-family: "Microsoft JhengHei", sans-serif; background-color: #f0f2f5; padding: 20px; margin: 0; }
         .navbar { background-color: #2c3e50; padding: 15px; border-radius: 10px; margin-bottom: 20px; display: flex; justify-content: space-between; align-items: center; color: white; }
@@ -40,10 +41,8 @@
         button.warning { background-color: #f39c12; }
         button.dark { background-color: #34495e; } 
         
-        .course-list { margin-top: 30px; display: grid; grid-template-columns: repeat(auto-fill, minmax(300px, 1fr)); gap: 20px; justify-content: center; }
-        .course-list { display: flex; flex-wrap: wrap; justify-content: center; gap: 20px; }
+        .course-list { margin-top: 30px; display: flex; flex-wrap: wrap; justify-content: center; gap: 20px; }
         .admin-course-card { width: 300px; background: white; border-radius: 10px; box-shadow: 0 2px 5px rgba(0,0,0,0.1); overflow: hidden; cursor: pointer; transition: 0.2s; position: relative; }
-
         .admin-course-card:hover { transform: translateY(-3px); box-shadow: 0 5px 15px rgba(0,0,0,0.1); }
         .card-thumb { height: 150px; background-size: cover; background-position: center; }
         .card-content { padding: 15px; }
@@ -52,19 +51,24 @@
         .btn-delete { position: absolute; top: 10px; right: 10px; background: #e74c3c; padding: 5px 10px; font-size: 12px; z-index: 10; border-radius: 3px; }
         
         .table-container { overflow-x: auto; background: white; border-radius: 10px; box-shadow: 0 2px 10px rgba(0,0,0,0.1); margin-top: 20px; }
-        table { width: 100%; border-collapse: collapse; min-width: 800px; }
         
+        /* 全域表格樣式 (這是導致衝突的源頭) */
+        table { width: 100%; border-collapse: collapse; min-width: 800px; }
         th, td { padding: 12px 15px; text-align: left; border-bottom: 1px solid #ddd; white-space: nowrap; }
-        th { background-color: #34495e; color: white; }
+        th { background-color: #34495e; color: white; cursor: pointer; user-select: none; }
+        th:hover { background-color: #2c3e50; }
         
         .badge { padding: 5px 10px; border-radius: 15px; font-size: 12px; font-weight: bold; color: white; }
         .badge.sold { background-color: #27ae60; }
         .badge.locked { background-color: #f39c12; }
         .badge.deleted { background-color: #95a5a6; text-decoration: line-through; } 
+        .badge.wait { background-color: #e67e22; }
         
         tr.row-deleted { background-color: #f2f2f2; color: #999; }
         tr.row-deleted td { text-decoration: line-through; }
         tr.row-deleted button { text-decoration: none !important; }
+        
+        tr.duplicate-row { background-color: #fff3cd !important; }
 
         #imgPreview { max-width: 200px; margin-top: 10px; display: none; border-radius: 5px; }
         .big-selector { font-size: 18px; padding: 15px; width: 100%; max-width: 500px; margin: 0 auto; display: block; border: 2px solid #3498db; }
@@ -94,6 +98,99 @@
         .preview-box p { font-size: 16px; color: #555; margin-bottom: 20px; }
 
         #sweeperStatus { position: fixed; bottom: 10px; left: 10px; background: rgba(0,0,0,0.7); color: white; padding: 5px 10px; border-radius: 5px; font-size: 12px; z-index: 9999; }
+
+        /* ★★★ 學費單專用 CSS (使用 #billArea 隔離全域樣式) ★★★ */
+        .bill-layout { display: flex; gap: 20px; align-items: flex-start; }
+        .bill-list { width: 300px; background: white; border-radius: 10px; padding: 15px; max-height: 800px; overflow-y: auto; }
+        .bill-list-item { padding: 10px; border-bottom: 1px solid #eee; cursor: pointer; }
+        .bill-list-item:hover { background: #f0f2f5; }
+        .bill-list-item.active { background: #e8f6f3; border-left: 5px solid #27ae60; }
+        
+        .bill-preview-area { flex: 1; background: #333; padding: 20px; border-radius: 10px; display: flex; flex-direction: column; align-items: center; }
+        
+        .bill-container {
+            width: 210mm; height: 148mm; background: white; padding: 5mm; 
+            display: flex; flex-direction: column; justify-content: space-between; 
+            box-sizing: border-box; position: relative; overflow: hidden; 
+            box-shadow: 0 0 15px rgba(0,0,0,0.5); text-align: left;
+            font-family: 'Microsoft JhengHei', '微軟正黑體', sans-serif;
+        }
+
+        /* ★★★ 關鍵修正：強制重置表格樣式，防止繼承全域的 min-width: 800px ★★★ */
+        #billArea table { 
+            width: 100% !important; 
+            flex-grow: 1; 
+            border-collapse: collapse; 
+            border: 3px solid black; 
+            table-layout: fixed; 
+            margin-bottom: 5px; 
+            min-width: 0 !important; /* 殺死全域設定 */
+        }
+        
+        #billArea th, #billArea td { 
+            border: 1px solid black; 
+            padding: 0; 
+            white-space: normal; /* 重置全域 nowrap */
+        }
+        
+        .row-header td { font-size: 18px; font-weight: bold; height: 35px; text-align: center; vertical-align: middle; white-space: nowrap; overflow: hidden; }
+        .note-title { height: 35px; line-height: 35px; background: #f0f0f0; font-size: 15px; font-weight: bold; text-align: center; }
+        .row-items { height: 200px; vertical-align: top; } 
+        .row-items td { padding: 0; vertical-align: top; }
+        
+        #billArea .inner-table { width: 100%; border-collapse: collapse; table-layout: fixed; margin-top: 2px; border: none; }
+        #billArea .inner-table tr { height: 30px; } 
+        #billArea .inner-table td { border: none; border-bottom: 1px dashed #ccc; padding: 0; font-size: 16px; vertical-align: middle; white-space: nowrap; overflow: hidden; }
+        #billArea .inner-table tr:last-child td { border-bottom: none; }
+        
+        .item-header { background: #e0e0e0; font-weight: bold; font-size: 15px; height: 32px; display: flex; align-items: center; padding: 0 5px; border-bottom: 2px solid #000; letter-spacing: 1px; }
+        
+        /* ★★★ 修正：使用 #billArea 增加權重，並保留 box-sizing ★★★ */
+        #billArea .col-1 { 
+            width: 45%; max-width: 45%; 
+            text-align: left; 
+            padding-left: 10px !important; 
+            white-space: nowrap; overflow: hidden; text-overflow: ellipsis; 
+            box-sizing: border-box; 
+        } 
+        #billArea .col-2 { 
+            width: 36%; max-width: 36%; 
+            text-align: center; white-space: nowrap; overflow: hidden; 
+            box-sizing: border-box; 
+        } 
+        #billArea .col-3 { 
+            width: 19%; max-width: 19%; 
+            text-align: right; padding-right: 15px !important; white-space: nowrap; overflow: hidden; 
+            box-sizing: border-box; 
+        } 
+        
+        .note-cell { font-size: 14px; color: #000; vertical-align: top; line-height: 1.4; padding: 5px; height: 200px; white-space: pre-wrap; position: relative; box-sizing: border-box; z-index: 1; word-break: break-all; }
+        .note-cell::before { content: ""; position: absolute; top: 5px; left: 5px; right: 5px; bottom: 5px; background-image: url('logo1.png'); background-repeat: no-repeat; background-position: center center; background-size: contain; opacity: 0.1; z-index: -1; }
+        .row-total { height: 40px !important; }
+        .total-cell { background: #fffbe6 !important; height: 40px !important; padding: 0; vertical-align: top; }
+        .total-wrapper { display: flex; align-items: baseline; justify-content: center; width: 100%; height: 100%; font-size: 20px; font-weight: bold; box-sizing: border-box; padding-top: 0; }
+        .total-price { font-size: 28px; margin-left: 8px; font-weight: 800; } 
+        .refund-title { text-align: center; font-weight: bold; width: 25px; font-size: 14px; line-height: 1.2; padding: 0 !important; }
+        .refund-policy { font-size: 13px; line-height: 1.25; text-align: justify; padding: 3px 5px !important; vertical-align: middle; letter-spacing: -0.2px; }
+        .footer-row td { height: 35px; font-size: 15px; vertical-align: middle; text-align: center;}
+        .date-box { display: flex; justify-content: flex-end; align-items: center; padding-right: 20px; height: 100%; }
+        .date-spacer-year { display: inline-block; width: 60px; }
+        .date-spacer-md { display: inline-block; width: 60px; }
+        .date-item { font-size: 16px; font-weight: bold; }
+        .footer-wrapper { width: 100%; text-align: center; flex-shrink: 0; }
+        .footer-outside { font-size: 12px; font-weight: bold; letter-spacing: 1px; color: #333; margin-bottom: 12px; }
+        .bank-outside { font-size: 13px; font-weight: bold; padding: 5px; line-height: 1.4; border-top: 1px dashed #ccc; padding-top: 8px; width: 95%; margin: 0 auto; }
+        .bank-highlight { color: #c00; margin-left: 5px; }
+        
+        .w-num { display: inline-block; width: 24px; text-align: center; font-weight: bold; }
+        .d-text { margin: 0 1px; }
+        
+        [contenteditable="true"] { outline: none; }
+        [contenteditable="true"]:hover { background-color: rgba(255, 255, 0, 0.1); cursor: text; }
+        [contenteditable="true"]:focus { background-color: rgba(255, 255, 0, 0.2); border-bottom: 1px dashed #999; }
+        
+        .config-row { display: flex; align-items: center; gap: 10px; margin-bottom: 8px; padding-bottom: 8px; border-bottom: 1px dashed #eee; }
+        .config-row input { padding: 5px; border: 1px solid #ccc; border-radius: 3px; }
     </style>
 </head>
 <body>
@@ -112,6 +209,7 @@
                 <button onclick="switchTab('banners')">🖼️ 橫幅管理</button>
                 <button onclick="switchTab('waitlist')">📋 候補名單</button>
                 <button onclick="switchTab('classrooms')">🏫 教室預覽</button>
+                <button onclick="switchTab('bills')">💰 學費單生成</button>
             </div>
             <a href="index.html" class="btn-home" target="_blank">🏠 回首頁</a>
         </div>
@@ -133,12 +231,23 @@
             </div>
             <div style="margin-top:20px;">
                 <input type="text" id="searchInput" placeholder="搜尋姓名、電話或訂單編號..." style="padding:10px; width:300px;">
-                <button onclick="exportToCSV()" class="success">📥 匯出 Excel</button>
+                <button onclick="exportBookingCSV()" class="success">📥 匯出 Excel</button>
             </div>
         </div>
         <div class="table-container">
             <table>
-                <thead><tr><th>訂單編號</th><th>課程</th><th>座位</th><th>狀態</th><th>姓名</th><th>電話</th><th>時間</th><th>操作</th></tr></thead>
+                <thead>
+                    <tr>
+                        <th onclick="sortBookingTable('orderId')">訂單編號 ⇅</th>
+                        <th onclick="sortBookingTable('courseName')">課程 ⇅</th>
+                        <th onclick="sortBookingTable('time')">時間 ⇅</th>
+                        <th onclick="sortBookingTable('status')">狀態 ⇅</th>
+                        <th onclick="sortBookingTable('seatId')">座位 ⇅</th>
+                        <th onclick="sortBookingTable('studentName')">姓名 ⇅</th>
+                        <th onclick="sortBookingTable('parentPhone')">電話 ⇅</th>
+                        <th>操作</th>
+                    </tr>
+                </thead>
                 <tbody id="bookingTable"></tbody>
             </table>
         </div>
@@ -295,10 +404,24 @@
     <div id="tab-waitlist" class="page-section">
         <div class="center-box">
             <select id="waitlistSelector" class="big-selector"><option value="all">選擇課程查看候補</option></select>
+            <div style="margin-top:20px;">
+                <button onclick="exportWaitlistCSV()" class="success">📥 匯出候補 Excel</button>
+            </div>
         </div>
         <div class="table-container">
             <table>
-                <thead><tr><th>課程</th><th>姓名</th><th>電話</th><th>備註</th><th>登記時間</th><th>操作</th></tr></thead>
+                <thead>
+                    <tr>
+                        <th onclick="sortWaitlistTable('courseName')">課程 ⇅</th>
+                        <th onclick="sortWaitlistTable('timestamp')">登記時間 ⇅</th>
+                        <th onclick="sortWaitlistTable('status')">狀態 ⇅</th>
+                        <th onclick="sortWaitlistTable('seq')">序號 ⇅</th>
+                        <th onclick="sortWaitlistTable('studentName')">姓名 ⇅</th>
+                        <th onclick="sortWaitlistTable('parentPhone')">電話 ⇅</th>
+                        <th>備註</th>
+                        <th>操作</th>
+                    </tr>
+                </thead>
                 <tbody id="waitlistTable"></tbody>
             </table>
         </div>
@@ -306,6 +429,114 @@
 
     <div id="tab-classrooms" class="page-section">
         <div class="classroom-preview-list" id="classroomList"></div>
+    </div>
+
+    <div id="tab-bills" class="page-section">
+        <div class="center-box" style="text-align:left; max-width:1000px; margin:0 auto;">
+            <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:15px;">
+                <h3 style="margin:0;">1. 課程參數設定 (印單用)</h3>
+                <select id="billTypeSelector" style="padding:5px; font-size:16px; border:2px solid #2c3e50;" onchange="processBills()">
+                    <option value="junior">🏫 國中小部 (預設)</option>
+                    <option value="senior">🏫 高中部</option>
+                </select>
+            </div>
+            
+            <div id="courseConfigList" style="max-height:300px; overflow-y:auto; border:1px solid #ddd; padding:10px; margin-bottom:20px;"></div>
+            <button onclick="saveAllBillConfigs()" class="success" style="width:100%; margin-bottom:20px;">💾 儲存所有設定並重新產生</button>
+            
+            <h3>2. 匯入舊生學校資料 (CSV)</h3>
+            <input type="file" id="csvSchoolFile" accept=".csv">
+            <button onclick="importSchoolCSV()" class="warning">📂 匯入 CSV</button>
+            <span id="csvStatus" style="color:green; font-weight:bold; margin-left:10px;"></span>
+            <div style="font-size:12px; color:#666; margin-top:5px;">格式：學校(第1欄), 姓名(第5欄) - 支援 114國一總名單格式</div>
+        </div>
+
+        <div class="bill-layout" style="margin-top:20px;">
+            <div class="bill-list">
+                <button onclick="createManualBill()" style="width:100%; margin-bottom:10px;" class="success">➕ 手動新增空白單</button>
+                <div id="studentBillList">載入中...</div>
+            </div>
+            
+            <div class="bill-preview-area">
+                <div class="controls" style="width:100%; display:flex; justify-content:space-between; margin-bottom:10px;">
+                    <div>
+                        <button onclick="downloadCurrentBill()" class="warning">📸 下載這張</button>
+                        <button onclick="downloadAllBills()" class="dark">📥 批次下載全部</button>
+                    </div>
+                    <div style="color:white; font-size:14px;">
+                        提示：點擊單據文字可直接修改
+                    </div>
+                </div>
+
+                <div class="bill-container" id="billArea">
+                    <table class="bill-table">
+                        <tr class="row-header">
+                            <td style="width: 9%;">姓名</td>
+                            <td style="width: 16%;" id="billName" contenteditable="true"></td>
+                            <td style="width: 9%;">年級</td>
+                            <td style="width: 11%;" id="billGrade" contenteditable="true"></td>
+                            <td style="width: 9%;">學校</td>
+                            <td style="width: 16%;" id="billSchool" contenteditable="true"></td>
+                            <td style="width: 30%; padding:0; vertical-align:top;">
+                                <div class="note-title">備註</div>
+                            </td>
+                        </tr>
+                        <tr class="row-items">
+                            <td colspan="6" rowspan="2" style="position: relative;">
+                                <div class="item-header">
+                                    <span class="col-1">收費科目</span>
+                                    <span class="col-2">起始日期與堂數</span>
+                                    <span class="col-3">金額</span>
+                                </div>
+                                <table class="inner-table" id="itemsTable"></table>
+                            </td>
+                            <td style="vertical-align: top; padding: 0;">
+                                <div id="billNote" class="note-cell" contenteditable="true"></div>
+                            </td>
+                        </tr>
+                        <tr class="row-total">
+                            <td class="total-cell">
+                                <div class="total-wrapper">
+                                    合計 <span id="billTotal" class="total-price" contenteditable="true">0</span> 元
+                                </div>
+                            </td>
+                        </tr>
+                        <tr>
+                            <td class="refund-title">退<br>費<br>規<br>定</td>
+                            <td colspan="6" class="refund-policy">
+                                一、本聯視同正式之收據，請保留三個月以上，以便核查。<br>
+                                二、補習班學生繳納費用後離班者，補習班應依新竹市短期補習班設立及管理規則第六章第 36 條規定辦理退費：<br>
+                                (一) 學生於實際開課日前提出退費申請者，應退還當期開班約定繳納費用總額九成。<br>
+                                (二) 學生於實際開課日起至第三日上課前提出退費申請者，應退還當期開班約定繳納費用總額八成。<br>
+                                (三) 學生於實際開課日起第三日上課後且未達全期之三分之一期間內提出退費申請者，應退還當期開班約定繳納費用總額五成。<br>
+                                (四) 學生於達全期之三分之一以上期間提出退費申請，所收取之當期開班約定繳納費用得全數不予退還。
+                            </td>
+                        </tr>
+                        <tr class="footer-row">
+                            <td colspan="2" style="font-weight: bold;">繳費日期</td>
+                            <td colspan="3">
+                                <div class="date-box">
+                                    <span class="date-spacer-year"></span><span class="date-item">年</span>
+                                    <span class="date-spacer-md"></span><span class="date-item">月</span>
+                                    <span class="date-spacer-md"></span><span class="date-item">日</span>
+                                </div>
+                            </td>
+                            <td colspan="1" style="font-weight: bold;">收款人</td>
+                            <td colspan="1"></td>
+                        </tr>
+                    </table>
+                    <div class="footer-wrapper">
+                        <div class="footer-outside" id="footerInfo">
+                            新竹市私立山熊科學文理短期補習班 &nbsp; 地址：新竹市科學園路107巷1號 &nbsp; 立案字號：府教社字第1010019608號
+                        </div>
+                        <div class="bank-outside" id="bankInfo">
+                            第一銀行(007) 竹科分行 &nbsp;&nbsp; 戶名：新竹市私立山熊科學文理短期補習班 &nbsp;&nbsp; 帳號：303-100-13273<br>
+                            <span class="bank-highlight">★ 匯款後請告知我們上課科目、匯款金額及帳號後 5 碼以利我們對帳，謝謝。</span>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
     </div>
 
     <div id="previewModal" class="preview-modal" onclick="closePreview()">
@@ -354,15 +585,23 @@
         let coursesData = {};
         let waitlistData = {};
         let seatsData = {}; 
+        let waitlistDisplayList = []; 
+        let schoolMap = {}; 
+
+        let billStudents = [];
+        let currentBillIndex = -1;
 
         let opCourseId = null;
         let opSeatId = null;
+        let bookingSort = { col: 'time', asc: false };
+        let waitlistSort = { col: 'timestamp', asc: true };
 
         window.switchTab = function(tabName) {
             document.querySelectorAll('.page-section').forEach(el => el.classList.remove('active'));
             document.querySelectorAll('.nav-tabs button').forEach(el => el.classList.remove('active'));
             document.getElementById(`tab-${tabName}`).classList.add('active');
             event.target.classList.add('active');
+            if (tabName === 'bills') initBillPage();
         };
         window.showCourseForm = function() { document.getElementById('courseListView').style.display = 'none'; document.getElementById('courseFormView').style.display = 'block'; resetForm(); };
         window.hideCourseForm = function() { document.getElementById('courseListView').style.display = 'block'; document.getElementById('courseFormView').style.display = 'none'; };
@@ -410,6 +649,9 @@
 
         window.saveCourse = async function() {
             const btn = document.getElementById('btnSave');
+            const pwd = document.getElementById('adminPwd').value.trim();
+            if (!pwd) { alert("⚠️ 請先輸入管理員密碼！"); return; }
+
             btn.disabled = true;
             btn.textContent = "處理中...";
 
@@ -469,7 +711,8 @@
                     image: imageUrl, updatedAt: Date.now(),
                     waitlistEnabled: waitlistEnabled,
                     waitlistLimit: parseInt(waitlistLimit) || 0,
-                    totalSeats: totalSeats 
+                    totalSeats: totalSeats,
+                    adminPwd: pwd
                 };
 
                 let courseId = id;
@@ -493,7 +736,8 @@
                     start1: start1Time, 
                     end1: end1Time, 
                     start2: start2Time,
-                    end2: end2Time
+                    end2: end2Time,
+                    adminPwd: pwd
                 });
 
                 hideCourseForm();
@@ -574,6 +818,8 @@
         }
 
         window.deleteCourse = function(courseId) {
+            const pwd = document.getElementById('adminPwd').value.trim();
+            if (!pwd) return alert("請先輸入管理員密碼！");
             if (confirm("⚠️ 確定要刪除？")) remove(ref(db, `courses/${courseId}`));
         };
 
@@ -598,21 +844,51 @@
                     }
                 });
             });
-            allBookings.sort((a, b) => b.rawTime - a.rawTime);
             renderTable();
             updateStats();
             loadVisualMap();
         });
+
+        window.sortBookingTable = function(col) {
+            if (bookingSort.col === col) bookingSort.asc = !bookingSort.asc;
+            else { bookingSort.col = col; bookingSort.asc = true; }
+            renderTable();
+        };
 
         function renderTable() {
             const filterId = document.getElementById('classSelector').value;
             const searchText = document.getElementById('searchInput').value.trim().toLowerCase();
             const tbody = document.getElementById('bookingTable');
             tbody.innerHTML = "";
-            allBookings.forEach(b => {
-                if (filterId !== 'all' && b.courseId !== filterId) return;
-                if (searchText && !b.studentName.includes(searchText) && !b.parentPhone.includes(searchText) && !b.orderId.includes(searchText)) return;
-                
+            
+            let displayList = allBookings.filter(b => {
+                if (filterId !== 'all' && b.courseId !== filterId) return false;
+                if (searchText && !b.studentName.includes(searchText) && !b.parentPhone.includes(searchText) && !b.orderId.includes(searchText)) return false;
+                return true;
+            });
+
+            displayList.sort((a, b) => {
+                let valA = a[bookingSort.col] || '';
+                let valB = b[bookingSort.col] || '';
+                if (bookingSort.col === 'time') { 
+                    valA = a.rawTime || Date.parse(a.time) || 0; 
+                    valB = b.rawTime || Date.parse(b.time) || 0; 
+                }
+                if (valA < valB) return bookingSort.asc ? -1 : 1;
+                if (valA > valB) return bookingSort.asc ? 1 : -1;
+                return 0;
+            });
+
+            const nameCounts = {};
+            const phoneCounts = {};
+            displayList.forEach(b => {
+                if (b.status === 'sold') {
+                    nameCounts[b.studentName] = (nameCounts[b.studentName] || 0) + 1;
+                    phoneCounts[b.parentPhone] = (phoneCounts[b.parentPhone] || 0) + 1;
+                }
+            });
+
+            displayList.forEach(b => {
                 const tr = document.createElement('tr');
                 let statusBadge = '';
                 let btnText = '釋出';
@@ -620,16 +896,19 @@
                 
                 if (b.status === 'sold') {
                     statusBadge = '<span class="badge sold">已劃位</span>';
+                    if (nameCounts[b.studentName] > 1 || phoneCounts[b.parentPhone] > 1) {
+                        tr.classList.add('duplicate-row');
+                    }
                 } else if (b.status === 'locked') {
                     statusBadge = '<span class="badge locked">填寫中</span>';
                 } else if (b.status === 'deleted') {
-                    statusBadge = '<span class="badge deleted">已釋出(保留)</span>';
+                    statusBadge = '<span class="badge deleted">已釋出</span>';
                     tr.classList.add('row-deleted'); 
                     btnText = '永久刪除';
                     btnClass = 'dark'; 
                 }
                 
-                tr.innerHTML = `<td>${b.orderId}</td><td>${b.courseName}</td><td>${b.seatId}</td><td>${statusBadge}</td><td>${b.studentName}</td><td>${b.parentPhone}</td><td>${b.time}</td>
+                tr.innerHTML = `<td>${b.orderId}</td><td>${b.courseName}</td><td>${b.time}</td><td>${statusBadge}</td><td>${b.seatId}</td><td>${b.studentName}</td><td>${b.parentPhone}</td>
                 <td>
                     <button class="warning" style="padding:5px 10px; font-size:12px;" onclick="window.editOrder('${b.courseId}', '${b.seatId}', '${b.parentPhone}', '${b.orderId}', '${b.studentName}')">編輯</button>
                     <button class="${btnClass}" style="padding:5px 10px; font-size:12px;" onclick="window.releaseSeat('${b.courseId}', '${b.seatId}', '${b.status}')">${btnText}</button>
@@ -695,7 +974,6 @@
             });
         };
 
-        // ★★★ 修改：toggleReserve 修正邏輯 ★★★
         window.toggleReserve = async function(courseId, seatId, info) {
             const pwd = document.getElementById('adminPwd').value.trim();
             if (!pwd) { alert("⚠️ 請先輸入管理員密碼才能進行操作！"); return; }
@@ -710,7 +988,6 @@
             } else if (info && info.status === 'locked' && info.user === 'admin_reserved') {
                 openOpModal(courseId, seatId);
             } else if (!info || (info && info.status === 'deleted')) {
-                // ★★★ 修正：將 deleted 狀態視為空位，觸發保留詢問 ★★★
                 const snap = await get(ref(db, `seats/${courseId}/${seatId}`));
                 if (snap.exists() && snap.val().status === 'sold') {
                      if (!confirm("⚠️ 警告：這個位子剛剛被學生搶走了！確定要強制覆蓋嗎？")) return;
@@ -762,6 +1039,7 @@
                 studentName: name,
                 parentPhone: phone,
                 soldTime: new Date().toLocaleString(),
+                timestamp: Date.now(), 
                 orderId: orderId,
                 adminPwd: pwd 
             };
@@ -849,15 +1127,52 @@
             document.getElementById('totalSold').textContent = allBookings.filter(b => b.status === 'sold').length;
         }
 
-        window.exportToCSV = function() {
-            let csv = "\uFEFF訂單編號,課程,座位,狀態,姓名,電話,時間\n";
-            allBookings.forEach(b => csv += `'${b.orderId},${b.courseName},${b.seatId},${b.status},${b.studentName},'${b.parentPhone},${b.time}\n`);
-            const blob = new Blob([csv], { type: "text/csv;charset=utf-8;" });
+        window.exportBookingCSV = function() {
+            const pwd = document.getElementById('adminPwd').value.trim();
+            if (!pwd) return alert("請先輸入管理員密碼！");
+
+            const filterId = document.getElementById('classSelector').value;
+            let csv = "\uFEFF訂單編號,課程,時間,狀態,座位,姓名,電話\n";
+            allBookings.forEach(b => {
+                if (filterId !== 'all' && b.courseId !== filterId) return;
+                let statusText = b.status === 'sold' ? '已劃位' : (b.status === 'deleted' ? '已釋出' : '填寫中');
+                csv += `'${b.orderId},${b.courseName},${b.time},${statusText},${b.seatId},${b.studentName},'${b.parentPhone}\n`;
+            });
+            downloadCSV(csv, "booking_data.csv");
+        };
+
+        window.exportWaitlistCSV = function() {
+            const pwd = document.getElementById('adminPwd').value.trim();
+            if (!pwd) return alert("請先輸入管理員密碼！");
+
+            const filterId = document.getElementById('waitlistSelector').value;
+            let csv = "\uFEFF課程,登記時間,狀態,序號,姓名,電話,備註\n";
+            
+            const list = waitlistData[filterId] || {};
+            const c = coursesData[filterId];
+            const courseName = c ? `[${c.grade}] ${c.subject} ${c.classType || ''}` : filterId;
+            
+            let exportList = Object.keys(list).map(key => ({ ...list[key], key, courseName }));
+            const activeItems = exportList.filter(w => w.status !== 'deleted');
+            activeItems.sort((a, b) => a.timestamp - b.timestamp);
+            const rankMap = {};
+            activeItems.forEach((item, index) => { rankMap[item.key] = index + 1; });
+
+            exportList.forEach(w => {
+                let seq = rankMap[w.key] || '-';
+                let statusText = w.status === 'deleted' ? '已刪除' : '候補中';
+                csv += `${w.courseName},${new Date(w.timestamp).toLocaleString()},${statusText},${seq},${w.studentName},'${w.parentPhone},${w.note || ''}\n`;
+            });
+            downloadCSV(csv, "waitlist_data.csv");
+        };
+
+        function downloadCSV(content, fileName) {
+            const blob = new Blob([content], { type: "text/csv;charset=utf-8;" });
             const link = document.createElement("a");
             link.href = URL.createObjectURL(blob);
-            link.download = "booking_data.csv";
+            link.download = fileName;
             link.click();
-        };
+        }
 
         document.getElementById('classSelector').addEventListener('change', () => {
             const sel = document.getElementById('classSelector');
@@ -882,6 +1197,8 @@
         });
 
         window.uploadBanner = async function() {
+            const pwd = document.getElementById('adminPwd').value.trim();
+            if (!pwd) return alert("請先輸入管理員密碼！");
             const fileInput = document.getElementById('b_file');
             if (fileInput.files.length === 0) return alert("請選擇圖片");
             const file = fileInput.files[0];
@@ -891,12 +1208,14 @@
             const metadata = { contentType: file.type };
             await uploadBytes(imgRef, file, metadata);
             const url = await getDownloadURL(imgRef);
-            await push(bannersRef, { url: url, createdAt: Date.now() });
+            await push(bannersRef, { url: url, createdAt: Date.now(), adminPwd: pwd });
             document.getElementById('bannerStatus').textContent = "";
             fileInput.value = "";
         };
 
         window.deleteBanner = function(key) {
+            const pwd = document.getElementById('adminPwd').value.trim();
+            if (!pwd) return alert("請先輸入管理員密碼！");
             if (confirm("確定刪除此橫幅？")) remove(ref(db, `banners/${key}`));
         };
 
@@ -921,33 +1240,92 @@
             selector.value = currentVal;
         }
 
+        window.sortWaitlistTable = function(col) {
+            if (waitlistSort.col === col) waitlistSort.asc = !waitlistSort.asc;
+            else { waitlistSort.col = col; waitlistSort.asc = true; }
+            renderWaitlistTable();
+        };
+
         function renderWaitlistTable() {
             const filterId = document.getElementById('waitlistSelector').value;
             const tbody = document.getElementById('waitlistTable');
             tbody.innerHTML = "";
-            if (filterId === 'all') return;
-            const list = waitlistData[filterId] || {};
-            const sortedList = Object.keys(list).map(key => ({ ...list[key], key })).sort((a, b) => a.timestamp - b.timestamp);
             
-            sortedList.forEach(w => {
+            waitlistDisplayList = [];
+            
+            if (filterId === 'all') {
+                tbody.innerHTML = "<tr><td colspan='8' style='text-align:center;'>請選擇特定課程以查看排序與序號</td></tr>";
+                return;
+            }
+
+            const list = waitlistData[filterId] || {};
+            const c = coursesData[filterId];
+            const courseName = c ? `[${c.grade}] ${c.subject} ${c.classType || ''}` : filterId;
+
+            waitlistDisplayList = Object.keys(list).map(key => ({ 
+                ...list[key], 
+                key, 
+                courseName 
+            }));
+
+            const activeItems = waitlistDisplayList.filter(w => w.status !== 'deleted');
+            activeItems.sort((a, b) => a.timestamp - b.timestamp);
+            const rankMap = {};
+            activeItems.forEach((item, index) => {
+                rankMap[item.key] = index + 1;
+            });
+
+            waitlistDisplayList.sort((a, b) => {
+                if (waitlistSort.col === 'seq') {
+                    const rankA = rankMap[a.key] || 999999;
+                    const rankB = rankMap[b.key] || 999999;
+                    return waitlistSort.asc ? rankA - rankB : rankB - rankA;
+                }
+                
+                let valA = a[waitlistSort.col] || '';
+                let valB = b[waitlistSort.col] || '';
+                if (valA < valB) return waitlistSort.asc ? -1 : 1;
+                if (valA > valB) return waitlistSort.asc ? 1 : -1;
+                return 0;
+            });
+
+            const nameCounts = {};
+            const phoneCounts = {};
+            waitlistDisplayList.forEach(w => {
+                if (w.status !== 'deleted') {
+                    nameCounts[w.studentName] = (nameCounts[w.studentName] || 0) + 1;
+                    phoneCounts[w.parentPhone] = (phoneCounts[w.parentPhone] || 0) + 1;
+                }
+            });
+
+            waitlistDisplayList.forEach(w => {
                 const tr = document.createElement('tr');
                 const time = new Date(w.timestamp).toLocaleString();
                 
                 let btnText = '刪除';
                 let btnClass = 'danger';
+                let statusBadge = '<span class="badge wait">候補中</span>';
+                let seqDisplay = rankMap[w.key] || '-';
                 
                 if (w.status === 'deleted') {
                     tr.classList.add('row-deleted'); 
                     btnText = '永久刪除';
                     btnClass = 'dark';
+                    statusBadge = '<span class="badge deleted">已刪除</span>';
+                } else {
+                    if (nameCounts[w.studentName] > 1 || phoneCounts[w.parentPhone] > 1) {
+                        tr.classList.add('duplicate-row');
+                    }
                 }
 
                 tr.innerHTML = `
-                    <td>${coursesData[filterId].subject} ${coursesData[filterId].classType || ''}</td>
+                    <td>${courseName}</td>
+                    <td>${time}</td>
+                    <td>${statusBadge}</td>
+                    <td style="font-weight:bold; color:#d35400;">${seqDisplay}</td>
                     <td>${w.studentName}</td>
                     <td>${w.parentPhone}</td>
                     <td>${w.note || '-'}</td>
-                    <td>${time}</td>
                     <td>
                         <button class="warning" style="padding:5px 10px; font-size:12px;" onclick="window.editWaitlist('${filterId}', '${w.key}', '${w.studentName}', '${w.parentPhone}', '${w.note}')">編輯</button>
                         <button class="${btnClass}" style="padding:5px 10px; font-size:12px;" onclick="window.deleteWaitlist('${filterId}', '${w.key}', '${w.status}')">${btnText}</button>
@@ -965,7 +1343,7 @@
                     set(ref(db, `waitlist/${courseId}/${waitlistId}`), null);
                 }
             } else {
-                if (confirm("確定移除此候補？(資料將保留)")) {
+                if (confirm("確定移除此候補？(資料將保留，序號將釋出)")) {
                     update(ref(db, `waitlist/${courseId}/${waitlistId}`), {
                         status: 'deleted',
                         adminPwd: pwd
@@ -1080,6 +1458,270 @@
         }
 
         startZombieSweeper();
+
+        // ★★★ 學費單功能邏輯 (V31.4) ★★★
+        window.initBillPage = function() {
+            renderCourseConfig();
+            processBills();
+        };
+
+        function renderCourseConfig() {
+            const container = document.getElementById('courseConfigList');
+            container.innerHTML = "";
+            Object.keys(coursesData).forEach(key => {
+                const c = coursesData[key];
+                const div = document.createElement('div');
+                div.className = "config-row";
+                div.innerHTML = `
+                    <span style="font-weight:bold; display:inline-block; width:200px;">${c.subject}</span>
+                    <input type="text" id="bill_date_${key}" placeholder="日期 (如 3/5)" style="width:80px;" value="${c.billDate || ''}">
+                    <input type="text" id="bill_count_${key}" placeholder="堂數 (如 12)" style="width:60px;" value="${c.billCount || ''}">
+                    <input type="text" id="bill_price_${key}" placeholder="金額" style="width:80px;" value="${c.billPrice || c.price.replace(/[$,]/g, '')}">
+                    <input type="text" id="bill_note_${key}" placeholder="備註 (選填)" style="width:150px;" value="${c.billNote || ''}">
+                `;
+                container.appendChild(div);
+            });
+        }
+
+        window.saveAllBillConfigs = function() {
+            const pwd = document.getElementById('adminPwd').value.trim();
+            if (!pwd) return alert("請先輸入管理員密碼！");
+
+            const updates = {};
+            Object.keys(coursesData).forEach(key => {
+                const date = document.getElementById(`bill_date_${key}`).value;
+                const count = document.getElementById(`bill_count_${key}`).value;
+                const price = document.getElementById(`bill_price_${key}`).value;
+                const note = document.getElementById(`bill_note_${key}`).value;
+                
+                updates[`courses/${key}/billDate`] = date;
+                updates[`courses/${key}/billCount`] = count;
+                updates[`courses/${key}/billPrice`] = price;
+                updates[`courses/${key}/billNote`] = note;
+                updates[`courses/${key}/adminPwd`] = pwd;
+            });
+
+            update(ref(db), updates).then(() => {
+                alert("✅ 設定已儲存！");
+                processBills();
+            }).catch(err => alert("儲存失敗：" + err.message));
+        };
+
+        window.importSchoolCSV = function() {
+            const fileInput = document.getElementById('csvSchoolFile');
+            if (fileInput.files.length === 0) return alert("請選擇 CSV 檔案");
+            const file = fileInput.files[0];
+            const reader = new FileReader();
+            reader.onload = function(e) {
+                const text = e.target.result;
+                const lines = text.split('\n');
+                let count = 0;
+                lines.forEach(line => {
+                    const parts = line.split(',');
+                    if (parts.length >= 5) {
+                        const school = parts[0].trim();
+                        const name = parts[4].trim();
+                        if (name && school && school !== '學校') { 
+                            schoolMap[name] = school;
+                            count++;
+                        }
+                    }
+                });
+                document.getElementById('csvStatus').textContent = `✅ 已匯入 ${count} 筆學校資料`;
+                processBills(); 
+            };
+            reader.readAsText(file);
+        };
+
+        function processBills() {
+            const billType = document.getElementById('billTypeSelector').value;
+            const studentMap = {};
+            
+            const footerInfo = document.getElementById('footerInfo');
+            const bankInfo = document.getElementById('bankInfo');
+            
+            if (billType === 'senior') {
+                footerInfo.innerHTML = '新竹市私立山熊升大文理短期補習班 &nbsp; 地址：新竹市科學園路107巷2號B1 &nbsp; 立案字號：府教社字第1120072237號';
+                bankInfo.innerHTML = '第一銀行(007) 竹科分行 &nbsp;&nbsp; 戶名：新竹市私立山熊升大文理短期補習班 &nbsp;&nbsp; 帳號：303-100-34751<br><span class="bank-highlight">★ 匯款後請告知我們上課科目、匯款金額及帳號後 5 碼以利我們對帳，謝謝。</span>';
+            } else {
+                footerInfo.innerHTML = '新竹市私立山熊科學文理短期補習班 &nbsp; 地址：新竹市科學園路107巷1號 &nbsp; 立案字號：府教社字第1010019608號';
+                bankInfo.innerHTML = '第一銀行(007) 竹科分行 &nbsp;&nbsp; 戶名：新竹市私立山熊科學文理短期補習班 &nbsp;&nbsp; 帳號：303-100-13273<br><span class="bank-highlight">★ 匯款後請告知我們上課科目、匯款金額及帳號後 5 碼以利我們對帳，謝謝。</span>';
+            }
+
+            Object.keys(seatsData).forEach(courseId => {
+                const seats = seatsData[courseId];
+                const c = coursesData[courseId];
+                if (!c) return;
+
+                const isSeniorCourse = c.grade.includes("高");
+                if (billType === 'senior' && !isSeniorCourse) return;
+                if (billType === 'junior' && isSeniorCourse) return;
+
+                Object.keys(seats).forEach(seatId => {
+                    if (seatId === '_settings') return;
+                    const info = seats[seatId];
+                    if (info.status === 'sold') {
+                        const name = info.studentName;
+                        if (!studentMap[name]) {
+                            studentMap[name] = {
+                                name: name,
+                                phone: info.parentPhone,
+                                items: [],
+                                total: 0,
+                                grade: inferGrade(c.grade),
+                                school: schoolMap[name] || "" 
+                            };
+                        }
+                        
+                        let price = parseInt(c.billPrice) || parseInt(c.price.replace(/[$,]/g, '')) || 0;
+                        
+                        studentMap[name].items.push({
+                            name: c.subject + (c.classType ? ` (${c.classType})` : ''),
+                            dateHtml: formatBillDate(c.billDate, c.billCount),
+                            price: price,
+                            note: c.billNote || ""
+                        });
+                        studentMap[name].total += price;
+                    }
+                });
+            });
+
+            billStudents = Object.values(studentMap);
+            renderBillList();
+        }
+
+        function formatBillDate(dateStr, count) {
+            let html = "";
+            if (dateStr) {
+                const parts = dateStr.split('/');
+                if (parts.length === 2) {
+                    html += `自<span class="w-num">${parts[0]}</span><span class="d-text">月</span><span class="w-num">${parts[1]}</span><span class="d-text">日</span>起`;
+                } else {
+                    html += dateStr;
+                }
+            }
+            if (count) {
+                html += ` 共 <span class="w-num">${count}</span> 堂`;
+            }
+            return html;
+        }
+
+        function inferGrade(gradeStr) {
+            if (!gradeStr) return "";
+            if (gradeStr.includes("小五")) return "五";
+            if (gradeStr.includes("小六")) return "六";
+            if (gradeStr.includes("國一")) return "七";
+            if (gradeStr.includes("國二")) return "八";
+            if (gradeStr.includes("國三")) return "九";
+            if (gradeStr.includes("高一")) return "高一";
+            if (gradeStr.includes("高二")) return "高二";
+            if (gradeStr.includes("高三")) return "高三";
+            return "";
+        }
+
+        function renderBillList() {
+            const listDiv = document.getElementById('studentBillList');
+            listDiv.innerHTML = "";
+            if (billStudents.length === 0) {
+                listDiv.innerHTML = "<div style='padding:10px; color:#666;'>無符合條件的學生</div>";
+                return;
+            }
+            billStudents.forEach((s, index) => {
+                const div = document.createElement('div');
+                div.className = 'bill-list-item';
+                div.innerHTML = `<b>${s.name}</b> (${s.items.length}科) $${s.total.toLocaleString()}`;
+                div.onclick = () => loadBill(index);
+                listDiv.appendChild(div);
+            });
+        }
+
+        window.loadBill = function(index) {
+            currentBillIndex = index;
+            const s = billStudents[index];
+            
+            document.getElementById('billName').textContent = s.name;
+            document.getElementById('billGrade').textContent = s.grade;
+            document.getElementById('billSchool').textContent = s.school;
+            document.getElementById('billTotal').textContent = s.total.toLocaleString();
+            
+            let notes = [];
+            s.items.forEach(item => {
+                if (item.note) {
+                    notes.push(`【${item.name}】\n${item.note}`);
+                }
+            });
+            document.getElementById('billNote').innerText = notes.join("\n\n");
+
+            const tbody = document.getElementById('itemsTable');
+            tbody.innerHTML = "";
+            
+            s.items.forEach(item => {
+                const tr = document.createElement('tr');
+                tr.innerHTML = `
+                    <td class="col-1" contenteditable="true">${item.name}</td>
+                    <td class="col-2" contenteditable="true">${item.dateHtml}</td>
+                    <td class="col-3" contenteditable="true">$${item.price.toLocaleString()}</td>
+                `;
+                tbody.appendChild(tr);
+            });
+
+            for(let i = s.items.length; i < 6; i++) {
+                const tr = document.createElement('tr');
+                if (i === s.items.length) {
+                    tr.innerHTML = '<td class="col-1" style="color:black; font-weight:bold;">　【 以 下 空 白 】</td><td colspan="2"></td>';
+                } else {
+                    tr.innerHTML = '<td colspan="3">&nbsp;</td>';
+                }
+                tbody.appendChild(tr);
+            }
+
+            document.querySelectorAll('.bill-list-item').forEach((el, i) => {
+                el.classList.toggle('active', i === index);
+            });
+        };
+
+        window.createManualBill = function() {
+            const emptyStudent = {
+                name: "姓名",
+                grade: "",
+                school: "",
+                total: 0,
+                items: [{ name: "科目名稱", dateHtml: "日期", price: 0 }]
+            };
+            billStudents.unshift(emptyStudent); 
+            renderBillList();
+            loadBill(0);
+        };
+
+        window.downloadCurrentBill = function() {
+            const element = document.getElementById('billArea');
+            const name = document.getElementById('billName').textContent || "學費單";
+            html2canvas(element, { scale: 2 }).then(canvas => {
+                const link = document.createElement('a');
+                link.download = `${name}_學費單.png`;
+                link.href = canvas.toDataURL("image/png");
+                link.click();
+            });
+        };
+
+        window.downloadAllBills = async function() {
+            if (!confirm(`確定要下載全部 ${billStudents.length} 張學費單嗎？`)) return;
+            
+            for (let i = 0; i < billStudents.length; i++) {
+                loadBill(i);
+                await new Promise(r => setTimeout(r, 500)); 
+                const element = document.getElementById('billArea');
+                const name = billStudents[i].name;
+                
+                await html2canvas(element, { scale: 2 }).then(canvas => {
+                    const link = document.createElement('a');
+                    link.download = `${name}_學費單.png`;
+                    link.href = canvas.toDataURL("image/png");
+                    link.click();
+                });
+            }
+            alert("✅ 全部下載完成！");
+        };
 
     </script>
 </body>
