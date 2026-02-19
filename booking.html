@@ -24,11 +24,16 @@
         
         #deadlineTimer { background: #e74c3c; color: white; padding: 10px; border-radius: 5px; margin-bottom: 20px; font-weight: bold; display: none; }
 
-        .classroom-wrapper { overflow-x: auto; padding-bottom: 20px; }
-        .stage-box { width: 80%; margin: 0 auto 30px auto; padding: 12px; border: 3px solid #333; background-color: #fff; font-weight: bold; font-size: 22px; letter-spacing: 8px; text-align: center; }
+        .classroom-wrapper { overflow-x: auto; padding-bottom: 20px; text-align: center; -webkit-overflow-scrolling: touch; }
+        
+        /* ★ 新增：將講台與座位表包裝在一起，確保寬度同步 */
+        .classroom-inner { display: inline-block; margin: 0 auto; }
+        #stageArea, #classroom { display: block; width: 100%; }
+
+        .stage-box { width: 100%; margin: 0 auto 20px auto; padding: 12px; border: 3px solid #333; background-color: #fff; font-weight: bold; font-size: 22px; letter-spacing: 8px; text-align: center; box-sizing: border-box; }
         .row { display: flex; justify-content: center; gap: 8px; margin-bottom: 15px; }
         
-        .seat { width: 45px; height: 55px; background-color: #4CAF50; color: white; display: flex; align-items: center; justify-content: center; border-radius: 6px; cursor: pointer; font-weight: bold; font-size: 13px; user-select: none; position: relative; transition: 0.2s; }
+        .seat { width: 45px; height: 55px; background-color: #4CAF50; color: white; display: flex; align-items: center; justify-content: center; border-radius: 6px; cursor: pointer; font-weight: bold; font-size: 13px; user-select: none; position: relative; transition: 0.2s; box-sizing: border-box; }
         .seat:hover { transform: scale(1.1); z-index: 10; }
         .seat.sold { background-color: #e74c3c; cursor: not-allowed; transform: none; pointer-events: none; }
         
@@ -94,8 +99,38 @@
             .main-container { padding-top: 60px; }
             .back-btn { top: 15px; left: 15px; padding: 5px 10px; font-size: 14px; }
             .course-info-header h2 { font-size: 20px; margin-top: 10px; }
-            .seat { font-size: 10px !important; white-space: nowrap; }
             .status-bar { flex-direction: column; align-items: center; gap: 5px; }
+            
+            /* ★★★ 智慧座位縮放魔法開始 ★★★ */
+            .classroom-inner {
+                max-width: 100%; /* 關鍵：確保教室容器最大只到螢幕邊緣，小教室會維持原本寬度 */
+            }
+            .stage-box { 
+                font-size: 14px;
+                padding: 6px;
+                margin-bottom: 12px;
+                letter-spacing: 5px;
+            }
+            .row {
+                width: 100%; /* 讓排與排之間知道邊界，擠不下的時候才會觸發縮小 */
+                gap: 2px; 
+                margin-bottom: 5px; 
+            }
+            .seat { 
+                /* flex 魔法設定： 
+                   0 = 不強制放大填滿螢幕 (小教室才不會變超胖)
+                   1 = 允許縮小 (大教室遇到螢幕邊緣會自動擠扁)
+                   40px = 座位在手機上的理想初始寬度 
+                */
+                flex: 0 1 40px; 
+                min-width: 21px;       /* 就算大教室再怎麼擠，最小也不要低於 21px，保持可讀性 */
+                height: auto;          /* 廢除固定高度！ */
+                aspect-ratio: 45 / 55; /* 神奇屬性：高度永遠自動跟著寬度維持 45:55 的完美比例 */
+                font-size: clamp(8px, 2.5vw, 12px) !important; /* 字體大小也會跟著動態縮放 */
+                border-radius: 3px;
+                padding: 0;
+            }
+            .seat:hover, .seat.locked { transform: scale(1.05); } 
         }
     </style>
 </head>
@@ -137,8 +172,10 @@
         </div>
 
         <div class="classroom-wrapper">
-            <div id="stageArea"></div>
-            <div id="classroom">載入中...</div>
+            <div class="classroom-inner">
+                <div id="stageArea"></div>
+                <div id="classroom">載入中...</div>
+            </div>
         </div>
 
         <div id="waitlistArea" class="waitlist-area">
