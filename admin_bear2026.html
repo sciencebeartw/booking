@@ -1,5 +1,3 @@
-<!-- 檔案：admin_bear2026.html -->
-<!-- 版本：V33.0 (新增資料驅動座位編輯器) -->
 <!DOCTYPE html>
 <html lang="zh-TW">
 <head>
@@ -14,7 +12,7 @@
         body { font-family: "Microsoft JhengHei", sans-serif; background-color: #f0f2f5; padding: 20px; margin: 0; }
         .navbar { background-color: #2c3e50; padding: 15px; border-radius: 10px; margin-bottom: 20px; display: flex; justify-content: space-between; align-items: center; color: white; }
         .nav-title { font-size: 24px; font-weight: bold; display: flex; align-items: center; }
-        .nav-tabs button { background: none; border: none; color: #bdc3c7; font-size: 18px; cursor: pointer; margin-left: 20px; padding: 5px 10px; transition: 0.3s; }
+        .nav-tabs button { background: none; border: none; color: #bdc3c7; font-size: 18px; cursor: pointer; margin-left: 15px; padding: 5px 10px; transition: 0.3s; }
         .nav-tabs button.active { color: white; border-bottom: 3px solid #e74c3c; font-weight: bold; }
         .nav-right { display: flex; align-items: center; }
         .btn-home { background: #e74c3c; color: white; text-decoration: none; padding: 8px 15px; border-radius: 5px; font-weight: bold; font-size: 14px; margin-left: 20px; }
@@ -42,6 +40,7 @@
         button.success { background-color: #27ae60; }
         button.warning { background-color: #f39c12; }
         button.dark { background-color: #34495e; } 
+        button:disabled { background-color: #ccc; cursor: not-allowed; }
         
         .course-list { margin-top: 30px; display: flex; flex-wrap: wrap; justify-content: center; gap: 20px; }
         .admin-course-card { width: 300px; background: white; border-radius: 10px; box-shadow: 0 2px 5px rgba(0,0,0,0.1); overflow: hidden; cursor: pointer; transition: 0.2s; position: relative; }
@@ -100,13 +99,10 @@
 
         #sweeperStatus { position: fixed; bottom: 10px; left: 10px; background: rgba(0,0,0,0.7); color: white; padding: 5px 10px; border-radius: 5px; font-size: 12px; z-index: 9999; }
 
-        .bill-layout { display: flex; gap: 20px; align-items: flex-start; }
-        .bill-list { width: 300px; background: white; border-radius: 10px; padding: 15px; max-height: 800px; overflow-y: auto; }
-        .bill-list-item { padding: 10px; border-bottom: 1px solid #eee; cursor: pointer; }
-        .bill-list-item:hover { background: #f0f2f5; }
-        .bill-list-item.active { background: #e8f6f3; border-left: 5px solid #27ae60; }
-        
-        .bill-preview-area { flex: 1; background: #333; padding: 20px; border-radius: 10px; display: flex; flex-direction: column; align-items: center; }
+        /* 學費單樣式 */
+        .bill-config-area { background: white; padding: 20px; border-radius: 10px; margin-bottom: 20px; max-width: 800px; margin: 0 auto 20px auto; }
+        .bill-preview-container { background: #333; padding: 20px; border-radius: 10px; display: flex; flex-direction: column; align-items: center; min-height: 600px; }
+        .bill-controls { background: white; padding: 10px; border-radius: 8px; width: 210mm; display: flex; gap: 10px; align-items: center; justify-content: space-between; margin-bottom: 15px; box-sizing: border-box; }
         
         .bill-container {
             width: 210mm; height: 148mm; background: white; padding: 5mm; 
@@ -116,21 +112,8 @@
             font-family: 'Microsoft JhengHei', '微軟正黑體', sans-serif;
         }
 
-        #billArea table { 
-            width: 100% !important; 
-            flex-grow: 1; 
-            border-collapse: collapse; 
-            border: 3px solid black; 
-            table-layout: fixed; 
-            margin-bottom: 5px; 
-            min-width: 0 !important; 
-        }
-        
-        #billArea th, #billArea td { 
-            border: 1px solid black; 
-            padding: 0; 
-            white-space: normal; 
-        }
+        #billArea table { width: 100% !important; flex-grow: 1; border-collapse: collapse; border: 3px solid black; table-layout: fixed; margin-bottom: 5px; min-width: 0 !important; }
+        #billArea th, #billArea td { border: 1px solid black; padding: 0; white-space: normal; }
         
         .row-header td { font-size: 18px; font-weight: bold; height: 35px; text-align: center; vertical-align: middle; white-space: nowrap; overflow: hidden; }
         .note-title { height: 35px; line-height: 35px; background: #f0f0f0; font-size: 15px; font-weight: bold; text-align: center; }
@@ -144,23 +127,9 @@
         
         .item-header { background: #e0e0e0; font-weight: bold; font-size: 15px; height: 32px; display: flex; align-items: center; padding: 0 5px; border-bottom: 2px solid #000; letter-spacing: 1px; }
         
-        #billArea .col-1 { 
-            width: 45%; max-width: 45%; 
-            text-align: left; 
-            padding-left: 10px !important; 
-            white-space: nowrap; overflow: hidden; text-overflow: ellipsis; 
-            box-sizing: border-box; 
-        } 
-        #billArea .col-2 { 
-            width: 36%; max-width: 36%; 
-            text-align: center; white-space: nowrap; overflow: hidden; 
-            box-sizing: border-box; 
-        } 
-        #billArea .col-3 { 
-            width: 19%; max-width: 19%; 
-            text-align: right; padding-right: 15px !important; white-space: nowrap; overflow: hidden; 
-            box-sizing: border-box; 
-        } 
+        #billArea .col-1 { width: 45%; max-width: 45%; text-align: left; padding-left: 10px !important; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; box-sizing: border-box; } 
+        #billArea .col-2 { width: 36%; max-width: 36%; text-align: center; white-space: nowrap; overflow: hidden; box-sizing: border-box; } 
+        #billArea .col-3 { width: 19%; max-width: 19%; text-align: right; padding-right: 15px !important; white-space: nowrap; overflow: hidden; box-sizing: border-box; } 
         
         .note-cell { font-size: 14px; color: #000; vertical-align: top; line-height: 1.4; padding: 5px; height: 200px; white-space: pre-wrap; position: relative; box-sizing: border-box; z-index: 1; word-break: break-all; }
         .note-cell::before { content: ""; position: absolute; top: 5px; left: 5px; right: 5px; bottom: 5px; background-image: url('logo1.png'); background-repeat: no-repeat; background-position: center center; background-size: contain; opacity: 0.1; z-index: -1; }
@@ -190,36 +159,108 @@
         .config-row { display: flex; align-items: center; gap: 10px; margin-bottom: 8px; padding-bottom: 8px; border-bottom: 1px dashed #eee; }
         .config-row input { padding: 5px; border: 1px solid #ccc; border-radius: 3px; }
 
-        /* ★★★ V33.0 新增：座位編輯器樣式 (源自 booking.html) ★★★ */
-        /* 為了確保後台預覽與前台完全一致，這裡複製了 booking.html 的關鍵 CSS */
+        /* 座位編輯器樣式 (V33.0) */
         #seatEditorContainer .classroom-wrapper { overflow-x: auto; padding-bottom: 20px; text-align: center; -webkit-overflow-scrolling: touch; background: #f9f9f9; border: 1px dashed #ccc; padding: 20px; border-radius: 10px; margin-top: 10px; }
         #seatEditorContainer .classroom-inner { display: inline-block; margin: 0 auto; }
         #seatEditorContainer .stage-box { width: 100%; margin: 0 auto 20px auto; padding: 12px; border: 3px solid #333; background-color: #fff; font-weight: bold; font-size: 22px; letter-spacing: 8px; text-align: center; box-sizing: border-box; }
         #seatEditorContainer .row { display: flex; justify-content: center; gap: 8px; margin-bottom: 15px; }
         #seatEditorContainer .seat { width: 45px; height: 55px; background-color: #4CAF50; color: white; display: flex; align-items: center; justify-content: center; border-radius: 6px; cursor: pointer; font-weight: bold; font-size: 13px; user-select: none; position: relative; transition: 0.2s; box-sizing: border-box; }
         #seatEditorContainer .seat:hover { transform: scale(1.1); z-index: 10; border: 2px solid #f1c40f; }
+        #seatEditorContainer .seat.blocked { background-color: #95a5a6; cursor: pointer; transform: none; } 
+        #seatEditorContainer .seat.aisle { background-color: transparent; color: transparent; border: 1px dashed #ddd; cursor: pointer; } 
+        #seatEditorContainer .seat.door { background-color: #fff; color: #333; border: 2px solid #333; font-size: 16px; writing-mode: vertical-rl; cursor: pointer; transform: none; } 
+        #seatEditorContainer .seat.pillar { background-color: #7f8c8d; color: white; cursor: pointer; transform: none; border-radius: 2px; } 
         
-        /* 編輯器專用狀態樣式 */
-        #seatEditorContainer .seat.blocked { background-color: #95a5a6; cursor: pointer; transform: none; } /* 阻擋位 */
-        #seatEditorContainer .seat.aisle { background-color: transparent; color: transparent; border: 1px dashed #ddd; cursor: pointer; } /* 走道 */
-        #seatEditorContainer .seat.door { background-color: #fff; color: #333; border: 2px solid #333; font-size: 16px; writing-mode: vertical-rl; cursor: pointer; transform: none; } /* 門 */
-        #seatEditorContainer .seat.pillar { background-color: #7f8c8d; color: white; cursor: pointer; transform: none; border-radius: 2px; } /* 柱子 */
-        
-        /* 手機版響應式 (完全複製 booking.html) */
         @media (max-width: 768px) {
             #seatEditorContainer .classroom-inner { max-width: 100%; }
             #seatEditorContainer .stage-box { font-size: 14px; padding: 6px; margin-bottom: 12px; letter-spacing: 5px; }
             #seatEditorContainer .row { width: 100%; gap: 2px; margin-bottom: 5px; }
-            #seatEditorContainer .seat { 
-                flex: 0 1 40px; 
-                min-width: 21px;
-                height: auto;
-                aspect-ratio: 45 / 55;
-                font-size: clamp(8px, 2.5vw, 12px) !important;
-                border-radius: 3px;
-                padding: 0;
-            }
+            #seatEditorContainer .seat { flex: 0 1 40px; min-width: 21px; height: auto; aspect-ratio: 45 / 55; font-size: clamp(8px, 2.5vw, 12px) !important; border-radius: 3px; padding: 0; }
         }
+
+        /* ★★★ V34.2 新增：座位表輸出樣式 (A4 橫向 + 自動縮放) ★★★ */
+        #printArea {
+            background: white;
+            padding: 20px;
+            border: 1px solid #ccc;
+            margin-top: 20px;
+            overflow-x: auto;
+            text-align: center;
+            font-family: "Microsoft JhengHei", sans-serif;
+        }
+        
+        .print-container {
+            display: inline-block;
+            width: 297mm; /* A4 橫向寬度 */
+            height: 210mm; /* A4 橫向高度 */
+            border: 2px solid black;
+            padding: 15mm;
+            background: white;
+            box-sizing: border-box;
+            position: relative;
+            overflow: hidden; /* 防止內容溢出 */
+        }
+
+        .print-header {
+            display: flex;
+            justify-content: space-between;
+            margin-bottom: 15px;
+            border-bottom: 2px solid black;
+            padding-bottom: 10px;
+            font-weight: bold;
+            font-size: 18px;
+        }
+
+        .print-stage {
+            border: 2px solid black;
+            font-size: 32px;
+            font-weight: 900;
+            padding: 10px;
+            margin-bottom: 20px;
+            letter-spacing: 20px;
+            text-align: center;
+        }
+
+        /* 縮放容器：負責將內容縮放到適合 A4 的大小 */
+        .print-content-scaler {
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: flex-start; /* 從上方開始 */
+            width: 100%;
+            height: 100%;
+            transform-origin: top center; /* 從上方中間開始縮放 */
+        }
+
+        .print-row {
+            display: flex;
+            justify-content: center;
+            gap: 5px;
+            margin-bottom: 5px;
+        }
+
+        .print-seat {
+            width: 90px;
+            height: 60px;
+            border: 1px solid black;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 18px;
+            font-weight: bold;
+            color: black;
+            box-sizing: border-box;
+            cursor: text;
+            background: white;
+        }
+        
+        .print-seat:hover { background-color: #f9f9f9; }
+        .print-seat.empty { }
+        .print-seat.aisle { border: none; background: transparent; cursor: default; }
+        .print-seat.door { border: 2px solid black; font-size: 24px; writing-mode: vertical-rl; cursor: default; }
+        .print-seat.pillar { background-color: #ccc; color: white; border: 1px solid #999; cursor: default; }
+        .print-seat.blocked { background: repeating-linear-gradient(45deg, #eee, #eee 10px, #ccc 10px, #ccc 20px); color: transparent; cursor: default; }
+
     </style>
 </head>
 <body>
@@ -234,11 +275,12 @@
         <div class="nav-right">
             <div class="nav-tabs">
                 <button class="active" onclick="switchTab('monitor')">📊 劃位監控</button>
+                <button onclick="switchTab('waitlist')">📋 候補名單</button>
                 <button onclick="switchTab('courses')">📝 課程管理</button>
                 <button onclick="switchTab('banners')">🖼️ 橫幅管理</button>
-                <button onclick="switchTab('waitlist')">📋 候補名單</button>
                 <button onclick="switchTab('classrooms')">🏫 教室預覽</button>
                 <button onclick="switchTab('bills')">💰 學費單生成</button>
+                <button onclick="switchTab('print')">🖨️ 座位表輸出</button>
             </div>
             <a href="index.html" class="btn-home" target="_blank">🏠 回首頁</a>
         </div>
@@ -278,6 +320,32 @@
                     </tr>
                 </thead>
                 <tbody id="bookingTable"></tbody>
+            </table>
+        </div>
+    </div>
+
+    <div id="tab-waitlist" class="page-section">
+        <div class="center-box">
+            <select id="waitlistSelector" class="big-selector"><option value="all">選擇課程查看候補</option></select>
+            <div style="margin-top:20px;">
+                <button onclick="exportWaitlistCSV()" class="success">📥 匯出候補 Excel</button>
+            </div>
+        </div>
+        <div class="table-container">
+            <table>
+                <thead>
+                    <tr>
+                        <th onclick="sortWaitlistTable('courseName')">課程 ⇅</th>
+                        <th onclick="sortWaitlistTable('timestamp')">登記時間 ⇅</th>
+                        <th onclick="sortWaitlistTable('status')">狀態 ⇅</th>
+                        <th onclick="sortWaitlistTable('seq')">序號 ⇅</th>
+                        <th onclick="sortWaitlistTable('studentName')">姓名 ⇅</th>
+                        <th onclick="sortWaitlistTable('parentPhone')">電話 ⇅</th>
+                        <th>備註</th>
+                        <th>操作</th>
+                    </tr>
+                </thead>
+                <tbody id="waitlistTable"></tbody>
             </table>
         </div>
     </div>
@@ -335,13 +403,12 @@
                         <option value="high_red">高中紅教室</option><option value="high_orange">高中橘教室</option><option value="high_green">高中綠教室</option>
                         <option value="high_yellow">高中黃教室</option><option value="high_blue">高中藍教室</option><option value="middle_new_orange">國中新橘教室</option>
                         <option value="middle_new_blue">國中新藍教室</option><option value="middle_new_yellow">國中新黃教室</option><option value="middle_new_red">國中新紅教室</option>
-                        <option value="middle_big_red">國中大紅教室</option><option value="middle_da_chiao">國中大橋教室</option><option value="middle_big_green">國中大綠教室</option>
+                        <option value="middle_big_red">國中大紅教室</option><option value="middle_da_chiao">國中大橘教室</option><option value="middle_big_green">國中大綠教室</option>
                         <option value="test_room">🧪 測試專用教室</option>
                     </select>
                 </div>
             </div>
 
-            <!-- ★★★ V33.0 新增：座位編輯器 ★★★ -->
             <div class="form-group" id="seatEditorContainer">
                 <label style="color:#e74c3c;">🪑 座位表編輯器 (點擊格子可切換狀態)</label>
                 <div style="font-size:12px; color:#666; margin-bottom:5px;">
@@ -358,7 +425,6 @@
                 </div>
                 <button type="button" onclick="resetSeatEditor()" class="warning" style="font-size:12px; padding:5px 10px;">↺ 重置為預設範本</button>
             </div>
-            <!-- ★★★ V33.0 結束 ★★★ -->
 
             <div class="form-row">
                 <div class="form-group">
@@ -450,139 +516,156 @@
         <div id="bannerList" class="banner-list"></div>
     </div>
 
-    <div id="tab-waitlist" class="page-section">
-        <div class="center-box">
-            <select id="waitlistSelector" class="big-selector"><option value="all">選擇課程查看候補</option></select>
-            <div style="margin-top:20px;">
-                <button onclick="exportWaitlistCSV()" class="success">📥 匯出候補 Excel</button>
-            </div>
-        </div>
-        <div class="table-container">
-            <table>
-                <thead>
-                    <tr>
-                        <th onclick="sortWaitlistTable('courseName')">課程 ⇅</th>
-                        <th onclick="sortWaitlistTable('timestamp')">登記時間 ⇅</th>
-                        <th onclick="sortWaitlistTable('status')">狀態 ⇅</th>
-                        <th onclick="sortWaitlistTable('seq')">序號 ⇅</th>
-                        <th onclick="sortWaitlistTable('studentName')">姓名 ⇅</th>
-                        <th onclick="sortWaitlistTable('parentPhone')">電話 ⇅</th>
-                        <th>備註</th>
-                        <th>操作</th>
-                    </tr>
-                </thead>
-                <tbody id="waitlistTable"></tbody>
-            </table>
-        </div>
-    </div>
-
     <div id="tab-classrooms" class="page-section">
         <div class="classroom-preview-list" id="classroomList"></div>
     </div>
 
     <div id="tab-bills" class="page-section">
-        <div class="center-box" style="text-align:left; max-width:1000px; margin:0 auto;">
-            <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:15px;">
-                <h3 style="margin:0;">1. 課程參數設定 (印單用)</h3>
-                <select id="billTypeSelector" style="padding:5px; font-size:16px; border:2px solid #2c3e50;" onchange="processBills()">
+        <div class="bill-config-area">
+            <h3>1. 參數設定</h3>
+            <div style="margin-bottom:15px;">
+                <label>選擇部別：</label>
+                <select id="billTypeSelector" style="padding:5px; font-size:16px; border:2px solid #2c3e50;" onchange="renderCourseConfig()">
                     <option value="junior">🏫 國中小部 (預設)</option>
                     <option value="senior">🏫 高中部</option>
                 </select>
             </div>
+            <div id="courseConfigList" style="max-height:300px; overflow-y:auto; border:1px solid #ddd; padding:10px; margin-bottom:15px;"></div>
             
-            <div id="courseConfigList" style="max-height:300px; overflow-y:auto; border:1px solid #ddd; padding:10px; margin-bottom:20px;"></div>
-            <button onclick="saveAllBillConfigs()" class="success" style="width:100%; margin-bottom:20px;">💾 儲存所有設定並重新產生</button>
-            
-            <h3>2. 匯入舊生學校資料 (CSV)</h3>
-            <input type="file" id="csvSchoolFile" accept=".csv">
-            <button onclick="importSchoolCSV()" class="warning">📂 匯入 CSV</button>
-            <span id="csvStatus" style="color:green; font-weight:bold; margin-left:10px;"></span>
-            <div style="font-size:12px; color:#666; margin-top:5px;">格式：學校(第1欄), 姓名(第5欄) - 支援 114國一總名單格式</div>
+            <h3>2. 匯入舊生資料 (CSV)</h3>
+            <div style="margin-bottom:15px;">
+                <input type="file" id="csvSchoolFile" accept=".csv">
+                <button onclick="importSchoolCSV()" class="warning">📂 匯入 CSV</button>
+                <span id="csvStatus" style="color:green; font-weight:bold; margin-left:10px;"></span>
+                <div style="font-size:12px; color:#666; margin-top:5px;">格式：學校(第1欄), 姓名(第5欄) - 支援 114國一總名單格式</div>
+            </div>
+
+            <div style="display:flex; gap:10px;">
+                <button onclick="saveAllBillConfigs()" class="success" style="flex:1;">💾 儲存設定並產生學費單</button>
+                <button onclick="createManualBill()" class="dark" style="flex:1;">➕ 新增空白單</button>
+            </div>
         </div>
 
-        <div class="bill-layout" style="margin-top:20px;">
-            <div class="bill-list">
-                <button onclick="createManualBill()" style="width:100%; margin-bottom:10px;" class="success">➕ 手動新增空白單</button>
-                <div id="studentBillList">載入中...</div>
+        <div class="bill-preview-container">
+            <div class="bill-controls">
+                <button onclick="prevBill()" style="background:#5f6368; color:white; border:none; padding:5px 15px; border-radius:5px; cursor:pointer;">◀ 上一張</button>
+                <span id="billCounter" style="font-weight:bold; font-size:16px;">0 / 0</span>
+                <button onclick="nextBill()" style="background:#5f6368; color:white; border:none; padding:5px 15px; border-radius:5px; cursor:pointer;">下一張 ▶</button>
+                <div style="flex-grow:1;"></div>
+                <button onclick="downloadCurrentBill()" class="warning">📸 下載這張</button>
+                <button onclick="downloadAllBills()" class="success">📥 全部下載</button>
             </div>
-            
-            <div class="bill-preview-area">
-                <div class="controls" style="width:100%; display:flex; justify-content:space-between; margin-bottom:10px;">
-                    <div>
-                        <button onclick="downloadCurrentBill()" class="warning">📸 下載這張</button>
-                        <button onclick="downloadAllBills()" class="dark">📥 批次下載全部</button>
+
+            <div class="bill-container" id="billArea">
+                <table class="bill-table">
+                    <tr class="row-header">
+                        <td style="width: 9%;">姓名</td>
+                        <td style="width: 16%;" id="billName" contenteditable="true"></td>
+                        <td style="width: 9%;">年級</td>
+                        <td style="width: 11%;" id="billGrade" contenteditable="true"></td>
+                        <td style="width: 9%;">學校</td>
+                        <td style="width: 16%;" id="billSchool" contenteditable="true"></td>
+                        <td style="width: 30%; padding:0; vertical-align:top;">
+                            <div class="note-title">備註</div>
+                        </td>
+                    </tr>
+                    <tr class="row-items">
+                        <td colspan="6" rowspan="2" style="position: relative;">
+                            <div class="item-header">
+                                <span class="col-1">收費科目</span>
+                                <span class="col-2">起始日期與堂數</span>
+                                <span class="col-3">金額</span>
+                            </div>
+                            <table class="inner-table" id="itemsTable"></table>
+                        </td>
+                        <td style="vertical-align: top; padding: 0;">
+                            <div id="billNote" class="note-cell" contenteditable="true"></div>
+                        </td>
+                    </tr>
+                    <tr class="row-total">
+                        <td class="total-cell">
+                            <div class="total-wrapper">
+                                合計 <span id="billTotal" class="total-price" contenteditable="true">0</span> 元
+                            </div>
+                        </td>
+                    </tr>
+                    <tr>
+                        <td class="refund-title">退<br>費<br>規<br>定</td>
+                        <td colspan="6" class="refund-policy">
+                            一、本聯視同正式之收據，請保留三個月以上，以便核查。<br>
+                            二、補習班學生繳納費用後離班者，補習班應依新竹市短期補習班設立及管理規則第六章第 36 條規定辦理退費：<br>
+                            (一) 學生於實際開課日前提出退費申請者，應退還當期開班約定繳納費用總額九成。<br>
+                            (二) 學生於實際開課日起至第三日上課前提出退費申請者，應退還當期開班約定繳納費用總額八成。<br>
+                            (三) 學生於實際開課日起第三日上課後且未達全期之三分之一期間內提出退費申請者，應退還當期開班約定繳納費用總額五成。<br>
+                            (四) 學生於達全期之三分之一以上期間提出退費申請，所收取之當期開班約定繳納費用得全數不予退還。
+                        </td>
+                    </tr>
+                    <tr class="footer-row">
+                        <td colspan="2" style="font-weight: bold;">繳費日期</td>
+                        <td colspan="3">
+                            <div class="date-box">
+                                <span class="date-spacer-year"></span><span class="date-item">年</span>
+                                <span class="date-spacer-md"></span><span class="date-item">月</span>
+                                <span class="date-spacer-md"></span><span class="date-item">日</span>
+                            </div>
+                        </td>
+                        <td colspan="1" style="font-weight: bold;">收款人</td>
+                        <td colspan="1"></td>
+                    </tr>
+                </table>
+                <div class="footer-wrapper">
+                    <div class="footer-outside" id="footerInfo">
+                        新竹市私立山熊科學文理短期補習班 &nbsp; 地址：新竹市科學園路107巷1號 &nbsp; 立案字號：府教社字第1010019608號
                     </div>
-                    <div style="color:white; font-size:14px;">
-                        提示：點擊單據文字可直接修改
+                    <div class="bank-outside" id="bankInfo">
+                        第一銀行(007) 竹科分行 &nbsp;&nbsp; 戶名：新竹市私立山熊科學文理短期補習班 &nbsp;&nbsp; 帳號：303-100-13273<br>
+                        <span class="bank-highlight">★ 匯款後請告知我們上課科目、匯款金額及帳號後 5 碼以利我們對帳，謝謝。</span>
                     </div>
                 </div>
+            </div>
+        </div>
+    </div>
 
-                <div class="bill-container" id="billArea">
-                    <table class="bill-table">
-                        <tr class="row-header">
-                            <td style="width: 9%;">姓名</td>
-                            <td style="width: 16%;" id="billName" contenteditable="true"></td>
-                            <td style="width: 9%;">年級</td>
-                            <td style="width: 11%;" id="billGrade" contenteditable="true"></td>
-                            <td style="width: 9%;">學校</td>
-                            <td style="width: 16%;" id="billSchool" contenteditable="true"></td>
-                            <td style="width: 30%; padding:0; vertical-align:top;">
-                                <div class="note-title">備註</div>
-                            </td>
-                        </tr>
-                        <tr class="row-items">
-                            <td colspan="6" rowspan="2" style="position: relative;">
-                                <div class="item-header">
-                                    <span class="col-1">收費科目</span>
-                                    <span class="col-2">起始日期與堂數</span>
-                                    <span class="col-3">金額</span>
-                                </div>
-                                <table class="inner-table" id="itemsTable"></table>
-                            </td>
-                            <td style="vertical-align: top; padding: 0;">
-                                <div id="billNote" class="note-cell" contenteditable="true"></div>
-                            </td>
-                        </tr>
-                        <tr class="row-total">
-                            <td class="total-cell">
-                                <div class="total-wrapper">
-                                    合計 <span id="billTotal" class="total-price" contenteditable="true">0</span> 元
-                                </div>
-                            </td>
-                        </tr>
-                        <tr>
-                            <td class="refund-title">退<br>費<br>規<br>定</td>
-                            <td colspan="6" class="refund-policy">
-                                一、本聯視同正式之收據，請保留三個月以上，以便核查。<br>
-                                二、補習班學生繳納費用後離班者，補習班應依新竹市短期補習班設立及管理規則第六章第 36 條規定辦理退費：<br>
-                                (一) 學生於實際開課日前提出退費申請者，應退還當期開班約定繳納費用總額九成。<br>
-                                (二) 學生於實際開課日起至第三日上課前提出退費申請者，應退還當期開班約定繳納費用總額八成。<br>
-                                (三) 學生於實際開課日起第三日上課後且未達全期之三分之一期間內提出退費申請者，應退還當期開班約定繳納費用總額五成。<br>
-                                (四) 學生於達全期之三分之一以上期間提出退費申請，所收取之當期開班約定繳納費用得全數不予退還。
-                            </td>
-                        </tr>
-                        <tr class="footer-row">
-                            <td colspan="2" style="font-weight: bold;">繳費日期</td>
-                            <td colspan="3">
-                                <div class="date-box">
-                                    <span class="date-spacer-year"></span><span class="date-item">年</span>
-                                    <span class="date-spacer-md"></span><span class="date-item">月</span>
-                                    <span class="date-spacer-md"></span><span class="date-item">日</span>
-                                </div>
-                            </td>
-                            <td colspan="1" style="font-weight: bold;">收款人</td>
-                            <td colspan="1"></td>
-                        </tr>
-                    </table>
-                    <div class="footer-wrapper">
-                        <div class="footer-outside" id="footerInfo">
-                            新竹市私立山熊科學文理短期補習班 &nbsp; 地址：新竹市科學園路107巷1號 &nbsp; 立案字號：府教社字第1010019608號
-                        </div>
-                        <div class="bank-outside" id="bankInfo">
-                            第一銀行(007) 竹科分行 &nbsp;&nbsp; 戶名：新竹市私立山熊科學文理短期補習班 &nbsp;&nbsp; 帳號：303-100-13273<br>
-                            <span class="bank-highlight">★ 匯款後請告知我們上課科目、匯款金額及帳號後 5 碼以利我們對帳，謝謝。</span>
-                        </div>
-                    </div>
+    <div id="tab-print" class="page-section">
+        <div class="center-box">
+            <h3>🖨️ 座位表圖片產生器</h3>
+            <div style="margin-bottom:15px; color:#555; font-size:14px;">
+                💡 提示：點擊下方的空位可以直接輸入學生姓名，輸入完畢請務必按下「儲存手動修改」。<br>
+                ⚠️ 注意：此處的修改僅供列印使用，不會影響前台劃位結果。
+            </div>
+            <div style="display:flex; gap:10px; justify-content:center; align-items:center;">
+                <select id="printSourceSelector" class="big-selector" style="width:200px;" onchange="updatePrintCourseList()">
+                    <option value="live">線上劃位結果 (Live)</option>
+                    <option value="manual">手動排位存檔 (Saved)</option>
+                    <option value="empty">空白教室範本 (Empty)</option>
+                </select>
+                <select id="printCourseSelector" class="big-selector" onchange="generateSeatingChart()">
+                    <option value="">請選擇課程/教室...</option>
+                </select>
+            </div>
+            
+            <div id="manualSaveArea" style="margin-top:15px; display:none; gap:10px; justify-content:center; align-items:center; background:#fff3cd; padding:10px; border-radius:5px;">
+                <label>存檔名稱：</label>
+                <input type="text" id="manualSaveName" placeholder="例如：週六班手動排位" style="padding:5px;">
+                <button onclick="saveManualLayout()" class="warning">💾 另存新檔</button>
+            </div>
+
+            <div style="margin-top:15px;">
+                <button onclick="downloadSeatingChart()" class="success">📸 下載座位表圖片 (A4)</button>
+            </div>
+        </div>
+        
+        <div id="printArea">
+            <div class="print-container">
+                <div class="print-header">
+                    <div id="p_classroom">教室名稱</div>
+                    <div id="p_classType">班級：</div>
+                    <div id="p_time">上課時間：</div>
+                    <div id="p_teacher">老師：</div>
+                </div>
+                <div class="print-stage">講　　台</div>
+                <div class="print-content-scaler">
+                    <div id="printGrid"></div>
                 </div>
             </div>
         </div>
@@ -615,16 +698,16 @@
         tinymce.init({ selector: '#c_desc', plugins: 'image link lists media table', toolbar: 'undo redo | formatselect | bold italic backcolor | alignleft aligncenter alignright alignjustify | bullist numlist outdent indent | removeformat | image', height: 400, menubar: true });
 
         const classrooms = {
-            "high_red": { name: "高中紅教室", layout: [ ["1-1:X", "1-2:X", "_", "1-3", "1-4", "1-5", "_", "1-6", "1-7", "1-8", "_", "1-9:X", "1-10:X"], ["2-1", "2-2", "_", "2-3", "2-4", "2-5", "_", "2-6", "2-7", "2-8", "_", "2-9", "2-10"], ["3-1", "3-2", "_", "3-3", "3-4", "3-5", "_", "3-6", "3-7", "3-8", "_", "3-9", "3-10"], ["4-1", "4-2", "_", "4-3", "4-4", "4-5", "_", "4-6", "4-7", "4-8", "_", "4-9", "4-10"], ["5-1", "5-2", "_", "5-3", "5-4", "5-5", "_", "5-6", "5-7", "5-8", "_", "5-9", "5-10"], ["6-1", "6-2", "_", "6-3", "6-4", "6-5", "_", "6-6", "6-7", "6-8", "_", "6-9", "6-10"], ["7-1", "7-2", "_", "7-3", "7-4", "7-5", "_", "7-6", "7-7", "7-8", "_", "7-9", "7-10"], ["8-1:X", "8-2:X", "_", "8-3:X", "8-4:X", "8-5:X", "_", "8-6:X", "8-7:X", "8-8:X", "_", "_", "DOOR"] ] },
+            "high_red": { name: "高中紅教室", layout: [ ["1-1:X", "1-2:X", "_", "1-3", "1-4", "1-5", "_", "1-6", "1-7", "1-8", "_", "1-9:X", "1-10:X"], ["2-1", "2-2", "_", "2-3", "2-4", "2-5", "_", "2-6", "2-7", "2-8", "_", "2-9", "2-10"], ["3-1", "3-2", "_", "3-3", "3-4", "3-5", "_", "3-6", "3-7", "3-8", "_", "3-9", "3-10"], ["4-1", "4-2", "_", "4-3", "4-4", "4-5", "_", "4-6", "4-7", "4-8", "_", "4-9", "4-10"], ["5-1", "5-2", "_", "5-3", "5-4", "5-5", "_", "5-6", "5-7", "5-8", "_", "5-9", "5-10"], ["6-1", "6-2", "_", "6-3", "6-4", "6-5", "_", "6-6", "6-7", "6-8", "_", "6-9", "6-10"], ["7-1:X", "7-2:X", "_", "7-3:X", "7-4:X", "7-5:X", "_", "7-6:X", "7-7:X", "7-8:X", "_", "7-9:X", "7-10:X"], ["8-1:X", "8-2:X", "_", "8-3:X", "8-4:X", "8-5:X", "_", "8-6:X", "8-7:X", "8-8:X", "_", "_", "DOOR"] ] },
             "high_orange": { name: "高中橘教室", layout: [ ["1-1:X", "1-2:X", "_", "1-3", "1-4", "1-5", "_", "1-6", "1-7", "1-8", "_", "1-9:X", "1-10:X"], ["2-1", "2-2", "_", "2-3", "2-4", "2-5", "_", "2-6", "2-7", "2-8", "_", "2-9", "2-10"], ["3-1", "3-2", "_", "3-3", "3-4", "3-5", "_", "3-6", "3-7", "3-8", "_", "3-9", "3-10"], ["4-1", "4-2", "_", "4-3", "4-4", "4-5", "_", "4-6", "4-7", "4-8", "_", "4-9", "4-10"], ["5-1", "5-2", "_", "5-3", "5-4", "5-5", "_", "5-6", "5-7", "5-8", "_", "5-9", "5-10"], ["6-1", "6-2", "_", "6-3", "6-4", "6-5", "_", "6-6", "6-7", "6-8", "_", "6-9", "6-10"], ["_","_","_","_","_","_","_","_","_","_","_","_","DOOR"] ] },
-            "high_green": { name: "高中綠教室", layout: [ ["1-1:X", "1-2", "_", "1-3", "1-4", "1-5", "_", "1-6:X", "1-7:X", "1-8:X"], ["2-1", "2-2", "_", "2-3", "2-4", "2-5", "_", "2-6", "2-7", "2-8"], ["3-1", "3-2", "_", "3-3", "3-4", "3-5", "_", "3-6", "3-7", "3-8"], ["4-1", "4-2", "_", "4-3", "4-4", "4-5", "_", "4-6", "4-7", "4-8"], ["5-1", "5-2", "_", "5-3", "5-4", "5-5", "_", "5-6", "5-7", "5-8:X"], ["6-1:X", "6-2:X", "_", "6-3:X", "6-4:X", "6-5:X", "_", "_", "_", "DOOR"] ] },
-            "high_yellow": { name: "高中黃教室", layout: [ ["1-1:X", "1-2:X", "_", "1-3", "1-4", "1-5", "_", "1-6:X", "1-7:X"], ["2-1", "2-2", "_", "2-3", "2-4", "2-5", "_", "2-6", "2-7"], ["3-1", "3-2", "_", "3-3", "3-4", "3-5", "_", "3-6", "3-7"], ["DOOR", "_", "_", "4-3", "4-4", "4-5", "_", "4-6", "4-7"], ["_", "_", "_", "5-3:X", "5-4:X", "5-5:X", "_", "5-6:X", "5-7:X"], ["_", "_", "_", "_", "_", "_", "_", "_", "_"] ] },
+            "high_green": { name: "高中綠教室", layout: [ ["1-1:X", "1-2", "_", "1-3", "1-4", "1-5", "_", "1-6:X", "1-7:X", "1-8:X"], ["2-1", "2-2", "_", "2-3", "2-4", "2-5", "_", "2-6", "2-7", "2-8"], ["3-1", "3-2", "_", "3-3", "3-4", "3-5", "_", "3-6", "3-7", "3-8"], ["4-1", "4-2", "_", "4-3", "4-4", "4-5", "_", "4-6", "4-7", "4-8"], ["5-1", "5-2", "_", "5-3", "5-4", "5-5", "_", "5-6", "5-7", "5-8"], ["6-1:X", "6-2:X", "_", "6-3:X", "6-4:X", "6-5:X", "_", "_", "_", "DOOR"] ] },
+            "high_yellow": { name: "高中黃教室", layout: [ ["1-1", "1-2:X", "_", "1-3", "1-4", "1-5", "_", "1-6:X", "1-7:X"], ["2-1", "2-2", "_", "2-3", "2-4", "2-5", "_", "2-6", "2-7"], ["3-1", "3-2", "_", "3-3", "3-4", "3-5", "_", "3-6", "3-7"], ["DOOR", "_", "_", "4-3", "4-4", "4-5", "_", "4-6", "4-7"], ["_", "_", "_", "5-3:X", "5-4:X", "5-5:X", "_", "5-6:X", "5-7:X"], ["_", "_", "_", "_", "_", "_", "_", "_", "_"] ] },
             "high_blue": { name: "高中藍教室", layout: [ ["1-1:X", "1-2", "_", "1-3", "1-4", "1-5", "_", "1-6:X", "1-7:X"], ["2-1", "2-2", "_", "2-3", "2-4", "2-5", "_", "2-6", "2-7"], ["3-1", "3-2", "_", "3-3", "3-4", "3-5", "_", "3-6", "3-7"], ["4-1", "4-2", "_", "4-3", "4-4", "4-5", "_", "4-6", "4-7"], ["5-1:X", "5-2:X", "_", "5-3:X", "5-4:X", "_", "_", "5-6:X", "5-7:X"], ["6-1:X", "6-2:X", "_", "_", "DOOR", "_", "_", "_", "_"] ] },
             "middle_new_orange": { name: "國中新橘教室", layout: [ ["1-1:X", "1-2", "_", "1-3", "1-4", "1-5", "_", "1-6", "1-7", "1-8:X"], ["2-1", "2-2", "_", "2-3", "2-4", "2-5", "_", "2-6", "2-7", "2-8"], ["3-1", "3-2", "_", "3-3", "3-4", "3-5", "_", "3-6", "3-7", "3-8"], ["4-1", "4-2", "_", "4-3", "4-4", "4-5", "_", "4-6", "4-7", "4-8:X"], ["DOOR", "_", "_", "5-3", "5-4", "5-5", "_", "5-6", "5-7", "PILLAR"] ] },
             "middle_new_blue": { name: "國中新藍教室", layout: [ ["1-1", "1-2", "1-3", "_", "1-4", "1-5", "1-6", "1-7:X"], ["2-1", "2-2", "2-3", "_", "2-4", "2-5", "2-6", "2-7:X"], ["3-1", "3-2", "3-3", "_", "3-4", "3-5", "3-6", "3-7:X"], ["4-1", "4-2", "4-3", "_", "4-4", "4-5", "4-6", "4-7:X"], ["5-1", "5-2", "5-3", "_", "5-4", "5-5", "5-6", "5-7:X"], ["6-1:X", "6-2:X", "6-3:X", "_", "6-4:X", "6-5:X", "6-6:X", "6-7:X"], ["7-1:X", "7-2:X", "7-3:X", "_", "7-4:X", "7-5:X", "7-6:X", "7-7:X"], ["DOOR", "_", "_", "_", "_", "_", "_", "_"] ] },
             "middle_new_yellow": { name: "國中新黃教室", layout: [ ["1-1:X", "1-2", "1-3", "_", "1-4", "1-5", "1-6", "_", "1-7", "1-8:X"], ["PILLAR", "2-2", "2-3", "_", "2-4", "2-5", "2-6", "_", "2-7", "2-8:X"], ["3-1:X", "3-2", "3-3", "_", "3-4", "3-5", "3-6", "_", "3-7", "3-8"], ["4-1", "4-2", "4-3", "_", "4-4", "4-5", "4-6", "_", "4-7", "4-8"], ["5-1", "5-2", "5-3", "_", "5-4", "5-5", "5-6", "_", "5-7", "5-8"], ["6-1:X", "6-2", "6-3", "_", "6-4", "6-5", "6-6", "_", "6-7", "6-8"], ["DOOR", "_", "_", "_", "_", "_", "_", "_", "_", "_"] ] },
-            "middle_new_red": { name: "國中新紅教室", layout: [ ["1-1:X", "1-2:X", "1-3", "_", "1-4", "1-5", "1-6", "1-7", "_", "1-8", "1-9:X", "1-10:X"], ["2-1", "2-2", "2-3", "_", "2-4", "2-5", "2-6", "2-7", "_", "2-8", "2-9", "2-10"], ["3-1", "3-2", "3-3", "_", "3-4", "3-5", "3-6", "3-7", "_", "3-8", "3-9", "3-10"], ["DOOR", "_", "_", "_", "_", "_", "_", "_", "_", "_", "_", "_"], ["4-1", "4-2", "4-3", "_", "4-4", "4-5", "4-6", "4-7", "_", "4-8", "4-9", "4-10"], ["5-1", "5-2", "5-3", "_", "5-4", "5-5", "5-6", "5-7", "_", "5-8", "5-9", "5-10"], ["6-1", "6-2", "6-3", "_", "6-4", "6-5", "6-6", "6-7", "_", "6-8", "6-9", "6-10"], ["7-1", "7-2", "7-3", "_", "7-4", "7-5", "7-6", "7-7", "_", "7-8", "7-9", "7-10"], ["8-1:X", "8-2:X", "8-3:X","_","8-4:X", "8-5:X", "8-6:X", "8-7:X", "_", "8-8:X", "8-9:X", "8-10:X"] ] },
-            "middle_big_red": { name: "國中大紅教室", layout: [ ["1-1:X", "1-2:X", "_", "1-3", "1-4", "1-5", "_", "1-6", "1-7", "1-8", "_", "1-9:X", "1-10:X"], ["2-1", "2-2", "_", "2-3", "2-4", "2-5", "_", "2-6", "2-7", "2-8", "_", "2-9", "2-10"], ["3-1", "3-2", "_", "3-3", "3-4", "3-5", "_", "3-6", "3-7", "3-8", "_", "3-9", "3-10"], ["4-1", "4-2", "_", "4-3", "4-4", "4-5", "_", "4-6", "4-7", "4-8", "_", "4-9", "4-10"], ["5-1", "5-2", "_", "5-3", "5-4", "5-5", "_", "5-6", "5-7", "5-8", "_", "5-9", "5-10"], ["6-1", "6-2", "_", "6-3", "6-4", "6-5", "_", "6-6", "6-7", "6-8", "_", "6-9", "6-10"], ["7-1:X", "7-2:X", "_", "7-3:X", "7-4:X", "7-5:X", "_", "7-6:X", "7-7:X", "7-8:X", "_", "7-9:X", "7-10:X"], ["_","_","_","_","_","_","_","_","_","_","_","_","DOOR"] ] },
+            "middle_new_red": { name: "國中新紅教室", layout: [ ["1-1", "1-2:X", "1-3", "_", "1-4", "1-5", "1-6", "1-7", "_", "1-8", "1-9:X", "1-10:X"], ["2-1", "2-2", "2-3", "_", "2-4", "2-5", "2-6", "2-7", "_", "2-8", "2-9", "2-10"], ["3-1", "3-2", "3-3", "_", "3-4", "3-5", "3-6", "3-7", "_", "3-8", "3-9", "3-10"], ["DOOR", "_", "_", "_", "_", "_", "_", "_", "_", "_", "_", "_"], ["4-1", "4-2", "4-3", "_", "4-4", "4-5", "4-6", "4-7", "_", "4-8", "4-9", "4-10"], ["5-1", "5-2", "5-3", "_", "5-4", "5-5", "5-6", "5-7", "_", "5-8", "5-9", "5-10"], ["6-1", "6-2", "6-3", "_", "6-4", "6-5", "6-6", "6-7", "_", "6-8", "6-9", "6-10"], ["7-1", "7-2", "7-3", "_", "7-4", "7-5", "7-6", "7-7", "_", "7-8", "7-9", "7-10"], ["8-1:X", "8-2:X", "8-3:X","_","8-4:X", "8-5:X", "8-6:X", "8-7:X", "_", "8-8:X", "8-9:X", "8-10:X"] ] },
+            "middle_big_red": { name: "國中大紅教室", layout: [ ["1-1:X", "1-2", "_", "1-3", "1-4", "1-5", "_", "1-6", "1-7", "1-8", "_", "1-9", "1-10:X"], ["2-1", "2-2", "_", "2-3", "2-4", "2-5", "_", "2-6", "2-7", "2-8", "_", "2-9", "2-10"], ["3-1", "3-2", "_", "3-3", "3-4", "3-5", "_", "3-6", "3-7", "3-8", "_", "3-9", "3-10"], ["4-1", "4-2", "_", "4-3", "4-4", "4-5", "_", "4-6", "4-7", "4-8", "_", "4-9", "4-10"], ["5-1", "5-2", "_", "5-3", "5-4", "5-5", "_", "5-6", "5-7", "5-8", "_", "5-9", "5-10"], ["6-1", "6-2", "_", "6-3", "6-4", "6-5", "_", "6-6", "6-7", "6-8", "_", "6-9", "6-10"], ["7-1:X", "7-2:X", "_", "7-3:X", "7-4:X", "7-5:X", "_", "7-6:X", "7-7:X", "7-8:X", "_", "7-9:X", "7-10:X"], ["_","_","_","_","_","_","_","_","_","_","_","_","DOOR"] ] },
             "middle_da_chiao": { name: "國中大橘教室", layout: [ ["1-1:X", "1-2:X", "1-3", "_", "1-4", "1-5", "1-6", "_", "1-7", "1-8:X"], ["2-1", "2-2", "2-3", "_", "2-4", "2-5", "2-6", "_", "2-7", "2-8"], ["3-1", "3-2", "3-3", "_", "3-4", "3-5", "3-6", "_", "3-7", "3-8"], ["4-1", "4-2", "4-3", "_", "4-4", "4-5", "4-6", "_", "4-7", "4-8"], ["5-1", "5-2", "5-3", "_", "5-4", "5-5", "5-6", "_", "_", "DOOR"] ] },
             "middle_big_green": { name: "國中大綠教室", layout: [ ["DOOR", "_", "_", "_", "_", "_"], ["1-1", "1-2", "1-3", "_", "1-4", "1-5"], ["2-1", "2-2", "2-3", "_", "2-4", "2-5"], ["3-1", "3-2", "3-3", "_", "3-4", "3-5"], ["PILLAR", "4-2", "4-3", "_", "4-4", "4-5"] ] },
             "test_room": { name: "測試專用教室", layout: [ ["1-1", "1-2"] ] }
@@ -636,6 +719,7 @@
         let seatsData = {}; 
         let waitlistDisplayList = []; 
         let schoolMap = {}; 
+        let printLayouts = {}; // V34.0 新增：手動存檔的座位表
 
         let billStudents = [];
         let currentBillIndex = -1;
@@ -655,6 +739,7 @@
             document.getElementById(`tab-${tabName}`).classList.add('active');
             event.target.classList.add('active');
             if (tabName === 'bills') initBillPage();
+            if (tabName === 'print') initPrintPage(); // V34.0
         };
         window.showCourseForm = function() { 
             document.getElementById('courseListView').style.display = 'none'; 
@@ -1685,18 +1770,35 @@
         startZombieSweeper();
 
         window.initBillPage = function() {
-            renderCourseConfig();
-            processBills();
+            window.renderCourseConfig();
+            window.processBills();
         };
 
-        function renderCourseConfig() {
+        // 監聽 print_layouts 資料
+        onValue(ref(db, 'print_layouts'), (snapshot) => {
+            printLayouts = snapshot.val() || {};
+            // 如果當前在 print 頁面，更新選單
+            if (document.getElementById('tab-print').classList.contains('active')) {
+                updatePrintCourseList();
+            }
+        });
+
+        // ★★★ 修正這裡：掛載到 window 讓下拉選單能觸發 ★★★
+        window.renderCourseConfig = function() {
             const container = document.getElementById('courseConfigList');
             container.innerHTML = "";
+            const billType = document.getElementById('billTypeSelector').value;
+
             Object.keys(coursesData).forEach(key => {
                 const c = coursesData[key];
+                const isSeniorCourse = c.grade.includes("高");
+                if (billType === 'senior' && !isSeniorCourse) return;
+                if (billType === 'junior' && isSeniorCourse) return;
+
                 const div = document.createElement('div');
                 div.className = "config-row";
                 div.innerHTML = `
+                    <input type="checkbox" id="bill_check_${key}" style="margin-right:10px;" checked onchange="window.processBills()">
                     <span style="font-weight:bold; display:inline-block; width:200px;">${c.subject}</span>
                     <input type="text" id="bill_date_${key}" placeholder="日期 (如 3/5)" style="width:80px;" value="${c.billDate || ''}">
                     <input type="text" id="bill_count_${key}" placeholder="堂數 (如 12)" style="width:60px;" value="${c.billCount || ''}">
@@ -1705,7 +1807,10 @@
                 `;
                 container.appendChild(div);
             });
-        }
+
+            // 渲染完設定後，自動觸發一次 processBills 以更新預覽
+            window.processBills();
+        };
 
         window.saveAllBillConfigs = function() {
             const pwd = document.getElementById('adminPwd').value.trim();
@@ -1713,21 +1818,24 @@
 
             const updates = {};
             Object.keys(coursesData).forEach(key => {
-                const date = document.getElementById(`bill_date_${key}`).value;
-                const count = document.getElementById(`bill_count_${key}`).value;
-                const price = document.getElementById(`bill_price_${key}`).value;
-                const note = document.getElementById(`bill_note_${key}`).value;
-                
-                updates[`courses/${key}/billDate`] = date;
-                updates[`courses/${key}/billCount`] = count;
-                updates[`courses/${key}/billPrice`] = price;
-                updates[`courses/${key}/billNote`] = note;
-                updates[`courses/${key}/adminPwd`] = pwd;
+                // 只儲存有顯示在畫面上的設定 (避免覆蓋到另一部別的設定)
+                if (document.getElementById(`bill_date_${key}`)) {
+                    const date = document.getElementById(`bill_date_${key}`).value;
+                    const count = document.getElementById(`bill_count_${key}`).value;
+                    const price = document.getElementById(`bill_price_${key}`).value;
+                    const note = document.getElementById(`bill_note_${key}`).value;
+                    
+                    updates[`courses/${key}/billDate`] = date;
+                    updates[`courses/${key}/billCount`] = count;
+                    updates[`courses/${key}/billPrice`] = price;
+                    updates[`courses/${key}/billNote`] = note;
+                    updates[`courses/${key}/adminPwd`] = pwd;
+                }
             });
 
             update(ref(db), updates).then(() => {
                 alert("✅ 設定已儲存！");
-                processBills();
+                window.processBills();
             }).catch(err => alert("儲存失敗：" + err.message));
         };
 
@@ -1752,12 +1860,13 @@
                     }
                 });
                 document.getElementById('csvStatus').textContent = `✅ 已匯入 ${count} 筆學校資料`;
-                processBills(); 
+                window.processBills(); 
             };
             reader.readAsText(file);
         };
 
-        function processBills() {
+        // ★★★ 修正這裡：掛載到 window 讓 HTML 內的 onchange 抓得到 ★★★
+        window.processBills = function() {
             const billType = document.getElementById('billTypeSelector').value;
             const studentMap = {};
             
@@ -1776,6 +1885,10 @@
                 const seats = seatsData[courseId];
                 const c = coursesData[courseId];
                 if (!c) return;
+
+                // 檢查是否勾選
+                const checkbox = document.getElementById(`bill_check_${courseId}`);
+                if (!checkbox || !checkbox.checked) return;
 
                 const isSeniorCourse = c.grade.includes("高");
                 if (billType === 'senior' && !isSeniorCourse) return;
@@ -1797,13 +1910,23 @@
                             };
                         }
                         
-                        let price = parseInt(c.billPrice) || parseInt(c.price.replace(/[$,]/g, '')) || 0;
+                        // 優先使用輸入框的值，若無則用預設值
+                        let priceInput = document.getElementById(`bill_price_${courseId}`);
+                        let price = priceInput ? parseInt(priceInput.value) : (parseInt(c.billPrice) || parseInt(c.price.replace(/[$,]/g, '')) || 0);
                         
+                        let dateInput = document.getElementById(`bill_date_${courseId}`);
+                        let countInput = document.getElementById(`bill_count_${courseId}`);
+                        let noteInput = document.getElementById(`bill_note_${courseId}`);
+
+                        let dateVal = dateInput ? dateInput.value : (c.billDate || "");
+                        let countVal = countInput ? countInput.value : (c.billCount || "");
+                        let noteVal = noteInput ? noteInput.value : (c.billNote || "");
+
                         studentMap[name].items.push({
                             name: c.subject + (c.classType ? ` (${c.classType})` : ''),
-                            dateHtml: formatBillDate(c.billDate, c.billCount),
+                            dateHtml: formatBillDate(dateVal, countVal),
                             price: price,
-                            note: c.billNote || ""
+                            note: noteVal
                         });
                         studentMap[name].total += price;
                     }
@@ -1811,8 +1934,19 @@
             });
 
             billStudents = Object.values(studentMap);
-            renderBillList();
-        }
+            // 重置預覽：確保無資料時畫面被清空
+            if (billStudents.length > 0) {
+                loadBill(0);
+            } else {
+                document.getElementById('billName').textContent = "無資料";
+                document.getElementById('billGrade').textContent = "";
+                document.getElementById('billSchool').textContent = "";
+                document.getElementById('billTotal').textContent = "0";
+                document.getElementById('billNote').innerText = "";
+                document.getElementById('itemsTable').innerHTML = "<tr><td colspan='3' style='text-align:center; padding: 20px;'>此部別目前沒有學費單資料</td></tr>";
+                document.getElementById('billCounter').textContent = "0 / 0";
+            }
+        };
 
         function formatBillDate(dateStr, count) {
             let html = "";
@@ -1843,26 +1977,24 @@
             return "";
         }
 
-        function renderBillList() {
-            const listDiv = document.getElementById('studentBillList');
-            listDiv.innerHTML = "";
-            if (billStudents.length === 0) {
-                listDiv.innerHTML = "<div style='padding:10px; color:#666;'>無符合條件的學生</div>";
-                return;
+        // V34.0 新增：學費單預覽切換功能
+        window.prevBill = function() {
+            if (currentBillIndex > 0) {
+                loadBill(currentBillIndex - 1);
             }
-            billStudents.forEach((s, index) => {
-                const div = document.createElement('div');
-                div.className = 'bill-list-item';
-                div.innerHTML = `<b>${s.name}</b> (${s.items.length}科) $${s.total.toLocaleString()}`;
-                div.onclick = () => loadBill(index);
-                listDiv.appendChild(div);
-            });
-        }
+        };
+
+        window.nextBill = function() {
+            if (currentBillIndex < billStudents.length - 1) {
+                loadBill(currentBillIndex + 1);
+            }
+        };
 
         window.loadBill = function(index) {
             currentBillIndex = index;
             const s = billStudents[index];
             
+            document.getElementById('billCounter').textContent = `${index + 1} / ${billStudents.length}`;
             document.getElementById('billName').textContent = s.name;
             document.getElementById('billGrade').textContent = s.grade;
             document.getElementById('billSchool').textContent = s.school;
@@ -1898,10 +2030,6 @@
                 }
                 tbody.appendChild(tr);
             }
-
-            document.querySelectorAll('.bill-list-item').forEach((el, i) => {
-                el.classList.toggle('active', i === index);
-            });
         };
 
         window.createManualBill = function() {
@@ -1912,9 +2040,8 @@
                 total: 0,
                 items: [{ name: "科目名稱", dateHtml: "日期", price: 0 }]
             };
-            billStudents.unshift(emptyStudent); 
-            renderBillList();
-            loadBill(0);
+            billStudents.push(emptyStudent); 
+            loadBill(billStudents.length - 1); // 切換到最後一張 (新增的)
         };
 
         window.downloadCurrentBill = function() {
@@ -1945,6 +2072,262 @@
                 });
             }
             alert("✅ 全部下載完成！");
+        };
+
+        // ★★★ V34.0 新增：座位表輸出邏輯 (分流版) ★★★
+        window.initPrintPage = function() {
+            updatePrintCourseList();
+        };
+
+        window.updatePrintCourseList = function() {
+            const source = document.getElementById('printSourceSelector').value;
+            const selector = document.getElementById('printCourseSelector');
+            const saveArea = document.getElementById('manualSaveArea');
+            
+            selector.innerHTML = '<option value="">請選擇...</option>';
+            saveArea.style.display = 'none';
+
+            if (source === 'live') {
+                Object.keys(coursesData).forEach(key => {
+                    const c = coursesData[key];
+                    const option = document.createElement('option');
+                    option.value = key;
+                    option.textContent = `[Live] ${c.grade} ${c.subject} ${c.classType || ''}`;
+                    selector.appendChild(option);
+                });
+            } else if (source === 'manual') {
+                saveArea.style.display = 'flex'; // 顯示存檔區
+                Object.keys(printLayouts).forEach(key => {
+                    const layout = printLayouts[key];
+                    const option = document.createElement('option');
+                    option.value = key;
+                    option.textContent = `[Saved] ${layout.name}`;
+                    selector.appendChild(option);
+                });
+            } else if (source === 'empty') {
+                saveArea.style.display = 'flex'; // 顯示存檔區
+                Object.keys(classrooms).forEach(key => {
+                    const c = classrooms[key];
+                    const option = document.createElement('option');
+                    option.value = key;
+                    option.textContent = `[Empty] ${c.name}`;
+                    selector.appendChild(option);
+                });
+            }
+        };
+
+        window.generateSeatingChart = function() {
+            const source = document.getElementById('printSourceSelector').value;
+            const selectedId = document.getElementById('printCourseSelector').value;
+            const grid = document.getElementById('printGrid');
+            grid.innerHTML = "";
+            
+            if (!selectedId) return;
+
+            let layoutToRender = null;
+            let currentSeats = {};
+            let classroomName = "";
+            let classType = "";
+            let time = "";
+            let teacher = "";
+
+            if (source === 'live') {
+                const c = coursesData[selectedId];
+                if (!c) return;
+                
+                classroomName = classrooms[c.classroom] ? classrooms[c.classroom].name : c.classroom;
+                classType = `班級：${c.subject} ${c.classType || ''}`;
+                time = `上課時間：${c.timeDescription || '-'}`;
+                teacher = `老師：${c.teacher}`;
+                
+                layoutToRender = c.layout || (classrooms[c.classroom] ? classrooms[c.classroom].layout : null);
+                currentSeats = seatsData[selectedId] || {};
+
+            } else if (source === 'manual') {
+                const saved = printLayouts[selectedId];
+                if (!saved) return;
+
+                classroomName = saved.classroomName;
+                classType = `班級：${saved.name}`; // 使用存檔名稱
+                time = `上課時間：${saved.time || ''}`;
+                teacher = `老師：${saved.teacher || ''}`;
+                
+                layoutToRender = saved.layout; // 這是存檔時的 layout (含名字)
+                // 手動模式下，名字直接存在 layout 裡，不需要 currentSeats
+
+            } else if (source === 'empty') {
+                const c = classrooms[selectedId];
+                if (!c) return;
+
+                classroomName = c.name;
+                classType = "班級：(請點擊輸入)";
+                time = "上課時間：";
+                teacher = "老師：";
+                layoutToRender = c.layout;
+                currentSeats = {}; // 空白
+            }
+
+            if (!layoutToRender) return;
+
+            // 更新標頭 (可編輯)
+            document.getElementById('p_classroom').textContent = classroomName;
+            document.getElementById('p_classType').textContent = classType;
+            document.getElementById('p_time').textContent = time;
+            document.getElementById('p_teacher').textContent = teacher;
+            
+            // 開啟標頭編輯功能 (方便手動模式修改)
+            document.getElementById('p_classType').contentEditable = true;
+            document.getElementById('p_time').contentEditable = true;
+            document.getElementById('p_teacher').contentEditable = true;
+
+            layoutToRender.forEach(row => {
+                const rowDiv = document.createElement('div');
+                rowDiv.className = 'print-row';
+                row.forEach(seatCode => {
+                    const seat = document.createElement('div');
+                    seat.className = 'print-seat';
+                    
+                    let code = seatCode;
+                    let isBlocked = false;
+                    
+                    // 處理手動存檔的格式 (可能已經包含名字)
+                    let manualName = "";
+                    if (source === 'manual' && printLayouts[selectedId].seatMap) {
+                         // 這裡需要知道 seatId，但 layout 只有 code
+                         // 我們假設 code 就是 key
+                    }
+
+                    if (code.includes(':X')) { code = code.split(':')[0]; isBlocked = true; }
+
+                    if (code === "_") {
+                        seat.classList.add('aisle');
+                    } else if (code === "DOOR") {
+                        seat.classList.add('door');
+                        seat.textContent = "門";
+                    } else if (code === "PILLAR") {
+                        seat.classList.add('pillar');
+                        seat.textContent = "柱";
+                    } else {
+                        // 正常座位
+                        if (isBlocked) {
+                            seat.classList.add('blocked');
+                            seat.textContent = code; 
+                        } else {
+                            seat.dataset.id = code; // 綁定 ID
+                            seat.contentEditable = true; // 允許編輯
+
+                            if (source === 'live') {
+                                const info = currentSeats[code];
+                                if (info && info.status === 'sold') {
+                                    seat.textContent = info.studentName;
+                                    if (info.studentName.length > 3) seat.style.fontSize = "14px";
+                                }
+                            } else if (source === 'manual') {
+                                const saved = printLayouts[selectedId];
+                                if (saved.seatMap && saved.seatMap[code]) {
+                                    seat.textContent = saved.seatMap[code];
+                                    if (saved.seatMap[code].length > 3) seat.style.fontSize = "14px";
+                                }
+                            }
+                            // empty 模式不填字
+                        }
+                    }
+                    rowDiv.appendChild(seat);
+                });
+                grid.appendChild(rowDiv);
+            });
+
+            // ★★★ V34.3 自動縮放邏輯 (修復大教室縮太小) ★★★
+            setTimeout(() => {
+                const container = document.querySelector('.print-container');
+                const gridEl = document.getElementById('printGrid');
+                
+                // 先重置縮放，才能取得真實大小
+                gridEl.style.transform = 'none';
+                
+                // 動態取得 A4 容器的可用內部寬度 (扣除左右 padding 的安全距離)
+                const availableWidth = container.clientWidth - 40; 
+                const gridWidth = gridEl.scrollWidth;
+
+                // 只有在格子寬度超過可用寬度時才縮小，且依據實際超出的比例精準縮放
+                if (gridWidth > availableWidth && availableWidth > 0) {
+                    const scale = availableWidth / gridWidth;
+                    gridEl.style.transform = `scale(${scale})`; 
+                }
+            }, 100); 
+        };
+
+        // ★★★ V34.0 新增：手動儲存座位表 (另存新檔) ★★★
+        window.saveManualLayout = function() {
+            const pwd = document.getElementById('adminPwd').value.trim();
+            if (!pwd) return alert("請先輸入管理員密碼！");
+
+            const saveName = document.getElementById('manualSaveName').value.trim();
+            if (!saveName) return alert("請輸入存檔名稱！");
+
+            const source = document.getElementById('printSourceSelector').value;
+            const selectedId = document.getElementById('printCourseSelector').value;
+            
+            // 抓取當前畫面上的資料
+            const seatMap = {};
+            document.querySelectorAll('.print-seat[data-id]').forEach(seat => {
+                const text = seat.textContent.trim();
+                if (text) {
+                    seatMap[seat.dataset.id] = text;
+                }
+            });
+
+            // 抓取標頭
+            const classType = document.getElementById('p_classType').textContent;
+            const time = document.getElementById('p_time').textContent;
+            const teacher = document.getElementById('p_teacher').textContent;
+            const classroomName = document.getElementById('p_classroom').textContent;
+
+            // 決定 Layout 來源 (為了下次能還原格子形狀)
+            let baseLayout = [];
+            if (source === 'live') {
+                const c = coursesData[selectedId];
+                baseLayout = c.layout || classrooms[c.classroom].layout;
+            } else if (source === 'empty') {
+                baseLayout = classrooms[selectedId].layout;
+            } else if (source === 'manual') {
+                baseLayout = printLayouts[selectedId].layout;
+            }
+
+            const saveId = "LAYOUT_" + Date.now();
+            const saveData = {
+                name: saveName,
+                classroomName: classroomName,
+                classType: classType, // 這裡存的是完整標題字串
+                time: time,
+                teacher: teacher,
+                layout: baseLayout,
+                seatMap: seatMap,
+                updatedAt: Date.now(),
+                adminPwd: pwd
+            };
+
+            // 寫入 print_layouts 節點 (與 seats 分開)
+            update(ref(db, `print_layouts/${saveId}`), saveData).then(() => {
+                alert("✅ 已另存新檔！您可以在「手動排位存檔」中找到它。");
+                // 重新整理選單
+                document.getElementById('printSourceSelector').value = 'manual';
+                updatePrintCourseList();
+            }).catch(err => alert("存檔失敗：" + err.message));
+        };
+
+        window.downloadSeatingChart = function() {
+            const element = document.querySelector('.print-container');
+            // 檔名取自標題
+            const title = document.getElementById('p_classType').textContent.replace('班級：', '').trim() || "座位表";
+            const filename = `${title}_座位表.png`;
+
+            html2canvas(element, { scale: 2 }).then(canvas => {
+                const link = document.createElement('a');
+                link.download = filename;
+                link.href = canvas.toDataURL("image/png");
+                link.click();
+            });
         };
 
     </script>
