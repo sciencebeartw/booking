@@ -1,5 +1,5 @@
 <!-- 檔案：sop.html -->
-<!-- 版本：V32.2 (修正所有 Markdown 語法殘留) -->
+<!-- 版本：V33.0 (新增資安威懾心理戰區塊) -->
 <!DOCTYPE html>
 <html lang="zh-TW">
 <head>
@@ -31,21 +31,23 @@
         .important-box { background-color: #fff3cd; border: 1px solid #ffeeba; color: #856404; padding: 15px; border-radius: 8px; margin-bottom: 20px; }
         .info-box { background-color: #e8f6f3; border: 1px solid #d1f2eb; color: #0e6655; padding: 15px; border-radius: 8px; margin-bottom: 20px; }
         .warning-box { background-color: #f8d7da; border: 1px solid #f5c6cb; color: #721c24; padding: 15px; border-radius: 8px; margin-bottom: 20px; }
+        
+        /* 資安嚇阻專用樣式 */
+        .deterrence-box { background-color: #f4f6f7; border: 2px solid #2c3e50; color: #2c3e50; padding: 20px; border-radius: 10px; margin-bottom: 30px; }
 
         .back-btn { display: inline-block; margin-bottom: 20px; color: #3498db; text-decoration: none; font-size: 16px; font-weight: bold; border: 1px solid #3498db; padding: 8px 20px; border-radius: 20px; transition: 0.3s; }
         .back-btn:hover { background: #3498db; color: white; }
 
         footer { text-align: center; padding: 40px; color: #999; font-size: 14px; background-color: #2c3e50; color: white; margin-top: 80px; }
 
-        /* ★★★ 雙 LINE 按鈕樣式 ★★★ */
         .float-line-container { position: fixed; bottom: 20px; right: 20px; display: flex; flex-direction: column; gap: 15px; z-index: 9999; align-items: center; }
         .line-btn { width: 65px; height: 65px; border-radius: 50%; box-shadow: 0 4px 12px rgba(0,0,0,0.3); cursor: pointer; display: flex; flex-direction: column; align-items: center; justify-content: center; text-decoration: none; color: white; font-family: Arial, sans-serif; transition: transform 0.2s; animation: bounce 2s ease-in-out infinite; }
         .line-btn:active { transform: scale(0.9); animation: none; }
         .line-btn span.small { font-size: 10px; font-weight: bold; margin-bottom: 2px; letter-spacing: 0px; }
         .line-btn span.large { font-size: 18px; font-weight: 900; letter-spacing: 1px; }
         
-        .btn-bear { background-color: #06C755; } /* 山熊科學 - 綠色 */
-        .btn-high { background-color: #0077CC; animation-delay: 1s; } /* 山熊升大 - 深水藍 */
+        .btn-bear { background-color: #06C755; }
+        .btn-high { background-color: #0077CC; animation-delay: 1s; }
 
         @keyframes bounce { 0%, 20%, 50%, 80%, 100% { transform: translateY(0); } 40% { transform: translateY(-10px); } 60% { transform: translateY(-5px); } }
 
@@ -69,6 +71,21 @@
         <a href="index.html" class="back-btn">⬅ 回首頁</a>
         <h1 class="page-title">📜 劃位報名攻略與須知</h1>
         
+        <!-- ★★★ V33.0 新增：資安嚇阻區塊 ★★★ -->
+        <div class="deterrence-box">
+            <div style="font-size: 18px; font-weight: bold; margin-bottom: 10px; display: flex; align-items: center; gap: 8px;">
+                🛡️ 公平劃位環境維護聲明
+            </div>
+            <div style="font-size: 14px; line-height: 1.8;">
+                為確保每位家長享有公平的劃位權益，本系統導入了 <strong>AI 行為特徵偵測技術</strong>，並採取以下安全防護：
+                <ul style="margin-top: 10px;">
+                    <li>系統會即時分析操作路徑，任何由自動化程式、外掛腳本發出的「非自然操作」，將立即觸發安全防護機制。</li>
+                    <li>被判定為高風險的操作，將被 Google 安全系統強制要求進行<strong>長達數十秒的多重圖片驗證</strong>，此舉將大幅延遲填表時間，甚至導致劃位失敗。</li>
+                    <li><span class="highlight">強烈建議：</span>請務必由<strong>真人手動點擊</strong>，並避免使用「無痕模式」或「VPN 翻牆工具」，以確保您被系統判定為高信用用戶，實現秒速通過驗證。</li>
+                </ul>
+            </div>
+        </div>
+
         <div class="important-box">
             <strong>🔥 搶位關鍵技巧 (必讀)：</strong><br>
             為了讓系統快速辨識您是「真人」，<span class="highlight">請勿使用「無痕模式」或「私密瀏覽」！</span>
@@ -123,7 +140,6 @@
         &copy; 2024 山熊科學補習班 | 系統開發：Sciencebear Tech Team
     </footer>
 
-    <!-- ★★★ 雙 LINE 按鈕 ★★★ -->
     <div class="float-line-container">
         <a href="https://lin.ee/FDQ1BLD" target="_blank" class="line-btn btn-bear" title="山熊科學官方LINE">
             <span class="small">山熊科學</span>
