@@ -1,5 +1,5 @@
 <!-- 檔案：booking.html -->
-<!-- 版本：V32.3 (資安修正：移除硬編碼的後台連結) -->
+<!-- 版本：V32.4 (新增反應時間紀錄功能) -->
 <!DOCTYPE html>
 <html lang="zh-TW">
 <head>
@@ -268,6 +268,10 @@
         let isClassroomRendered = false;
         
         let isManualRelease = false; 
+        
+        // ★★★ 新增：反應時間紀錄變數 ★★★
+        let pageLoadTime = 0;
+        let reactionMs = 0;
 
         window.onloadCallback = function() {
             widgetId1 = grecaptcha.render('recaptcha1', {
@@ -325,6 +329,9 @@
         let unsubscribe = null; 
 
         async function init() {
+            // ★★★ 新增：啟動碼表 ★★★
+            pageLoadTime = Date.now();
+
             const params = new URLSearchParams(window.location.search);
             const courseId = params.get('class'); 
 
@@ -630,6 +637,11 @@
         });
 
         function tryLockSeat(seatId) {
+            // ★★★ 新增：點擊時計算反應時間 ★★★
+            const clickTime = Date.now();
+            reactionMs = clickTime - pageLoadTime;
+            console.log(`反應時間: ${reactionMs} ms`);
+
             if (currentSeatId && currentSeatId !== seatId) { alert("您已經有一個座位正在保留中！"); return; }
             const seatEl = document.getElementById(`seat-${seatId}`);
             
@@ -795,7 +807,8 @@
                 studentName: name,
                 parentPhone: phone,
                 timestamp: serverTimestamp(), 
-                displayTime: timestamp
+                displayTime: timestamp,
+                reactionTime: reactionMs // ★★★ 新增：寫入反應時間 ★★★
             };
 
             const updates = {};
