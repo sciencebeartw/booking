@@ -1,5 +1,5 @@
 <!-- 檔案：detail.html -->
-<!-- 版本：V32.0 (新增靜態教室預覽) -->
+<!-- 版本：V32.0 (新增靜態教室預覽 - 綠色全開版) -->
 <!DOCTYPE html>
 <html lang="zh-TW">
 <head>
@@ -38,19 +38,51 @@
         .bottom-action-area { margin-top: 40px; border-top: 1px solid #eee; padding-top: 20px; }
         footer { text-align: center; padding: 40px; color: #999; font-size: 14px; background-color: #2c3e50; color: white; margin-top: 80px; }
         
-        /* ★★★ 教室預覽樣式 (移植自 booking.html) ★★★ */
+        /* ★★★ 教室預覽樣式 (移植自 booking.html 並調整為靜態展示) ★★★ */
         .preview-section { margin-top: 40px; padding: 20px; background: #f9f9f9; border-radius: 10px; border: 1px dashed #ccc; }
         .preview-title { text-align: center; font-weight: bold; color: #2c3e50; margin-bottom: 5px; font-size: 18px; }
         .preview-subtitle { text-align: center; color: #7f8c8d; font-size: 13px; margin-bottom: 20px; }
         
-        .classroom-wrapper { overflow-x: auto; padding-bottom: 10px; text-align: center; pointer-events: none; /* 禁止點擊互動 */ user-select: none; }
-        .stage-box { width: 60%; margin: 0 auto 20px auto; padding: 8px; border: 2px solid #333; background-color: #fff; font-weight: bold; font-size: 16px; letter-spacing: 5px; text-align: center; color: #333; }
-        .row { display: flex; justify-content: center; gap: 5px; margin-bottom: 10px; }
+        .classroom-wrapper { 
+            overflow-x: auto; 
+            padding-bottom: 10px; 
+            text-align: center; 
+            pointer-events: none; /* 禁止點擊互動 */ 
+            user-select: none; 
+            -webkit-overflow-scrolling: touch; /* 新增：讓蘋果手機滑動更順暢 */
+        }
         
-        /* 預覽時座位稍微縮小一點 */
+        /* ★ 新增：確保座位表跟講台能完整撐開，不會被左右裁切 */
+        #stageArea, #classroomGrid {
+            display: inline-block;
+            min-width: max-content; 
+            padding: 0 10px; /* 兩側留點呼吸空間 */
+        }
+
+        .stage-box { 
+            width: 250px; /* 將 60% 改成固定寬度，避免滑動時講台比例跑掉 */
+            margin: 0 auto 20px auto; 
+            padding: 8px; 
+            border: 2px solid #333; 
+            background-color: #fff; 
+            font-weight: bold; 
+            font-size: 16px; 
+            letter-spacing: 5px; 
+            text-align: center; 
+            color: #333; 
+        }
+        
+        .row { 
+            display: flex; 
+            justify-content: center; 
+            gap: 5px; 
+            margin-bottom: 10px; 
+        }
+        
+        /* 預覽時座位稍微縮小一點，且預設為綠色 (代表位置存在) */
         .seat { width: 35px; height: 40px; background-color: #4CAF50; color: white; display: flex; align-items: center; justify-content: center; border-radius: 4px; font-size: 10px; font-weight: bold; position: relative; }
         
-        /* 預覽專用狀態：全部綠色表示配置，被擋住的變灰 */
+        /* 預覽專用狀態：被擋住的變灰，走道透明 */
         .seat.blocked { background-color: #bdc3c7; color: transparent; }
         .seat.aisle { background-color: transparent; color: transparent; }
         .seat.door { background-color: #fff; color: #333; border: 1px solid #333; writing-mode: vertical-rl; }
@@ -107,7 +139,7 @@
                 </div>
             </div>
 
-            <!-- ★★★ 新增：靜態教室預覽 ★★★ -->
+            <!-- ★★★ 新增：靜態教室預覽 (綠色全開版) ★★★ -->
             <div class="preview-section" id="classroomPreviewSection" style="display:none;">
                 <div class="preview-title">🏫 教室配置示意圖</div>
                 <div class="preview-subtitle">此為座位分佈參考，實際剩餘座位請以劃位頁面為主</div>
@@ -152,7 +184,7 @@
         import { db, ref, child } from './firebase-config.js';
         import { onValue } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-database.js";
 
-        // ★★★ 教室定義 (與 booking.html 保持同步) ★★★
+        // ★★★ 教室定義 (複製自 booking.html，確保資料一致) ★★★
         const classrooms = {
             "high_red": { name: "高中紅教室", hasStage: true, layout: [ ["1-1:X", "1-2:X", "_", "1-3", "1-4", "1-5", "_", "1-6", "1-7", "1-8", "_", "1-9:X", "1-10:X"], ["2-1", "2-2", "_", "2-3", "2-4", "2-5", "_", "2-6", "2-7", "2-8", "_", "2-9", "2-10"], ["3-1", "3-2", "_", "3-3", "3-4", "3-5", "_", "3-6", "3-7", "3-8", "_", "3-9", "3-10"], ["4-1", "4-2", "_", "4-3", "4-4", "4-5", "_", "4-6", "4-7", "4-8", "_", "4-9", "4-10"], ["5-1", "5-2", "_", "5-3", "5-4", "5-5", "_", "5-6", "5-7", "5-8", "_", "5-9", "5-10"], ["6-1", "6-2", "_", "6-3", "6-4", "6-5", "_", "6-6", "6-7", "6-8", "_", "6-9", "6-10"], ["7-1:X", "7-2:X", "_", "7-3:X", "7-4:X", "7-5:X", "_", "7-6:X", "7-7:X", "7-8:X", "_", "7-9:X", "7-10:X"], ["8-1:X", "8-2:X", "_", "8-3:X", "8-4:X", "8-5:X", "_", "8-6:X", "8-7:X", "8-8:X", "_", "_", "DOOR"] ] },
             "high_orange": { name: "高中橘教室", hasStage: true, layout: [ ["1-1:X", "1-2", "_", "1-3", "1-4", "1-5", "_", "1-6", "1-7", "1-8", "_", "1-9:X", "1-10:X"], ["2-1", "2-2", "_", "2-3", "2-4", "2-5", "_", "2-6", "2-7", "2-8", "_", "2-9", "2-10"], ["3-1", "3-2", "_", "3-3", "3-4", "3-5", "_", "3-6", "3-7", "3-8", "_", "3-9", "3-10"], ["4-1", "4-2", "_", "4-3", "4-4", "4-5", "_", "4-6", "4-7", "4-8", "_", "4-9", "4-10"], ["5-1", "5-2", "_", "5-3", "5-4", "5-5", "_", "5-6", "5-7", "5-8", "_", "5-9", "5-10"], ["6-1", "6-2", "_", "6-3", "6-4", "6-5", "_", "6-6", "6-7", "6-8", "_", "6-9", "6-10"], ["_","_","_","_","_","_","_","_","_","_","_","_","DOOR"] ] },
@@ -216,7 +248,10 @@
             document.getElementById('c_teacher').textContent = c.teacher;
             document.getElementById('c_time_desc').textContent = c.timeDescription || '-';
             document.getElementById('c_start_date').textContent = c.startDate || '-';
+            
+            // 使用 classrooms 物件取得中文名稱，若無則回退到 c.classroom
             document.getElementById('c_classroom').textContent = classrooms[c.classroom] ? classrooms[c.classroom].name : c.classroom; 
+            
             document.getElementById('c_desc_content').innerHTML = c.desc;
 
             // ★★★ 渲染靜態教室預覽 ★★★
