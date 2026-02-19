@@ -1,5 +1,5 @@
 <!-- 檔案：sop.html -->
-<!-- 版本：V28.22 (雙 LINE 按鈕更新) -->
+<!-- 版本：V32.1 (修正 Markdown 語法顯示錯誤) -->
 <!DOCTYPE html>
 <html lang="zh-TW">
 <head>
@@ -11,7 +11,7 @@
     <link rel="apple-touch-icon" href="icon.png">
 
     <style>
-        body { font-family: "Microsoft JhengHei", sans-serif; background-color: #f8f9fa; margin: 0; padding: 0; }
+        body { font-family: "Microsoft JhengHei", sans-serif; background-color: #f8f9fa; margin: 0; padding: 0; line-height: 1.6; }
         
         header { background: #2c3e50; box-shadow: 0 2px 5px rgba(0,0,0,0.1); position: sticky; top: 0; z-index: 1000; }
         .header-container { max-width: 1200px; margin: 0 auto; padding: 10px 20px; display: flex; justify-content: center; align-items: center; gap: 20px; }
@@ -20,12 +20,18 @@
 
         .container { max-width: 800px; margin: 40px auto; background: white; padding: 40px; border-radius: 15px; box-shadow: 0 5px 20px rgba(0,0,0,0.1); position: relative; }
         
-        h1.page-title { color: #2c3e50; text-align: center; border-bottom: 2px solid #e74c3c; padding-bottom: 10px; margin-top: 0; }
-        h3 { color: #e74c3c; margin-top: 30px; }
-        ul { padding-left: 20px; line-height: 1.8; }
-        li { margin-bottom: 10px; }
-        .highlight { color: #d35400; font-weight: bold; }
+        h1.page-title { color: #2c3e50; text-align: center; border-bottom: 2px solid #e74c3c; padding-bottom: 15px; margin-top: 0; }
         
+        h3 { color: #2c3e50; margin-top: 30px; border-left: 5px solid #e74c3c; padding-left: 10px; }
+        
+        ul { padding-left: 20px; }
+        li { margin-bottom: 10px; color: #555; }
+        
+        .highlight { color: #d35400; font-weight: bold; }
+        .important-box { background-color: #fff3cd; border: 1px solid #ffeeba; color: #856404; padding: 15px; border-radius: 8px; margin-bottom: 20px; }
+        .info-box { background-color: #e8f6f3; border: 1px solid #d1f2eb; color: #0e6655; padding: 15px; border-radius: 8px; margin-bottom: 20px; }
+        .warning-box { background-color: #f8d7da; border: 1px solid #f5c6cb; color: #721c24; padding: 15px; border-radius: 8px; margin-bottom: 20px; }
+
         .back-btn { display: inline-block; margin-bottom: 20px; color: #3498db; text-decoration: none; font-size: 16px; font-weight: bold; border: 1px solid #3498db; padding: 8px 20px; border-radius: 20px; transition: 0.3s; }
         .back-btn:hover { background: #3498db; color: white; }
 
@@ -42,6 +48,11 @@
         .btn-high { background-color: #0077CC; animation-delay: 1s; } /* 山熊升大 - 深水藍 */
 
         @keyframes bounce { 0%, 20%, 50%, 80%, 100% { transform: translateY(0); } 40% { transform: translateY(-10px); } 60% { transform: translateY(-5px); } }
+
+        @media (max-width: 768px) {
+            .container { padding: 20px; margin: 20px auto; }
+            h1.page-title { font-size: 22px; }
+        }
     </style>
 </head>
 <body>
@@ -56,26 +67,56 @@
 
     <div class="container">
         <a href="index.html" class="back-btn">⬅ 回首頁</a>
-        <h1 class="page-title">📜 劃位報名請詳讀</h1>
+        <h1 class="page-title">📜 劃位報名攻略與須知</h1>
         
-        <h3>⚠️ 重要注意事項</h3>
+        <div class="important-box">
+            <strong>🔥 搶位關鍵技巧 (必讀)：</strong><br>
+            為了讓系統快速辨識您是「真人」，<span class="highlight">請勿使用「無痕模式」或「私密瀏覽」！</span>
+        </div>
+
+        <h3>1. 為什麼不能用「無痕模式」？</h3>
         <ul>
-            <li>購買人姓名請填寫 <span class="highlight">學生姓名</span>，聯絡電話請填寫 <span class="highlight">家長電話</span>。</li>
-            <li>若找不到相對應的學生資料，我們將會直接釋出座位。</li>
-            <li>請務必提前加入【山熊升大】Line官方帳號，並主動傳訊告知是哪位同學或家長。</li>
+            <li>我們使用了 Google 的安全驗證機制來防止外掛程式搶位。</li>
+            <li>若您使用「無痕模式」，Google 無法讀取您的瀏覽信任分數，會判定您「可疑」，進而強制跳出 <span class="highlight">「九宮格圖片驗證」</span> (例如：請選出所有紅綠燈、消防栓...)，這會浪費您寶貴的 10~20 秒。</li>
+            <li><strong>建議做法：</strong>使用一般的 Chrome / Safari 瀏覽器，並保持登入 Google 帳號。這樣通常只需要 <span class="highlight">「點一下打勾」</span> 即可秒速通過驗證！</li>
         </ul>
 
-        <h3>🕒 開放時間</h3>
+        <h3>2. 關於機器人驗證的公平性</h3>
+        <div class="info-box">
+            🤖 我們理解多一個驗證步驟會稍微麻煩一點，但這是為了 **保障所有家長的公平權益**。<br>
+            系統必須杜絕惡意程式秒殺座位，讓真正需要的學生都能有公平的機會報名，請您見諒與配合。
+        </div>
+
+        <h3>3. 劃位前準備資料</h3>
         <ul>
-            <li>19:00 - 20:00：第一階段開放 (全體學生)。</li>
-            <li>21:00 - 22:00：第二階段開放 (釋出座位 + 候補)。</li>
+            <li><strong>學生姓名：</strong>請填寫真實姓名，切勿使用暱稱。</li>
+            <li><strong>家長手機：</strong>請務必填寫正確的 <span class="highlight">10 碼手機號碼</span> (如 0912345678)。</li>
+            <li><em>注意：系統將以「家長手機」作為後續訂單查詢與身分驗證的唯一依據。</em></li>
         </ul>
 
-        <h3>🚫 關於候補</h3>
+        <h3>4. 系統規則與注意事項</h3>
         <ul>
-            <li>若座位已額滿，可於第二階段選購 <span class="highlight">候補</span> 選項。</li>
-            <li>若有釋出座位，將依照候補順位通知。</li>
+            <li><strong>限時填寫：</strong>點選座位後，系統會為您保留 <span class="highlight">60 秒</span>。若超時未送出，座位將自動釋出給下一位使用者。</li>
+            <li><strong>🚫 禁止雙重劃位：</strong>同一位學生在同一門課程中，僅能佔用一個座位。系統會定期偵測，若發現重複佔位，將保留第一筆並 <span class="highlight">直接取消後續座位</span>，請勿嘗試多佔位。</li>
+            <li><strong>資料修改：</strong>劃位送出後，學生姓名無法自行修改。若需更正，請直接聯繫官方 LINE。</li>
         </ul>
+
+        <h3>5. 開放時間與候補機制</h3>
+        <ul>
+            <li><strong>第一階段 (全面開放)：</strong>通常為 19:00 - 20:00。所有學生皆可選位。</li>
+            <li><strong>第二階段 (釋出+候補)：</strong>通常為 21:00 - 22:00。
+                <ul>
+                    <li>若座位已額滿，此階段將開放 <span class="highlight">「登記候補」</span>。</li>
+                    <li>若有釋出座位，我們將依照候補登記順序，透過 LINE 或電話通知遞補。</li>
+                </ul>
+            </li>
+        </ul>
+
+        <div class="warning-box">
+            <strong>⚠️ 最後提醒：</strong><br>
+            請務必提前加入官方 LINE 帳號，並主動告知學生姓名，以便我們在有異動時能第一時間聯繫您。
+        </div>
+
     </div>
 
     <footer>

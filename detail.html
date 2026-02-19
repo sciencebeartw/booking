@@ -105,7 +105,24 @@
             .timer-text { font-size: 20px; } 
             .timer-label { font-size: 14px; font-weight: bold; } 
             .btn-action { font-size: 18px; padding: 12px; } 
-            .seat { width: 28px; height: 32px; font-size: 9px; } /* 手機版縮更小 */
+            
+            /* ★ 以下是教室等比例縮小的關鍵設定 */
+            .stage-box { 
+                width: 180px; /* 講台縮小 */
+                font-size: 14px;
+                padding: 5px;
+                margin-bottom: 15px;
+            }
+            .row {
+                gap: 2px; /* 縮小座位左右間距 */
+                margin-bottom: 6px; /* 縮小排與排的上下間距 */
+            }
+            .seat { 
+                width: 21px;  /* 座位寬度大幅縮小 */
+                height: 25px; /* 座位高度大幅縮小 */
+                font-size: 7.5px; /* 字體縮小以符合座位 */
+                border-radius: 2px;
+            }
         }
     </style>
 </head>
