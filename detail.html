@@ -86,7 +86,40 @@
         }
         
         /* 預覽時座位稍微縮小一點，且預設為綠色 (代表位置存在) */
-        .seat { width: 35px; height: 40px; background-color: #4CAF50; color: white; display: flex; align-items: center; justify-content: center; border-radius: 4px; font-size: 10px; font-weight: bold; position: relative; }
+        /* ★★★ V33.2 電腦版終極修正：字體隨視窗縮放 + 絕對不換行 ★★★ */
+        /* ★★★ V33.3 修正：同步寬度 + 處理瀏覽器最小字體限制 ★★★ */
+        .seat { 
+            /* 1. 統一標準：這裡設 45，下面 flex 也要 45 */
+            width: 45px; 
+            height: auto; 
+            aspect-ratio: 45 / 55; 
+            
+            /* 2. 彈性設定：基準值改為 45px，允許縮小到 28px */
+            flex: 0 1 45px; 
+            min-width: 28px; 
+
+            /* 3. 字體魔法：
+               最小設 10px (這是大部分瀏覽器的物理極限)
+               中間改 2vw (讓它對視窗寬度更敏感)
+               最大 14px 
+            */
+            font-size: clamp(10px, 2vw, 14px); 
+            
+            /* 4. 鐵血紀律：絕對不換行，超出範圍就藏起來 (保持版面整齊) */
+            white-space: nowrap; 
+            overflow: hidden; 
+            
+            background-color: #4CAF50; 
+            color: white; 
+            display: flex; 
+            align-items: center; 
+            justify-content: center; 
+            border-radius: 6px; 
+            font-weight: bold; 
+            position: relative; 
+            margin: 0 1px; 
+        }
+        
         
         /* 預覽專用狀態：被擋住的變灰，走道透明 */
         .seat.blocked { background-color: #bdc3c7; color: transparent; }
