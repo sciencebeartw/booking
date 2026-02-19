@@ -1,3 +1,5 @@
+<!-- 檔案：detail.html -->
+<!-- 版本：V32.0 (新增靜態教室預覽) -->
 <!DOCTYPE html>
 <html lang="zh-TW">
 <head>
@@ -36,6 +38,24 @@
         .bottom-action-area { margin-top: 40px; border-top: 1px solid #eee; padding-top: 20px; }
         footer { text-align: center; padding: 40px; color: #999; font-size: 14px; background-color: #2c3e50; color: white; margin-top: 80px; }
         
+        /* ★★★ 教室預覽樣式 (移植自 booking.html) ★★★ */
+        .preview-section { margin-top: 40px; padding: 20px; background: #f9f9f9; border-radius: 10px; border: 1px dashed #ccc; }
+        .preview-title { text-align: center; font-weight: bold; color: #2c3e50; margin-bottom: 5px; font-size: 18px; }
+        .preview-subtitle { text-align: center; color: #7f8c8d; font-size: 13px; margin-bottom: 20px; }
+        
+        .classroom-wrapper { overflow-x: auto; padding-bottom: 10px; text-align: center; pointer-events: none; /* 禁止點擊互動 */ user-select: none; }
+        .stage-box { width: 60%; margin: 0 auto 20px auto; padding: 8px; border: 2px solid #333; background-color: #fff; font-weight: bold; font-size: 16px; letter-spacing: 5px; text-align: center; color: #333; }
+        .row { display: flex; justify-content: center; gap: 5px; margin-bottom: 10px; }
+        
+        /* 預覽時座位稍微縮小一點 */
+        .seat { width: 35px; height: 40px; background-color: #4CAF50; color: white; display: flex; align-items: center; justify-content: center; border-radius: 4px; font-size: 10px; font-weight: bold; position: relative; }
+        
+        /* 預覽專用狀態：全部綠色表示配置，被擋住的變灰 */
+        .seat.blocked { background-color: #bdc3c7; color: transparent; }
+        .seat.aisle { background-color: transparent; color: transparent; }
+        .seat.door { background-color: #fff; color: #333; border: 1px solid #333; writing-mode: vertical-rl; }
+        .seat.pillar { background-color: #7f8c8d; color: white; }
+
         /* ★★★ 雙 LINE 按鈕樣式 ★★★ */
         .float-line-container { position: fixed; bottom: 20px; right: 20px; display: flex; flex-direction: column; gap: 15px; z-index: 9999; align-items: center; }
         .line-btn { width: 65px; height: 65px; border-radius: 50%; box-shadow: 0 4px 12px rgba(0,0,0,0.3); cursor: pointer; display: flex; flex-direction: column; align-items: center; justify-content: center; text-decoration: none; color: white; font-family: Arial, sans-serif; transition: transform 0.2s; animation: bounce 2s ease-in-out infinite; }
@@ -53,6 +73,7 @@
             .timer-text { font-size: 20px; } 
             .timer-label { font-size: 14px; font-weight: bold; } 
             .btn-action { font-size: 18px; padding: 12px; } 
+            .seat { width: 28px; height: 32px; font-size: 9px; } /* 手機版縮更小 */
         }
     </style>
 </head>
@@ -83,6 +104,16 @@
                     <div class="info-item"><strong>📅 開課日期:</strong> <span id="c_start_date">-</span></div>
                     
                     <div id="time_labels"></div>
+                </div>
+            </div>
+
+            <!-- ★★★ 新增：靜態教室預覽 ★★★ -->
+            <div class="preview-section" id="classroomPreviewSection" style="display:none;">
+                <div class="preview-title">🏫 教室配置示意圖</div>
+                <div class="preview-subtitle">此為座位分佈參考，實際剩餘座位請以劃位頁面為主</div>
+                <div class="classroom-wrapper">
+                    <div id="stageArea"></div>
+                    <div id="classroomGrid"></div>
                 </div>
             </div>
 
@@ -121,13 +152,27 @@
         import { db, ref, child } from './firebase-config.js';
         import { onValue } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-database.js";
 
-        const classroomNames = {
-            "high_red": "高中紅教室", "high_orange": "高中橘教室", "high_green": "高中綠教室",
-            "high_yellow": "高中黃教室", "high_blue": "高中藍教室",
-            "middle_new_orange": "國中新橘教室", "middle_new_blue": "國中新藍教室", "middle_new_yellow": "國中新黃教室",
-            "middle_new_red": "國中新紅教室", "middle_big_red": "國中大紅教室",
-            "middle_da_chiao": "國中大橋教室", "middle_big_green": "國中大綠教室",
-            "test_room": "🧪 測試專用教室"
+        // ★★★ 教室定義 (與 booking.html 保持同步) ★★★
+        const classrooms = {
+            "high_red": { name: "高中紅教室", hasStage: true, layout: [ ["1-1:X", "1-2:X", "_", "1-3", "1-4", "1-5", "_", "1-6", "1-7", "1-8", "_", "1-9:X", "1-10:X"], ["2-1", "2-2", "_", "2-3", "2-4", "2-5", "_", "2-6", "2-7", "2-8", "_", "2-9", "2-10"], ["3-1", "3-2", "_", "3-3", "3-4", "3-5", "_", "3-6", "3-7", "3-8", "_", "3-9", "3-10"], ["4-1", "4-2", "_", "4-3", "4-4", "4-5", "_", "4-6", "4-7", "4-8", "_", "4-9", "4-10"], ["5-1", "5-2", "_", "5-3", "5-4", "5-5", "_", "5-6", "5-7", "5-8", "_", "5-9", "5-10"], ["6-1", "6-2", "_", "6-3", "6-4", "6-5", "_", "6-6", "6-7", "6-8", "_", "6-9", "6-10"], ["7-1:X", "7-2:X", "_", "7-3:X", "7-4:X", "7-5:X", "_", "7-6:X", "7-7:X", "7-8:X", "_", "7-9:X", "7-10:X"], ["8-1:X", "8-2:X", "_", "8-3:X", "8-4:X", "8-5:X", "_", "8-6:X", "8-7:X", "8-8:X", "_", "_", "DOOR"] ] },
+            "high_orange": { name: "高中橘教室", hasStage: true, layout: [ ["1-1:X", "1-2", "_", "1-3", "1-4", "1-5", "_", "1-6", "1-7", "1-8", "_", "1-9:X", "1-10:X"], ["2-1", "2-2", "_", "2-3", "2-4", "2-5", "_", "2-6", "2-7", "2-8", "_", "2-9", "2-10"], ["3-1", "3-2", "_", "3-3", "3-4", "3-5", "_", "3-6", "3-7", "3-8", "_", "3-9", "3-10"], ["4-1", "4-2", "_", "4-3", "4-4", "4-5", "_", "4-6", "4-7", "4-8", "_", "4-9", "4-10"], ["5-1", "5-2", "_", "5-3", "5-4", "5-5", "_", "5-6", "5-7", "5-8", "_", "5-9", "5-10"], ["6-1", "6-2", "_", "6-3", "6-4", "6-5", "_", "6-6", "6-7", "6-8", "_", "6-9", "6-10"], ["_","_","_","_","_","_","_","_","_","_","_","_","DOOR"] ] },
+            "high_green": { name: "高中綠教室", hasStage: true, layout: [ ["1-1:X", "1-2", "_", "1-3", "1-4", "1-5", "_", "1-6:X", "1-7:X", "1-8:X"], ["2-1", "2-2", "_", "2-3", "2-4", "2-5", "_", "2-6", "2-7", "2-8"], ["3-1", "3-2", "_", "3-3", "3-4", "3-5", "_", "3-6", "3-7", "3-8"], ["4-1", "4-2", "_", "4-3", "4-4", "4-5", "_", "4-6", "4-7", "4-8"], ["5-1", "5-2", "_", "5-3", "5-4", "5-5", "_", "5-6", "5-7", "5-8"], ["6-1:X", "6-2:X", "_", "6-3:X", "6-4:X", "6-5:X", "_", "_", "_", "DOOR"] ] },
+            "high_yellow": { name: "高中黃教室", hasStage: true, layout: [ ["1-1", "1-2:X", "_", "1-3", "1-4", "1-5", "_", "1-6:X", "1-7:X"], ["2-1", "2-2", "_", "2-3", "2-4", "2-5", "_", "2-6", "2-7"], ["3-1", "3-2", "_", "3-3", "3-4", "3-5", "_", "3-6", "3-7"], ["DOOR", "_", "_", "4-3", "4-4", "4-5", "_", "4-6", "4-7"], ["_", "_", "_", "5-3:X", "5-4:X", "5-5:X", "_", "5-6:X", "5-7:X"], ["_", "_", "_", "_", "_", "_", "_", "_", "_"] ] },
+            "high_blue": { name: "高中藍教室", hasStage: true, layout: [ ["1-1:X", "1-2", "_", "1-3", "1-4", "1-5", "_", "1-6:X", "1-7:X"], ["2-1", "2-2", "_", "2-3", "2-4", "2-5", "_", "2-6", "2-7"], ["3-1", "3-2", "_", "3-3", "3-4", "3-5", "_", "3-6", "3-7"], ["4-1", "4-2", "_", "4-3", "4-4", "4-5", "_", "4-6", "4-7"], ["5-1:X", "5-2:X", "_", "5-3:X", "5-4:X", "5-5:X", "_", "5-6:X", "5-7:X"], ["6-1:X", "6-2:X", "_", "_", "DOOR", "_", "_", "_", "_"] ] },
+            "middle_new_orange": { name: "國中新橘教室", hasStage: true, layout: [ ["1-1:X", "1-2", "_", "1-3", "1-4", "1-5", "_", "1-6", "1-7", "1-8:X"], ["2-1", "2-2", "_", "2-3", "2-4", "2-5", "_", "2-6", "2-7", "2-8"], ["3-1", "3-2", "_", "3-3", "3-4", "3-5", "_", "3-6", "3-7", "3-8"], ["4-1", "4-2", "_", "4-3", "4-4", "4-5", "_", "4-6", "4-7", "4-8:X"], ["DOOR", "_", "_", "5-3", "5-4", "5-5", "_", "5-6", "5-7", "PILLAR"] ] },
+            "middle_new_blue": { name: "國中新藍教室", hasStage: true, layout: [ ["1-1", "1-2", "1-3", "_", "1-4", "1-5", "1-6", "1-7:X"], ["2-1", "2-2", "2-3", "_", "2-4", "2-5", "2-6", "2-7:X"], ["3-1", "3-2", "3-3", "_", "3-4", "3-5", "3-6", "3-7:X"], ["4-1", "4-2", "4-3", "_", "4-4", "4-5", "4-6", "4-7:X"], ["5-1", "5-2", "5-3", "_", "5-4", "5-5", "5-6", "5-7:X"], ["6-1:X", "6-2:X", "6-3:X", "_", "6-4:X", "6-5:X", "6-6:X", "6-7:X"], ["7-1:X", "7-2:X", "7-3:X", "_", "7-4:X", "7-5:X", "7-6:X", "7-7:X"], ["DOOR", "_", "_", "_", "_", "_", "_", "_"] ] },
+            "middle_new_yellow": { name: "國中新黃教室", hasStage: true, layout: [ ["1-1", "1-2", "1-3", "_", "1-4", "1-5", "1-6", "_", "1-7", "1-8:X"], ["PILLAR", "2-2", "2-3", "_", "2-4", "2-5", "2-6", "_", "2-7", "2-8:X"], ["3-1:X", "3-2", "3-3", "_", "3-4", "3-5", "3-6", "_", "3-7", "3-8"], ["4-1", "4-2", "4-3", "_", "4-4", "4-5", "4-6", "_", "4-7", "4-8"], ["5-1", "5-2", "5-3", "_", "5-4", "5-5", "5-6", "_", "5-7", "5-8"], ["6-1:X", "6-2", "6-3", "_", "6-4", "6-5", "6-6", "_", "6-7", "6-8"], ["DOOR", "_", "_", "_", "_", "_", "_", "_", "_", "_"] ] },
+            "middle_new_red": { name: "國中新紅教室", hasStage: true, layout: [ ["1-1", "1-2:X", "1-3", "_", "1-4", "1-5", "1-6", "1-7", "_", "1-8", "1-9:X", "1-10:X"], ["2-1", "2-2", "2-3", "_", "2-4", "2-5", "2-6", "2-7", "_", "2-8", "2-9", "2-10"], ["3-1", "3-2", "3-3", "_", "3-4", "3-5", "3-6", "3-7", "_", "3-8", "3-9", "3-10"], ["DOOR", "_", "_", "_", "_", "_", "_", "_", "_", "_", "_", "_"], ["4-1", "4-2", "4-3", "_", "4-4", "4-5", "4-6", "4-7", "_", "4-8", "4-9", "4-10"], ["5-1", "5-2", "5-3", "_", "5-4", "5-5", "5-6", "5-7", "_", "5-8", "5-9", "5-10"], ["6-1", "6-2", "6-3", "_", "6-4", "6-5", "6-6", "6-7", "_", "6-8", "6-9", "6-10"], ["7-1", "7-2", "7-3", "_", "7-4", "7-5", "7-6", "7-7", "_", "7-8", "7-9", "7-10"], ["8-1:X", "8-2:X", "8-3:X","_","8-4:X", "8-5:X", "8-6:X", "8-7:X", "_", "8-8:X", "8-9:X", "8-10:X"] ] },
+            "middle_big_red": { name: "國中大紅教室", hasStage: true, layout: [ ["1-1:X", "1-2", "_", "1-3", "1-4", "1-5", "_", "1-6", "1-7", "1-8", "_", "1-9", "1-10:X"], ["2-1", "2-2", "_", "2-3", "2-4", "2-5", "_", "2-6", "2-7", "2-8", "_", "2-9", "2-10"], ["3-1", "3-2", "_", "3-3", "3-4", "3-5", "_", "3-6", "3-7", "3-8", "_", "3-9", "3-10"], ["4-1", "4-2", "_", "4-3", "4-4", "4-5", "_", "4-6", "4-7", "4-8", "_", "4-9", "4-10"], ["5-1", "5-2", "_", "5-3", "5-4", "5-5", "_", "5-6", "5-7", "5-8", "_", "5-9", "5-10"], ["6-1", "6-2", "_", "6-3", "6-4", "6-5", "_", "6-6", "6-7", "6-8", "_", "6-9", "6-10"], ["7-1", "7-2", "_", "7-3", "7-4", "7-5", "_", "7-6", "7-7", "7-8", "_", "7-9", "7-10"], ["_","_","_","_","_","_","_","_","_","_","_","_","DOOR"] ] },
+            "middle_da_chiao": { name: "國中大橋教室", hasStage: true, layout: [ ["1-1:X", "1-2:X", "1-3", "_", "1-4", "1-5", "1-6", "_", "1-7", "1-8:X"], ["2-1", "2-2", "2-3", "_", "2-4", "2-5", "2-6", "_", "2-7", "2-8"], ["3-1", "3-2", "3-3", "_", "3-4", "3-5", "3-6", "_", "3-7", "3-8"], ["4-1", "4-2", "4-3", "_", "4-4", "4-5", "4-6", "_", "4-7", "4-8:X"], ["5-1", "5-2", "5-3", "_", "5-4", "5-5", "5-6", "_", "5-7", "5-8"], ["_","_","_","_","_","_","_","_","_","DOOR"] ] },
+            "middle_big_green": { name: "國中大綠教室", hasStage: true, layout: [ ["DOOR", "_", "_", "_", "_", "_"], ["1-1", "1-2", "1-3", "_", "1-4", "1-5"], ["2-1", "2-2", "2-3", "_", "2-4", "2-5"], ["3-1", "3-2", "3-3", "_", "3-4", "3-5"], ["PILLAR", "4-2", "4-3", "_", "4-4", "4-5"] ] },
+            "test_room": { 
+                name: "測試專用教室", 
+                hasStage: true, 
+                layout: [ 
+                    ["1-1", "1-2"]
+                ] 
+            }
         };
 
         const params = new URLSearchParams(window.location.search);
@@ -171,8 +216,14 @@
             document.getElementById('c_teacher').textContent = c.teacher;
             document.getElementById('c_time_desc').textContent = c.timeDescription || '-';
             document.getElementById('c_start_date').textContent = c.startDate || '-';
-            document.getElementById('c_classroom').textContent = classroomNames[c.classroom] || c.classroom; 
+            document.getElementById('c_classroom').textContent = classrooms[c.classroom] ? classrooms[c.classroom].name : c.classroom; 
             document.getElementById('c_desc_content').innerHTML = c.desc;
+
+            // ★★★ 渲染靜態教室預覽 ★★★
+            if (c.classroom && classrooms[c.classroom]) {
+                renderClassroomPreview(c.classroom);
+                document.getElementById('classroomPreviewSection').style.display = 'block';
+            }
 
             const start1 = new Date(c.start1);
             const hasStart2 = c.start2 && new Date(c.start2).getFullYear() < 3000;
@@ -190,6 +241,54 @@
 
             if (timerInterval) clearInterval(timerInterval);
             startTimer(c);
+        }
+
+        // ★★★ 渲染教室 (靜態) ★★★
+        function renderClassroomPreview(type) {
+            const config = classrooms[type];
+            if (!config) return;
+
+            const stageArea = document.getElementById('stageArea');
+            const grid = document.getElementById('classroomGrid');
+            
+            stageArea.innerHTML = config.hasStage ? '<div class="stage-box">講　台</div>' : '';
+            grid.innerHTML = "";
+
+            config.layout.forEach(row => {
+                const rowDiv = document.createElement('div');
+                rowDiv.className = 'row';
+                row.forEach(seatCode => {
+                    const seat = document.createElement('div');
+                    seat.className = 'seat';
+                    let code = seatCode;
+                    let isBlocked = false;
+
+                    // 處理 :X 阻擋位
+                    if (seatCode.includes(':X')) {
+                        code = seatCode.split(':')[0];
+                        isBlocked = true;
+                    }
+
+                    if (code === "_") {
+                        seat.classList.add('aisle');
+                    } else if (code === "DOOR") {
+                        seat.classList.add('door');
+                        seat.textContent = "門";
+                    } else if (code === "PILLAR") {
+                        seat.classList.add('pillar');
+                        seat.textContent = "柱";
+                    } else {
+                        // 正常座位
+                        seat.textContent = code;
+                        if (isBlocked) {
+                            seat.classList.add('blocked');
+                        }
+                        // 其餘一般座位保持綠色 (預設樣式)
+                    }
+                    rowDiv.appendChild(seat);
+                });
+                grid.appendChild(rowDiv);
+            });
         }
 
         function startTimer(c) {
