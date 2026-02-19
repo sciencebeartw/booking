@@ -52,20 +52,21 @@
             -webkit-overflow-scrolling: touch; 
         }
         
-        /* ★ 新增：這層包裝會被座位表撐開到真實寬度 */
+        /* ★ 終極置中解法：讓它變成區塊，寬度貼合內容，然後左右自動推擠置中！ */
         .classroom-inner {
-            display: inline-block;
+            display: block;
+            width: max-content;
             margin: 0 auto;
         }
 
-        /* ★ 讓講台區塊跟座位表區塊佔滿 inner 的寬度 */
+        /* 確保講台與座位表填滿 inner 的真實寬度 */
         #stageArea, #classroomGrid {
             display: block; 
             width: 100%;
         }
 
         .stage-box { 
-            width: 100%; /* ★ 關鍵：設為 100% 就會自動拉伸到跟座位一樣寬！ */
+            width: 100%; /* 講台會自動拉伸到跟座位一模一樣寬 */
             margin: 0 auto 20px auto; 
             padding: 8px; 
             border: 2px solid #333; 
