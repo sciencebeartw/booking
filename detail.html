@@ -46,21 +46,19 @@
         .classroom-wrapper { 
             overflow-x: auto; 
             padding-bottom: 10px; 
-            text-align: center; 
             pointer-events: none; /* 禁止點擊互動 */ 
             user-select: none; 
-            -webkit-overflow-scrolling: touch; /* 新增：讓蘋果手機滑動更順暢 */
+            -webkit-overflow-scrolling: touch; /* 讓蘋果手機滑動更順暢 */
         }
         
-        /* ★ 新增：確保座位表跟講台能完整撐開，不會被左右裁切 */
+        /* ★ 將講台與座位表設定為 table，確保垂直排列且能完美置中，手機版也不會被切斷 */
         #stageArea, #classroomGrid {
-            display: inline-block;
-            min-width: max-content; 
-            padding: 0 10px; /* 兩側留點呼吸空間 */
+            display: table;
+            margin: 0 auto; 
         }
 
         .stage-box { 
-            width: 250px; /* 將 60% 改成固定寬度，避免滑動時講台比例跑掉 */
+            width: 250px; /* 給定講台固定寬度，確保不會因為外層變動而縮太小 */
             margin: 0 auto 20px auto; 
             padding: 8px; 
             border: 2px solid #333; 
@@ -70,6 +68,7 @@
             letter-spacing: 5px; 
             text-align: center; 
             color: #333; 
+            box-sizing: border-box;
         }
         
         .row { 
@@ -77,6 +76,7 @@
             justify-content: center; 
             gap: 5px; 
             margin-bottom: 10px; 
+            width: max-content; /* ★ 確保每一排的寬度是真實寬度，手機版就不會擠壓或往左吃掉座位 */
         }
         
         /* 預覽時座位稍微縮小一點，且預設為綠色 (代表位置存在) */
