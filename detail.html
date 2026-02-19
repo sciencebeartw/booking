@@ -43,23 +43,24 @@
         .preview-title { text-align: center; font-weight: bold; color: #2c3e50; margin-bottom: 5px; font-size: 18px; }
         .preview-subtitle { text-align: center; color: #7f8c8d; font-size: 13px; margin-bottom: 20px; }
         
+        CSS
         .classroom-wrapper { 
             overflow-x: auto; 
             padding-bottom: 10px; 
             text-align: center; 
-            /* 已經把 pointer-events: none; 刪除了，恢復觸控能力 */
-            user-select: none; 
+            user-select: none; /* 恢復觸控與滑動能力 */
             -webkit-overflow-scrolling: touch; 
         }
         
+        /* ★ 將講台與座位表的外層設定為 block，強迫它們必須「上下垂直堆疊」，徹底解決並排跑版問題！ */
         #stageArea, #classroomGrid {
-            display: inline-block;
-            margin: 0 auto;
+            display: block;
+            width: 100%;
         }
 
         .stage-box { 
             width: 250px; 
-            margin: 0 auto 20px auto; 
+            margin: 0 auto 20px auto; /* 靠這個 auto 讓講台在自己的區塊內完美置中 */
             padding: 8px; 
             border: 2px solid #333; 
             background-color: #fff; 
