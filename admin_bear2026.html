@@ -1,3 +1,5 @@
+<!-- 檔案：admin_bear2026.html -->
+<!-- 版本：V33.0 (新增資料驅動座位編輯器) -->
 <!DOCTYPE html>
 <html lang="zh-TW">
 <head>
@@ -52,7 +54,6 @@
         
         .table-container { overflow-x: auto; background: white; border-radius: 10px; box-shadow: 0 2px 10px rgba(0,0,0,0.1); margin-top: 20px; }
         
-        /* 全域表格樣式 (這是導致衝突的源頭) */
         table { width: 100%; border-collapse: collapse; min-width: 800px; }
         th, td { padding: 12px 15px; text-align: left; border-bottom: 1px solid #ddd; white-space: nowrap; }
         th { background-color: #34495e; color: white; cursor: pointer; user-select: none; }
@@ -99,7 +100,6 @@
 
         #sweeperStatus { position: fixed; bottom: 10px; left: 10px; background: rgba(0,0,0,0.7); color: white; padding: 5px 10px; border-radius: 5px; font-size: 12px; z-index: 9999; }
 
-        /* ★★★ 學費單專用 CSS (使用 #billArea 隔離全域樣式) ★★★ */
         .bill-layout { display: flex; gap: 20px; align-items: flex-start; }
         .bill-list { width: 300px; background: white; border-radius: 10px; padding: 15px; max-height: 800px; overflow-y: auto; }
         .bill-list-item { padding: 10px; border-bottom: 1px solid #eee; cursor: pointer; }
@@ -116,7 +116,6 @@
             font-family: 'Microsoft JhengHei', '微軟正黑體', sans-serif;
         }
 
-        /* ★★★ 關鍵修正：強制重置表格樣式，防止繼承全域的 min-width: 800px ★★★ */
         #billArea table { 
             width: 100% !important; 
             flex-grow: 1; 
@@ -124,13 +123,13 @@
             border: 3px solid black; 
             table-layout: fixed; 
             margin-bottom: 5px; 
-            min-width: 0 !important; /* 殺死全域設定 */
+            min-width: 0 !important; 
         }
         
         #billArea th, #billArea td { 
             border: 1px solid black; 
             padding: 0; 
-            white-space: normal; /* 重置全域 nowrap */
+            white-space: normal; 
         }
         
         .row-header td { font-size: 18px; font-weight: bold; height: 35px; text-align: center; vertical-align: middle; white-space: nowrap; overflow: hidden; }
@@ -145,7 +144,6 @@
         
         .item-header { background: #e0e0e0; font-weight: bold; font-size: 15px; height: 32px; display: flex; align-items: center; padding: 0 5px; border-bottom: 2px solid #000; letter-spacing: 1px; }
         
-        /* ★★★ 修正：使用 #billArea 增加權重，並保留 box-sizing ★★★ */
         #billArea .col-1 { 
             width: 45%; max-width: 45%; 
             text-align: left; 
@@ -191,6 +189,37 @@
         
         .config-row { display: flex; align-items: center; gap: 10px; margin-bottom: 8px; padding-bottom: 8px; border-bottom: 1px dashed #eee; }
         .config-row input { padding: 5px; border: 1px solid #ccc; border-radius: 3px; }
+
+        /* ★★★ V33.0 新增：座位編輯器樣式 (源自 booking.html) ★★★ */
+        /* 為了確保後台預覽與前台完全一致，這裡複製了 booking.html 的關鍵 CSS */
+        #seatEditorContainer .classroom-wrapper { overflow-x: auto; padding-bottom: 20px; text-align: center; -webkit-overflow-scrolling: touch; background: #f9f9f9; border: 1px dashed #ccc; padding: 20px; border-radius: 10px; margin-top: 10px; }
+        #seatEditorContainer .classroom-inner { display: inline-block; margin: 0 auto; }
+        #seatEditorContainer .stage-box { width: 100%; margin: 0 auto 20px auto; padding: 12px; border: 3px solid #333; background-color: #fff; font-weight: bold; font-size: 22px; letter-spacing: 8px; text-align: center; box-sizing: border-box; }
+        #seatEditorContainer .row { display: flex; justify-content: center; gap: 8px; margin-bottom: 15px; }
+        #seatEditorContainer .seat { width: 45px; height: 55px; background-color: #4CAF50; color: white; display: flex; align-items: center; justify-content: center; border-radius: 6px; cursor: pointer; font-weight: bold; font-size: 13px; user-select: none; position: relative; transition: 0.2s; box-sizing: border-box; }
+        #seatEditorContainer .seat:hover { transform: scale(1.1); z-index: 10; border: 2px solid #f1c40f; }
+        
+        /* 編輯器專用狀態樣式 */
+        #seatEditorContainer .seat.blocked { background-color: #95a5a6; cursor: pointer; transform: none; } /* 阻擋位 */
+        #seatEditorContainer .seat.aisle { background-color: transparent; color: transparent; border: 1px dashed #ddd; cursor: pointer; } /* 走道 */
+        #seatEditorContainer .seat.door { background-color: #fff; color: #333; border: 2px solid #333; font-size: 16px; writing-mode: vertical-rl; cursor: pointer; transform: none; } /* 門 */
+        #seatEditorContainer .seat.pillar { background-color: #7f8c8d; color: white; cursor: pointer; transform: none; border-radius: 2px; } /* 柱子 */
+        
+        /* 手機版響應式 (完全複製 booking.html) */
+        @media (max-width: 768px) {
+            #seatEditorContainer .classroom-inner { max-width: 100%; }
+            #seatEditorContainer .stage-box { font-size: 14px; padding: 6px; margin-bottom: 12px; letter-spacing: 5px; }
+            #seatEditorContainer .row { width: 100%; gap: 2px; margin-bottom: 5px; }
+            #seatEditorContainer .seat { 
+                flex: 0 1 40px; 
+                min-width: 21px;
+                height: auto;
+                aspect-ratio: 45 / 55;
+                font-size: clamp(8px, 2.5vw, 12px) !important;
+                border-radius: 3px;
+                padding: 0;
+            }
+        }
     </style>
 </head>
 <body>
@@ -301,8 +330,8 @@
                     </datalist>
                 </div>
                 <div class="form-group">
-                    <label>使用教室</label>
-                    <select id="c_classroom">
+                    <label>使用教室 (切換將重置下方座位表)</label>
+                    <select id="c_classroom" onchange="resetSeatEditor()">
                         <option value="high_red">高中紅教室</option><option value="high_orange">高中橘教室</option><option value="high_green">高中綠教室</option>
                         <option value="high_yellow">高中黃教室</option><option value="high_blue">高中藍教室</option><option value="middle_new_orange">國中新橘教室</option>
                         <option value="middle_new_blue">國中新藍教室</option><option value="middle_new_yellow">國中新黃教室</option><option value="middle_new_red">國中新紅教室</option>
@@ -311,6 +340,26 @@
                     </select>
                 </div>
             </div>
+
+            <!-- ★★★ V33.0 新增：座位編輯器 ★★★ -->
+            <div class="form-group" id="seatEditorContainer">
+                <label style="color:#e74c3c;">🪑 座位表編輯器 (點擊格子可切換狀態)</label>
+                <div style="font-size:12px; color:#666; margin-bottom:5px;">
+                    狀態循環：🟩座位 ➜ ⬜走道 ➜ ⬛不開放 ➜ 🟫柱子 ➜ 🚪門 ➜ (回頭)
+                </div>
+                <div id="editorLockMsg" style="display:none; color:red; font-weight:bold; background:#ffeeba; padding:10px; border-radius:5px; margin-bottom:10px;">
+                    🔒 此課程已有售出紀錄，為保護訂單資料，座位表已鎖定不可編輯。
+                </div>
+                <div class="classroom-wrapper">
+                    <div class="classroom-inner">
+                        <div class="stage-box">講　台</div>
+                        <div id="editorGrid"></div>
+                    </div>
+                </div>
+                <button type="button" onclick="resetSeatEditor()" class="warning" style="font-size:12px; padding:5px 10px;">↺ 重置為預設範本</button>
+            </div>
+            <!-- ★★★ V33.0 結束 ★★★ -->
+
             <div class="form-row">
                 <div class="form-group">
                     <label>上課時間 (自動代入)</label>
@@ -566,17 +615,17 @@
         tinymce.init({ selector: '#c_desc', plugins: 'image link lists media table', toolbar: 'undo redo | formatselect | bold italic backcolor | alignleft aligncenter alignright alignjustify | bullist numlist outdent indent | removeformat | image', height: 400, menubar: true });
 
         const classrooms = {
-            "high_red": { name: "高中紅教室", layout: [ ["1-1:X", "1-2:X", "_", "1-3", "1-4", "1-5", "_", "1-6", "1-7", "1-8", "_", "1-9:X", "1-10:X"], ["2-1", "2-2", "_", "2-3", "2-4", "2-5", "_", "2-6", "2-7", "2-8", "_", "2-9", "2-10"], ["3-1", "3-2", "_", "3-3", "3-4", "3-5", "_", "3-6", "3-7", "3-8", "_", "3-9", "3-10"], ["4-1", "4-2", "_", "4-3", "4-4", "4-5", "_", "4-6", "4-7", "4-8", "_", "4-9", "4-10"], ["5-1", "5-2", "_", "5-3", "5-4", "5-5", "_", "5-6", "5-7", "5-8", "_", "5-9", "5-10"], ["6-1", "6-2", "_", "6-3", "6-4", "6-5", "_", "6-6", "6-7", "6-8", "_", "6-9", "6-10"], ["7-1:X", "7-2:X", "_", "7-3:X", "7-4:X", "7-5:X", "_", "7-6:X", "7-7:X", "7-8:X", "_", "7-9:X", "7-10:X"], ["8-1:X", "8-2:X", "_", "8-3:X", "8-4:X", "8-5:X", "_", "8-6:X", "8-7:X", "8-8:X", "_", "_", "DOOR"] ] },
-            "high_orange": { name: "高中橘教室", layout: [ ["1-1:X", "1-2", "_", "1-3", "1-4", "1-5", "_", "1-6", "1-7", "1-8", "_", "1-9:X", "1-10:X"], ["2-1", "2-2", "_", "2-3", "2-4", "2-5", "_", "2-6", "2-7", "2-8", "_", "2-9", "2-10"], ["3-1", "3-2", "_", "3-3", "3-4", "3-5", "_", "3-6", "3-7", "3-8", "_", "3-9", "3-10"], ["4-1", "4-2", "_", "4-3", "4-4", "4-5", "_", "4-6", "4-7", "4-8", "_", "4-9", "4-10"], ["5-1", "5-2", "_", "5-3", "5-4", "5-5", "_", "5-6", "5-7", "5-8", "_", "5-9", "5-10"], ["6-1", "6-2", "_", "6-3", "6-4", "6-5", "_", "6-6", "6-7", "6-8", "_", "6-9", "6-10"], ["_","_","_","_","_","_","_","_","_","_","_","_","DOOR"] ] },
-            "high_green": { name: "高中綠教室", layout: [ ["1-1:X", "1-2", "_", "1-3", "1-4", "1-5", "_", "1-6:X", "1-7:X", "1-8:X"], ["2-1", "2-2", "_", "2-3", "2-4", "2-5", "_", "2-6", "2-7", "2-8"], ["3-1", "3-2", "_", "3-3", "3-4", "3-5", "_", "3-6", "3-7", "3-8"], ["4-1", "4-2", "_", "4-3", "4-4", "4-5", "_", "4-6", "4-7", "4-8"], ["5-1", "5-2", "_", "5-3", "5-4", "5-5", "_", "5-6", "5-7", "5-8"], ["6-1:X", "6-2:X", "_", "6-3:X", "6-4:X", "6-5:X", "_", "_", "_", "DOOR"] ] },
-            "high_yellow": { name: "高中黃教室", layout: [ ["1-1", "1-2:X", "_", "1-3", "1-4", "1-5", "_", "1-6:X", "1-7:X"], ["2-1", "2-2", "_", "2-3", "2-4", "2-5", "_", "2-6", "2-7"], ["3-1", "3-2", "_", "3-3", "3-4", "3-5", "_", "3-6", "3-7"], ["DOOR", "_", "_", "4-3", "4-4", "4-5", "_", "4-6", "4-7"], ["_", "_", "_", "5-3:X", "5-4:X", "5-5:X", "_", "5-6:X", "5-7:X"], ["_", "_", "_", "_", "_", "_", "_", "_", "_"] ] },
-            "high_blue": { name: "高中藍教室", layout: [ ["1-1:X", "1-2", "_", "1-3", "1-4", "1-5", "_", "1-6:X", "1-7:X"], ["2-1", "2-2", "_", "2-3", "2-4", "2-5", "_", "2-6", "2-7"], ["3-1", "3-2", "_", "3-3", "3-4", "3-5", "_", "3-6", "3-7"], ["4-1", "4-2", "_", "4-3", "4-4", "4-5", "_", "4-6", "4-7"], ["5-1:X", "5-2:X", "_", "5-3:X", "5-4:X", "5-5:X", "_", "5-6:X", "5-7:X"], ["6-1:X", "6-2:X", "_", "_", "DOOR", "_", "_", "_", "_"] ] },
+            "high_red": { name: "高中紅教室", layout: [ ["1-1:X", "1-2:X", "_", "1-3", "1-4", "1-5", "_", "1-6", "1-7", "1-8", "_", "1-9:X", "1-10:X"], ["2-1", "2-2", "_", "2-3", "2-4", "2-5", "_", "2-6", "2-7", "2-8", "_", "2-9", "2-10"], ["3-1", "3-2", "_", "3-3", "3-4", "3-5", "_", "3-6", "3-7", "3-8", "_", "3-9", "3-10"], ["4-1", "4-2", "_", "4-3", "4-4", "4-5", "_", "4-6", "4-7", "4-8", "_", "4-9", "4-10"], ["5-1", "5-2", "_", "5-3", "5-4", "5-5", "_", "5-6", "5-7", "5-8", "_", "5-9", "5-10"], ["6-1", "6-2", "_", "6-3", "6-4", "6-5", "_", "6-6", "6-7", "6-8", "_", "6-9", "6-10"], ["7-1", "7-2", "_", "7-3", "7-4", "7-5", "_", "7-6", "7-7", "7-8", "_", "7-9", "7-10"], ["8-1:X", "8-2:X", "_", "8-3:X", "8-4:X", "8-5:X", "_", "8-6:X", "8-7:X", "8-8:X", "_", "_", "DOOR"] ] },
+            "high_orange": { name: "高中橘教室", layout: [ ["1-1:X", "1-2:X", "_", "1-3", "1-4", "1-5", "_", "1-6", "1-7", "1-8", "_", "1-9:X", "1-10:X"], ["2-1", "2-2", "_", "2-3", "2-4", "2-5", "_", "2-6", "2-7", "2-8", "_", "2-9", "2-10"], ["3-1", "3-2", "_", "3-3", "3-4", "3-5", "_", "3-6", "3-7", "3-8", "_", "3-9", "3-10"], ["4-1", "4-2", "_", "4-3", "4-4", "4-5", "_", "4-6", "4-7", "4-8", "_", "4-9", "4-10"], ["5-1", "5-2", "_", "5-3", "5-4", "5-5", "_", "5-6", "5-7", "5-8", "_", "5-9", "5-10"], ["6-1", "6-2", "_", "6-3", "6-4", "6-5", "_", "6-6", "6-7", "6-8", "_", "6-9", "6-10"], ["_","_","_","_","_","_","_","_","_","_","_","_","DOOR"] ] },
+            "high_green": { name: "高中綠教室", layout: [ ["1-1:X", "1-2", "_", "1-3", "1-4", "1-5", "_", "1-6:X", "1-7:X", "1-8:X"], ["2-1", "2-2", "_", "2-3", "2-4", "2-5", "_", "2-6", "2-7", "2-8"], ["3-1", "3-2", "_", "3-3", "3-4", "3-5", "_", "3-6", "3-7", "3-8"], ["4-1", "4-2", "_", "4-3", "4-4", "4-5", "_", "4-6", "4-7", "4-8"], ["5-1", "5-2", "_", "5-3", "5-4", "5-5", "_", "5-6", "5-7", "5-8:X"], ["6-1:X", "6-2:X", "_", "6-3:X", "6-4:X", "6-5:X", "_", "_", "_", "DOOR"] ] },
+            "high_yellow": { name: "高中黃教室", layout: [ ["1-1:X", "1-2:X", "_", "1-3", "1-4", "1-5", "_", "1-6:X", "1-7:X"], ["2-1", "2-2", "_", "2-3", "2-4", "2-5", "_", "2-6", "2-7"], ["3-1", "3-2", "_", "3-3", "3-4", "3-5", "_", "3-6", "3-7"], ["DOOR", "_", "_", "4-3", "4-4", "4-5", "_", "4-6", "4-7"], ["_", "_", "_", "5-3:X", "5-4:X", "5-5:X", "_", "5-6:X", "5-7:X"], ["_", "_", "_", "_", "_", "_", "_", "_", "_"] ] },
+            "high_blue": { name: "高中藍教室", layout: [ ["1-1:X", "1-2", "_", "1-3", "1-4", "1-5", "_", "1-6:X", "1-7:X"], ["2-1", "2-2", "_", "2-3", "2-4", "2-5", "_", "2-6", "2-7"], ["3-1", "3-2", "_", "3-3", "3-4", "3-5", "_", "3-6", "3-7"], ["4-1", "4-2", "_", "4-3", "4-4", "4-5", "_", "4-6", "4-7"], ["5-1:X", "5-2:X", "_", "5-3:X", "5-4:X", "_", "_", "5-6:X", "5-7:X"], ["6-1:X", "6-2:X", "_", "_", "DOOR", "_", "_", "_", "_"] ] },
             "middle_new_orange": { name: "國中新橘教室", layout: [ ["1-1:X", "1-2", "_", "1-3", "1-4", "1-5", "_", "1-6", "1-7", "1-8:X"], ["2-1", "2-2", "_", "2-3", "2-4", "2-5", "_", "2-6", "2-7", "2-8"], ["3-1", "3-2", "_", "3-3", "3-4", "3-5", "_", "3-6", "3-7", "3-8"], ["4-1", "4-2", "_", "4-3", "4-4", "4-5", "_", "4-6", "4-7", "4-8:X"], ["DOOR", "_", "_", "5-3", "5-4", "5-5", "_", "5-6", "5-7", "PILLAR"] ] },
             "middle_new_blue": { name: "國中新藍教室", layout: [ ["1-1", "1-2", "1-3", "_", "1-4", "1-5", "1-6", "1-7:X"], ["2-1", "2-2", "2-3", "_", "2-4", "2-5", "2-6", "2-7:X"], ["3-1", "3-2", "3-3", "_", "3-4", "3-5", "3-6", "3-7:X"], ["4-1", "4-2", "4-3", "_", "4-4", "4-5", "4-6", "4-7:X"], ["5-1", "5-2", "5-3", "_", "5-4", "5-5", "5-6", "5-7:X"], ["6-1:X", "6-2:X", "6-3:X", "_", "6-4:X", "6-5:X", "6-6:X", "6-7:X"], ["7-1:X", "7-2:X", "7-3:X", "_", "7-4:X", "7-5:X", "7-6:X", "7-7:X"], ["DOOR", "_", "_", "_", "_", "_", "_", "_"] ] },
-            "middle_new_yellow": { name: "國中新黃教室", layout: [ ["1-1", "1-2", "1-3", "_", "1-4", "1-5", "1-6", "_", "1-7", "1-8:X"], ["PILLAR", "2-2", "2-3", "_", "2-4", "2-5", "2-6", "_", "2-7", "2-8:X"], ["3-1:X", "3-2", "3-3", "_", "3-4", "3-5", "3-6", "_", "3-7", "3-8"], ["4-1", "4-2", "4-3", "_", "4-4", "4-5", "4-6", "_", "4-7", "4-8"], ["5-1", "5-2", "5-3", "_", "5-4", "5-5", "5-6", "_", "5-7", "5-8"], ["6-1:X", "6-2", "6-3", "_", "6-4", "6-5", "6-6", "_", "6-7", "6-8"], ["DOOR", "_", "_", "_", "_", "_", "_", "_", "_", "_"] ] },
-            "middle_new_red": { name: "國中新紅教室", layout: [ ["1-1", "1-2:X", "1-3", "_", "1-4", "1-5", "1-6", "1-7", "_", "1-8", "1-9:X", "1-10:X"], ["2-1", "2-2", "2-3", "_", "2-4", "2-5", "2-6", "2-7", "_", "2-8", "2-9", "2-10"], ["3-1", "3-2", "3-3", "_", "3-4", "3-5", "3-6", "3-7", "_", "3-8", "3-9", "3-10"], ["DOOR", "_", "_", "_", "_", "_", "_", "_", "_", "_", "_", "_"], ["4-1", "4-2", "4-3", "_", "4-4", "4-5", "4-6", "4-7", "_", "4-8", "4-9", "4-10"], ["5-1", "5-2", "5-3", "_", "5-4", "5-5", "5-6", "5-7", "_", "5-8", "5-9", "5-10"], ["6-1", "6-2", "6-3", "_", "6-4", "6-5", "6-6", "6-7", "_", "6-8", "6-9", "6-10"], ["7-1", "7-2", "7-3", "_", "7-4", "7-5", "7-6", "7-7", "_", "7-8", "7-9", "7-10"], ["8-1:X", "8-2:X", "8-3:X","_","8-4:X", "8-5:X", "8-6:X", "8-7:X", "_", "8-8:X", "8-9:X", "8-10:X"] ] },
-            "middle_big_red": { name: "國中大紅教室", layout: [ ["1-1:X", "1-2", "_", "1-3", "1-4", "1-5", "_", "1-6", "1-7", "1-8", "_", "1-9", "1-10:X"], ["2-1", "2-2", "_", "2-3", "2-4", "2-5", "_", "2-6", "2-7", "2-8", "_", "2-9", "2-10"], ["3-1", "3-2", "_", "3-3", "3-4", "3-5", "_", "3-6", "3-7", "3-8", "_", "3-9", "3-10"], ["4-1", "4-2", "_", "4-3", "4-4", "4-5", "_", "4-6", "4-7", "4-8", "_", "4-9", "4-10"], ["5-1", "5-2", "_", "5-3", "5-4", "5-5", "_", "5-6", "5-7", "5-8", "_", "5-9", "5-10"], ["6-1", "6-2", "_", "6-3", "6-4", "6-5", "_", "6-6", "6-7", "6-8", "_", "6-9", "6-10"], ["7-1", "7-2", "_", "7-3", "7-4", "7-5", "_", "7-6", "7-7", "7-8", "_", "7-9", "7-10"], ["_","_","_","_","_","_","_","_","_","_","_","_","DOOR"] ] },
-            "middle_da_chiao": { name: "國中大橋教室", layout: [ ["1-1:X", "1-2:X", "1-3", "_", "1-4", "1-5", "1-6", "_", "1-7", "1-8:X"], ["2-1", "2-2", "2-3", "_", "2-4", "2-5", "2-6", "_", "2-7", "2-8"], ["3-1", "3-2", "3-3", "_", "3-4", "3-5", "3-6", "_", "3-7", "3-8"], ["4-1", "4-2", "4-3", "_", "4-4", "4-5", "4-6", "_", "4-7", "4-8:X"], ["5-1", "5-2", "5-3", "_", "5-4", "5-5", "5-6", "_", "5-7", "5-8"], ["_","_","_","_","_","_","_","_","_","DOOR"] ] },
+            "middle_new_yellow": { name: "國中新黃教室", layout: [ ["1-1:X", "1-2", "1-3", "_", "1-4", "1-5", "1-6", "_", "1-7", "1-8:X"], ["PILLAR", "2-2", "2-3", "_", "2-4", "2-5", "2-6", "_", "2-7", "2-8:X"], ["3-1:X", "3-2", "3-3", "_", "3-4", "3-5", "3-6", "_", "3-7", "3-8"], ["4-1", "4-2", "4-3", "_", "4-4", "4-5", "4-6", "_", "4-7", "4-8"], ["5-1", "5-2", "5-3", "_", "5-4", "5-5", "5-6", "_", "5-7", "5-8"], ["6-1:X", "6-2", "6-3", "_", "6-4", "6-5", "6-6", "_", "6-7", "6-8"], ["DOOR", "_", "_", "_", "_", "_", "_", "_", "_", "_"] ] },
+            "middle_new_red": { name: "國中新紅教室", layout: [ ["1-1:X", "1-2:X", "1-3", "_", "1-4", "1-5", "1-6", "1-7", "_", "1-8", "1-9:X", "1-10:X"], ["2-1", "2-2", "2-3", "_", "2-4", "2-5", "2-6", "2-7", "_", "2-8", "2-9", "2-10"], ["3-1", "3-2", "3-3", "_", "3-4", "3-5", "3-6", "3-7", "_", "3-8", "3-9", "3-10"], ["DOOR", "_", "_", "_", "_", "_", "_", "_", "_", "_", "_", "_"], ["4-1", "4-2", "4-3", "_", "4-4", "4-5", "4-6", "4-7", "_", "4-8", "4-9", "4-10"], ["5-1", "5-2", "5-3", "_", "5-4", "5-5", "5-6", "5-7", "_", "5-8", "5-9", "5-10"], ["6-1", "6-2", "6-3", "_", "6-4", "6-5", "6-6", "6-7", "_", "6-8", "6-9", "6-10"], ["7-1", "7-2", "7-3", "_", "7-4", "7-5", "7-6", "7-7", "_", "7-8", "7-9", "7-10"], ["8-1:X", "8-2:X", "8-3:X","_","8-4:X", "8-5:X", "8-6:X", "8-7:X", "_", "8-8:X", "8-9:X", "8-10:X"] ] },
+            "middle_big_red": { name: "國中大紅教室", layout: [ ["1-1:X", "1-2:X", "_", "1-3", "1-4", "1-5", "_", "1-6", "1-7", "1-8", "_", "1-9:X", "1-10:X"], ["2-1", "2-2", "_", "2-3", "2-4", "2-5", "_", "2-6", "2-7", "2-8", "_", "2-9", "2-10"], ["3-1", "3-2", "_", "3-3", "3-4", "3-5", "_", "3-6", "3-7", "3-8", "_", "3-9", "3-10"], ["4-1", "4-2", "_", "4-3", "4-4", "4-5", "_", "4-6", "4-7", "4-8", "_", "4-9", "4-10"], ["5-1", "5-2", "_", "5-3", "5-4", "5-5", "_", "5-6", "5-7", "5-8", "_", "5-9", "5-10"], ["6-1", "6-2", "_", "6-3", "6-4", "6-5", "_", "6-6", "6-7", "6-8", "_", "6-9", "6-10"], ["7-1:X", "7-2:X", "_", "7-3:X", "7-4:X", "7-5:X", "_", "7-6:X", "7-7:X", "7-8:X", "_", "7-9:X", "7-10:X"], ["_","_","_","_","_","_","_","_","_","_","_","_","DOOR"] ] },
+            "middle_da_chiao": { name: "國中大橘教室", layout: [ ["1-1:X", "1-2:X", "1-3", "_", "1-4", "1-5", "1-6", "_", "1-7", "1-8:X"], ["2-1", "2-2", "2-3", "_", "2-4", "2-5", "2-6", "_", "2-7", "2-8"], ["3-1", "3-2", "3-3", "_", "3-4", "3-5", "3-6", "_", "3-7", "3-8"], ["4-1", "4-2", "4-3", "_", "4-4", "4-5", "4-6", "_", "4-7", "4-8"], ["5-1", "5-2", "5-3", "_", "5-4", "5-5", "5-6", "_", "_", "DOOR"] ] },
             "middle_big_green": { name: "國中大綠教室", layout: [ ["DOOR", "_", "_", "_", "_", "_"], ["1-1", "1-2", "1-3", "_", "1-4", "1-5"], ["2-1", "2-2", "2-3", "_", "2-4", "2-5"], ["3-1", "3-2", "3-3", "_", "3-4", "3-5"], ["PILLAR", "4-2", "4-3", "_", "4-4", "4-5"] ] },
             "test_room": { name: "測試專用教室", layout: [ ["1-1", "1-2"] ] }
         };
@@ -596,6 +645,10 @@
         let bookingSort = { col: 'time', asc: false };
         let waitlistSort = { col: 'timestamp', asc: true };
 
+        // ★★★ V33.0 新增：座位編輯器全域變數 ★★★
+        let currentEditorLayout = []; // 儲存當前編輯器狀態 (2D Array)
+        let isEditorLocked = false;   // 是否鎖定 (已售出則鎖定)
+
         window.switchTab = function(tabName) {
             document.querySelectorAll('.page-section').forEach(el => el.classList.remove('active'));
             document.querySelectorAll('.nav-tabs button').forEach(el => el.classList.remove('active'));
@@ -603,7 +656,13 @@
             event.target.classList.add('active');
             if (tabName === 'bills') initBillPage();
         };
-        window.showCourseForm = function() { document.getElementById('courseListView').style.display = 'none'; document.getElementById('courseFormView').style.display = 'block'; resetForm(); };
+        window.showCourseForm = function() { 
+            document.getElementById('courseListView').style.display = 'none'; 
+            document.getElementById('courseFormView').style.display = 'block'; 
+            resetForm(); 
+            // 新增時，預設載入第一個教室的範本
+            resetSeatEditor();
+        };
         window.hideCourseForm = function() { document.getElementById('courseListView').style.display = 'block'; document.getElementById('courseFormView').style.display = 'none'; };
         window.previewImage = function(input) { if (input.files && input.files[0]) { const reader = new FileReader(); reader.onload = function(e) { document.getElementById('imgPreview').src = e.target.result; document.getElementById('imgPreview').style.display = 'block'; }; reader.readAsDataURL(input.files[0]); } };
         
@@ -647,6 +706,121 @@
             classTypes.forEach(t => typeList.innerHTML += `<option value="${t}">`);
         }
 
+        // ★★★ V33.0 新增：座位編輯器核心邏輯 ★★★
+        
+        // 1. 重置編輯器 (載入預設範本)
+        window.resetSeatEditor = function() {
+            if (isEditorLocked) {
+                alert("🔒 此課程已有售出紀錄，無法重置座位表！");
+                // 恢復選單為原本的教室 (如果使用者試圖切換)
+                const courseId = document.getElementById('c_id').value;
+                if (courseId && coursesData[courseId]) {
+                    document.getElementById('c_classroom').value = coursesData[courseId].classroom;
+                }
+                return;
+            }
+
+            const classroomType = document.getElementById('c_classroom').value;
+            const config = classrooms[classroomType];
+            if (!config) return;
+
+            // 深拷貝一份範本，以免修改到原始設定
+            currentEditorLayout = JSON.parse(JSON.stringify(config.layout));
+            renderEditorGrid();
+        };
+
+        // 2. 渲染編輯器網格
+        function renderEditorGrid() {
+            const grid = document.getElementById('editorGrid');
+            grid.innerHTML = "";
+
+            currentEditorLayout.forEach((row, rIndex) => {
+                const rowDiv = document.createElement('div');
+                rowDiv.className = 'row';
+                row.forEach((code, cIndex) => {
+                    const seat = document.createElement('div');
+                    seat.className = 'seat';
+                    
+                    // 解析狀態
+                    let displayCode = code;
+                    if (code.includes(':X')) {
+                        seat.classList.add('blocked');
+                        displayCode = code.split(':')[0];
+                    } else if (code === "_") {
+                        seat.classList.add('aisle');
+                    } else if (code === "DOOR") {
+                        seat.classList.add('door');
+                        seat.textContent = "門";
+                    } else if (code === "PILLAR") {
+                        seat.classList.add('pillar');
+                        seat.textContent = "柱";
+                    } else {
+                        // 正常座位
+                        seat.textContent = code;
+                    }
+
+                    // 儲存原始 ID (如果是特殊狀態，我們需要知道它原本是誰，以便切換回來)
+                    // 這裡簡化邏輯：如果當前是特殊狀態，我們假設它的 ID 是 r-c 格式或保留原值
+                    // 為了方便，我們直接操作 currentEditorLayout 陣列
+                    
+                    if (!isEditorLocked) {
+                        seat.onclick = () => toggleSeatType(rIndex, cIndex);
+                    } else {
+                        seat.style.cursor = "not-allowed";
+                        seat.style.opacity = "0.7";
+                    }
+                    
+                    rowDiv.appendChild(seat);
+                });
+                grid.appendChild(rowDiv);
+            });
+        }
+
+        // 3. 切換座位狀態 (循環邏輯)
+        function toggleSeatType(r, c) {
+            const currentCode = currentEditorLayout[r][c];
+            let newCode = currentCode;
+
+            // 狀態循環：
+            // 1. 正常 (如 "1-1") -> 2. 走道 ("_") -> 3. 阻擋 ("1-1:X") -> 4. 柱子 ("PILLAR") -> 5. 門 ("DOOR") -> 1. 正常
+
+            if (currentCode === "_") {
+                // 走道 -> 阻擋 (需恢復 ID)
+                // 這裡有個小問題：變成走道後 ID 遺失了。
+                // 解決方案：我們用 r+1, c+1 來推算預設 ID，或者簡單地用 "X"
+                // 為了 V33.0 的穩定性，我們嘗試從原始範本找回 ID
+                const classroomType = document.getElementById('c_classroom').value;
+                const originalCode = classrooms[classroomType].layout[r][c];
+                // 如果原始就是走道，那恢復成 "X"
+                const baseId = (originalCode === "_" || originalCode === "DOOR" || originalCode === "PILLAR") ? `${r+1}-${c+1}` : originalCode.split(':')[0];
+                newCode = `${baseId}:X`;
+            } 
+            else if (currentCode.includes(":X")) {
+                // 阻擋 -> 柱子
+                newCode = "PILLAR";
+            }
+            else if (currentCode === "PILLAR") {
+                // 柱子 -> 門
+                newCode = "DOOR";
+            }
+            else if (currentCode === "DOOR") {
+                // 門 -> 正常 (需恢復 ID)
+                const classroomType = document.getElementById('c_classroom').value;
+                const originalCode = classrooms[classroomType].layout[r][c];
+                const baseId = (originalCode === "_" || originalCode === "DOOR" || originalCode === "PILLAR") ? `${r+1}-${c+1}` : originalCode.split(':')[0];
+                newCode = baseId;
+            }
+            else {
+                // 正常 -> 走道
+                newCode = "_";
+            }
+
+            currentEditorLayout[r][c] = newCode;
+            renderEditorGrid();
+        }
+
+        // ★★★ V33.0 結束 ★★★
+
         window.saveCourse = async function() {
             const btn = document.getElementById('btnSave');
             const pwd = document.getElementById('adminPwd').value.trim();
@@ -681,16 +855,15 @@
 
                 if (!grade || !subject || !start1) throw new Error("請填寫完整資料！");
 
+                // ★ V33.0 修改：計算總座位數時，使用編輯器當前的 layout
                 let totalSeats = 0;
-                if (classrooms[classroom]) {
-                    classrooms[classroom].layout.forEach(row => {
-                        row.forEach(seatCode => {
-                            if (seatCode !== "_" && seatCode !== "DOOR" && seatCode !== "PILLAR" && !seatCode.includes(":X")) {
-                                totalSeats++;
-                            }
-                        });
+                currentEditorLayout.forEach(row => {
+                    row.forEach(seatCode => {
+                        if (seatCode !== "_" && seatCode !== "DOOR" && seatCode !== "PILLAR" && !seatCode.includes(":X")) {
+                            totalSeats++;
+                        }
                     });
-                }
+                });
 
                 let imageUrl = oldImageUrl || "https://via.placeholder.com/400x200?text=No+Image";
                 if (fileInput.files.length > 0) {
@@ -712,19 +885,21 @@
                     waitlistEnabled: waitlistEnabled,
                     waitlistLimit: parseInt(waitlistLimit) || 0,
                     totalSeats: totalSeats,
+                    // ★ V33.0 關鍵：將編輯器當下的 layout 存入資料庫 (影印存檔)
+                    layout: currentEditorLayout,
                     adminPwd: pwd
                 };
 
                 let courseId = id;
                 if (id) {
                     await update(ref(db, `courses/${id}`), courseData);
-                    alert("✅ 課程更新成功！");
+                    alert("✅ 課程更新成功！座位表已同步更新。");
                 } else {
                     const newRef = push(coursesRef);
                     courseId = newRef.key;
                     courseData.createdAt = Date.now();
                     await set(newRef, courseData);
-                    alert("✅ 課程新增成功！");
+                    alert("✅ 課程新增成功！座位表已建立。");
                 }
 
                 const start1Time = new Date(start1).getTime();
@@ -783,6 +958,40 @@
             const img = document.getElementById('imgPreview');
             img.src = c.image;
             img.style.display = 'block';
+
+            // ★★★ V33.0 新增：載入座位表邏輯 ★★★
+            
+            // 1. 檢查是否有已售出的座位 (安全鎖)
+            const courseSeats = seatsData[key] || {};
+            let hasSold = false;
+            Object.values(courseSeats).forEach(s => {
+                if (s.status === 'sold') hasSold = true;
+            });
+
+            isEditorLocked = hasSold;
+            const lockMsg = document.getElementById('editorLockMsg');
+            const classroomSelect = document.getElementById('c_classroom');
+            
+            if (hasSold) {
+                lockMsg.style.display = 'block';
+                classroomSelect.disabled = true; // 鎖定教室選擇
+            } else {
+                lockMsg.style.display = 'none';
+                classroomSelect.disabled = false;
+            }
+
+            // 2. 載入 Layout
+            if (c.layout) {
+                // 如果資料庫有存 layout (影印稿)，直接用
+                currentEditorLayout = JSON.parse(JSON.stringify(c.layout));
+            } else {
+                // 如果沒有 (舊課程)，載入預設範本
+                const config = classrooms[c.classroom];
+                if (config) {
+                    currentEditorLayout = JSON.parse(JSON.stringify(config.layout));
+                }
+            }
+            renderEditorGrid();
         };
 
         window.resetForm = function() {
@@ -795,6 +1004,11 @@
             tinymce.get('c_desc').setContent('');
             document.getElementById('uploadStatus').textContent = "";
             document.getElementById('imgPreview').style.display = 'none';
+            
+            // V33.0 重置鎖定狀態
+            isEditorLocked = false;
+            document.getElementById('editorLockMsg').style.display = 'none';
+            document.getElementById('c_classroom').disabled = false;
         };
 
         function renderCourseList() {
@@ -930,48 +1144,59 @@
             mapContainer.style.display = 'block';
             mapContent.innerHTML = "";
             
-            const classroomType = coursesData[courseId].classroom;
-            const config = classrooms[classroomType];
+            // ★ V33.0 修改：監控畫面也優先使用資料庫存的 layout
+            const c = coursesData[courseId];
+            let layoutToRender = [];
+            
+            if (c.layout) {
+                layoutToRender = c.layout;
+            } else {
+                const config = classrooms[c.classroom];
+                if (config) layoutToRender = config.layout;
+            }
+
             const currentSeats = seatsData[courseId] || {};
 
-            config.layout.forEach(row => {
-                const rowDiv = document.createElement('div');
-                rowDiv.className = 'row';
-                row.forEach(seatCode => {
-                    const seat = document.createElement('div');
-                    seat.className = 'seat';
-                    let code = seatCode;
-                    let isBlocked = false;
-                    if (seatCode.includes(':X')) { code = seatCode.split(':')[0]; isBlocked = true; }
+            if (layoutToRender && layoutToRender.length > 0) {
+                layoutToRender.forEach(row => {
+                    const rowDiv = document.createElement('div');
+                    rowDiv.className = 'row';
+                    row.forEach(seatCode => {
+                        const seat = document.createElement('div');
+                        seat.className = 'seat';
+                        let code = seatCode;
+                        let isBlocked = false;
+                        if (seatCode.includes(':X')) { code = seatCode.split(':')[0]; isBlocked = true; }
 
-                    if (code === "_") seat.classList.add('aisle');
-                    else if (code === "DOOR") { seat.textContent = "門"; seat.classList.add('aisle'); }
-                    else if (code === "PILLAR") { seat.textContent = "柱"; seat.classList.add('aisle'); }
-                    else {
-                        seat.textContent = code;
-                        const info = currentSeats[code];
-                        
-                        if (info) {
-                            if (info.status === 'sold') {
-                                seat.classList.add('sold');
-                                seat.innerHTML += `<div class="seat-tooltip">${info.studentName}<br>${info.parentPhone}</div>`;
-                            } else if (info.status === 'locked') {
-                                seat.classList.add('locked');
-                                if (info.user === 'admin_reserved') {
-                                    seat.classList.add('reserved'); 
-                                    seat.innerHTML += `<div class="seat-tooltip">保留位</div>`;
-                                } else {
-                                    seat.innerHTML += `<div class="seat-tooltip">填寫中...</div>`;
+                        if (code === "_") seat.classList.add('aisle');
+                        else if (code === "DOOR") { seat.textContent = "門"; seat.classList.add('aisle'); }
+                        else if (code === "PILLAR") { seat.textContent = "柱"; seat.classList.add('aisle'); }
+                        else {
+                            seat.textContent = code;
+                            const info = currentSeats[code];
+                            
+                            if (info) {
+                                if (info.status === 'sold') {
+                                    seat.classList.add('sold');
+                                    seat.innerHTML += `<div class="seat-tooltip">${info.studentName}<br>${info.parentPhone}</div>`;
+                                } else if (info.status === 'locked') {
+                                    seat.classList.add('locked');
+                                    if (info.user === 'admin_reserved') {
+                                        seat.classList.add('reserved'); 
+                                        seat.innerHTML += `<div class="seat-tooltip">保留位</div>`;
+                                    } else {
+                                        seat.innerHTML += `<div class="seat-tooltip">填寫中...</div>`;
+                                    }
                                 }
                             }
+                            
+                            seat.onclick = () => toggleReserve(courseId, code, info);
                         }
-                        
-                        seat.onclick = () => toggleReserve(courseId, code, info);
-                    }
-                    rowDiv.appendChild(seat);
+                        rowDiv.appendChild(seat);
+                    });
+                    mapContent.appendChild(rowDiv);
                 });
-                mapContent.appendChild(rowDiv);
-            });
+            }
         };
 
         window.toggleReserve = async function(courseId, seatId, info) {
@@ -1459,7 +1684,6 @@
 
         startZombieSweeper();
 
-        // ★★★ 學費單功能邏輯 (V31.4) ★★★
         window.initBillPage = function() {
             renderCourseConfig();
             processBills();
