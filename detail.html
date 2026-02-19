@@ -48,19 +48,25 @@
             overflow-x: auto; 
             padding-bottom: 10px; 
             text-align: center; 
-            user-select: none; /* 恢復觸控與滑動能力 */
+            user-select: none; 
             -webkit-overflow-scrolling: touch; 
         }
         
-        /* ★ 將講台與座位表的外層設定為 block，強迫它們必須「上下垂直堆疊」，徹底解決並排跑版問題！ */
+        /* ★ 新增：這層包裝會被座位表撐開到真實寬度 */
+        .classroom-inner {
+            display: inline-block;
+            margin: 0 auto;
+        }
+
+        /* ★ 讓講台區塊跟座位表區塊佔滿 inner 的寬度 */
         #stageArea, #classroomGrid {
-            display: block;
+            display: block; 
             width: 100%;
         }
 
         .stage-box { 
-            width: 250px; 
-            margin: 0 auto 20px auto; /* 靠這個 auto 讓講台在自己的區塊內完美置中 */
+            width: 100%; /* ★ 關鍵：設為 100% 就會自動拉伸到跟座位一樣寬！ */
+            margin: 0 auto 20px auto; 
             padding: 8px; 
             border: 2px solid #333; 
             background-color: #fff; 
@@ -106,21 +112,20 @@
             .timer-label { font-size: 14px; font-weight: bold; } 
             .btn-action { font-size: 18px; padding: 12px; } 
             
-            /* ★ 以下是教室等比例縮小的關鍵設定 */
             .stage-box { 
-                width: 180px; /* 講台縮小 */
+                /* width: 180px; 這裡刪除！讓它維持 100% 自動對齊 */
                 font-size: 14px;
                 padding: 5px;
                 margin-bottom: 15px;
             }
             .row {
-                gap: 2px; /* 縮小座位左右間距 */
-                margin-bottom: 6px; /* 縮小排與排的上下間距 */
+                gap: 2px; 
+                margin-bottom: 6px; 
             }
             .seat { 
-                width: 21px;  /* 座位寬度大幅縮小 */
-                height: 25px; /* 座位高度大幅縮小 */
-                font-size: 7.5px; /* 字體縮小以符合座位 */
+                width: 21px;  
+                height: 25px; 
+                font-size: 7.5px; 
                 border-radius: 2px;
             }
         }
@@ -161,8 +166,10 @@
                 <div class="preview-title">🏫 教室配置示意圖</div>
                 <div class="preview-subtitle">此為座位分佈參考，實際剩餘座位請以劃位頁面為主</div>
                 <div class="classroom-wrapper">
-                    <div id="stageArea"></div>
-                    <div id="classroomGrid"></div>
+                    <div class="classroom-inner"> 
+                        <div id="stageArea"></div>
+                        <div id="classroomGrid"></div>
+                    </div>
                 </div>
             </div>
 
