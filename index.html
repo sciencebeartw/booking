@@ -1,34 +1,49 @@
 <!-- 檔案：index.html -->
-<!-- 版本：V28.23 (燈號邏輯修正) -->
+<!-- 版本：V29.1 (新增：今日劃位與最近劃位之動態時光機) -->
 <!DOCTYPE html>
 <html lang="zh-TW">
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>🐻 山熊科學 - 課程劃位入口</title>
+    <title>山熊科學 - 課程劃位入口</title>
     <link rel="icon" href="icon.png" type="image/png">
     <link rel="apple-touch-icon" href="icon.png">
     <style>
         body { font-family: "Microsoft JhengHei", sans-serif; background-color: #f8f9fa; margin: 0; padding: 0; }
-        header { background: #2c3e50; padding: 10px 20px; display: flex; justify-content: space-between; align-items: center; color: white; box-shadow: 0 2px 5px rgba(0,0,0,0.1); position: sticky; top: 0; z-index: 1000; }
-        .header-container { max-width: 1200px; margin: 0 auto; padding: 10px 20px; display: flex; justify-content: space-between; align-items: center; width: 100%; }
-        .header-left { display: flex; align-items: center; gap: 15px; cursor: pointer; user-select: none; }
-        .header-left img { height: 50px; }
-        .header-left h1 { margin: 0; font-size: 22px; letter-spacing: 1px; color: white; }
-        .header-right { display: flex; gap: 15px; align-items: center; }
-        .nav-link { color: white; text-decoration: none; font-size: 15px; font-weight: bold; padding: 8px 12px; border-radius: 5px; transition: 0.3s; display: flex; align-items: center; gap: 5px; }
+        
+        /* 導覽列樣式 (完美置中與間距同步) */
+        header { background: #2c3e50; padding: 0; display: flex; justify-content: space-between; align-items: center; color: white; box-shadow: 0 2px 5px rgba(0,0,0,0.1); position: sticky; top: 0; z-index: 1000; }
+        .header-container { max-width: 1200px; margin: 0 auto; padding: 15px 20px; display: grid; grid-template-columns: 1fr auto 1fr; align-items: center; width: 100%; box-sizing: border-box; }
+        .header-left { grid-column: 2; display: flex; justify-content: center; align-items: center; gap: 20px; cursor: pointer; user-select: none; white-space: nowrap; }
+        .header-left img { height: 60px; }
+        .header-left h1 { margin: 0; font-size: 24px; letter-spacing: 1px; color: white; }
+        .header-right { grid-column: 3; display: flex; gap: 15px; align-items: center; justify-content: flex-end; white-space: nowrap; }
+        .nav-link { color: white; text-decoration: none; font-size: 15px; font-weight: bold; padding: 8px 12px; border-radius: 5px; transition: 0.3s; display: flex; align-items: center; gap: 5px; white-space: nowrap; }
         .nav-link:hover { background: rgba(255,255,255,0.1); }
-        @media (max-width: 768px) { .header-container { flex-direction: column; gap: 10px; } .header-right { gap: 10px; flex-wrap: wrap; justify-content: center; } .nav-link { font-size: 14px; padding: 5px 10px; } }
+        @media (max-width: 950px) { .header-container { display: flex; flex-direction: column; gap: 10px; } .header-left { white-space: normal; flex-wrap: wrap; justify-content: center; text-align: center; } .header-right { flex-wrap: wrap; justify-content: center; } .nav-link { font-size: 14px; padding: 5px 10px; } }
+
         .carousel { position: relative; width: 100%; height: 400px; overflow: hidden; background: #eee; margin-bottom: 20px; }
         .carousel-track { display: flex; transition: transform 0.5s ease-in-out; height: 100%; }
         .carousel-slide { min-width: 100%; height: 100%; background-size: contain; background-repeat: no-repeat; background-position: center; }
         .carousel-nav { position: absolute; bottom: 20px; left: 50%; transform: translateX(-50%); display: flex; gap: 10px; }
         .carousel-dot { width: 12px; height: 12px; background: rgba(0,0,0,0.3); border-radius: 50%; cursor: pointer; }
         .carousel-dot.active { background: #e74c3c; }
+        
         .filter-container { max-width: 1100px; margin: 0 auto; padding: 0 20px; display: flex; flex-wrap: wrap; justify-content: center; gap: 10px; }
         .filter-btn { padding: 10px 20px; border: 1px solid #ddd; background: white; border-radius: 30px; cursor: pointer; font-size: 16px; transition: 0.3s; color: #555; }
         .filter-btn:hover { background: #eee; }
         .filter-btn.active { background: #2c3e50; color: white; border-color: #2c3e50; }
+        
+        /* ★★★ 今日劃位專屬樣式 (紅) ★★★ */
+        .filter-btn.special-today { border-color: #e74c3c; color: #e74c3c; font-weight: bold; background: #fff5f5; }
+        .filter-btn.special-today:hover { background: #ffebeb; }
+        .filter-btn.special-today.active { background: #e74c3c; color: white; border-color: #e74c3c; }
+
+        /* ★★★ 最近劃位專屬樣式 (橘) ★★★ */
+        .filter-btn.special-upcoming { border-color: #e67e22; color: #e67e22; font-weight: bold; background: #fdf2e9; }
+        .filter-btn.special-upcoming:hover { background: #fae5d3; }
+        .filter-btn.special-upcoming.active { background: #e67e22; color: white; border-color: #e67e22; }
+
         .container { max-width: 1100px; margin: 30px auto; padding: 0 20px; display: grid; grid-template-columns: repeat(auto-fill, minmax(320px, 1fr)); gap: 30px; justify-content: center; }
         .container:has(> :nth-child(1):last-child) { display: flex; justify-content: center; }
         .container:has(> :nth-child(1):last-child) .course-card { width: 100%; max-width: 400px; }
@@ -85,7 +100,7 @@
     </div>
 
     <div id="filterContainer" class="filter-container">
-        <button class="filter-btn active" onclick="filterCourses('all')">全部課程</button>
+        <button class="filter-btn active" id="btn-all" onclick="filterCourses('all')">全部課程</button>
     </div>
 
     <div id="courseContainer" class="container">
@@ -93,7 +108,7 @@
     </div>
 
     <footer>
-        &copy; 2024 山熊科學補習班 | 系統開發：Sciencebear Tech Team
+        &copy; 2025 山熊科學實驗教室 | 系統開發：Sciencebear Tech Team
     </footer>
 
     <div class="float-line-container">
@@ -180,11 +195,34 @@
         let waitlistStatus = {}; 
         let categories = new Set();
         let currentCategory = 'all';
+        let isFirstLoad = true; // 紀錄是否為初次載入
+
+        // ★★★ 判斷是否為「今天」 ★★★
+        function isToday(timestamp) {
+            const d = new Date(timestamp);
+            const today = new Date();
+            return d.getDate() === today.getDate() &&
+                   d.getMonth() === today.getMonth() &&
+                   d.getFullYear() === today.getFullYear();
+        }
+
+        // ★★★ 判斷是否為「未來的一天」 ★★★
+        function isFutureDay(timestamp) {
+            const d = new Date(timestamp);
+            const today = new Date();
+            // 把時間都歸零，只比較「日期」
+            d.setHours(0, 0, 0, 0);
+            today.setHours(0, 0, 0, 0);
+            return d.getTime() > today.getTime();
+        }
 
         onValue(ref(db, 'courses'), (snapshot) => {
             const data = snapshot.val();
             allCourses = [];
             categories = new Set();
+            
+            let hasTodayCourses = false;    // 紀錄今天是否有劃位
+            let hasUpcomingCourses = false; // 紀錄未來是否有劃位
 
             if (!data) {
                 courseContainer.innerHTML = '<div class="loading">目前沒有開放的課程。</div>';
@@ -196,20 +234,63 @@
                 c.id = key; 
                 allCourses.push(c);
                 if (c.grade) categories.add(c.grade);
+
+                // 檢查這堂課的一階時間狀態
+                if (c.start1) {
+                    const start1Time = new Date(c.start1).getTime();
+                    if (isToday(start1Time)) {
+                        hasTodayCourses = true;
+                    } else if (isFutureDay(start1Time)) {
+                        hasUpcomingCourses = true;
+                    }
+                }
             });
 
-            if (filterContainer.children.length <= 1) {
-                const gradeOrder = ["升小五課程", "升小六課程", "升國一課程", "升國二課程", "升國三課程", "升高一課程", "升高二課程", "升高三課程"];
-                const sortedCategories = Array.from(categories).sort((a, b) => gradeOrder.indexOf(a) - gradeOrder.indexOf(b));
-                sortedCategories.forEach(cat => {
-                    const btn = document.createElement('button');
-                    btn.className = 'filter-btn';
-                    btn.textContent = cat;
-                    btn.onclick = () => window.filterCourses(cat);
-                    filterContainer.appendChild(btn);
-                });
+            // 重建分類按鈕
+            filterContainer.innerHTML = '<button class="filter-btn" id="btn-all" onclick="filterCourses(\'all\')">全部課程</button>';
+
+            // 互斥邏輯：有「今日劃位」就不顯示「最近劃位」
+            if (hasTodayCourses) {
+                const btnToday = document.createElement('button');
+                btnToday.className = 'filter-btn special-today';
+                btnToday.textContent = '🔥 今日劃位';
+                btnToday.onclick = () => window.filterCourses('today');
+                filterContainer.appendChild(btnToday);
+            } else if (hasUpcomingCourses) {
+                // 只有在沒有今日劃位時，才顯示最近劃位
+                const btnUpcoming = document.createElement('button');
+                btnUpcoming.className = 'filter-btn special-upcoming';
+                btnUpcoming.textContent = '⏳ 最近劃位';
+                btnUpcoming.onclick = () => window.filterCourses('upcoming');
+                filterContainer.appendChild(btnUpcoming);
             }
-            refreshDisplay();
+
+            const gradeOrder = ["升小五課程", "升小六課程", "升國一課程", "升國二課程", "升國三課程", "升高一課程", "升高二課程", "升高三課程"];
+            const sortedCategories = Array.from(categories).sort((a, b) => gradeOrder.indexOf(a) - gradeOrder.indexOf(b));
+            
+            sortedCategories.forEach(cat => {
+                const btn = document.createElement('button');
+                btn.className = 'filter-btn';
+                btn.textContent = cat;
+                btn.onclick = () => window.filterCourses(cat);
+                filterContainer.appendChild(btn);
+            });
+
+            // ★★★ 第一次載入時的智慧預設邏輯 ★★★
+            // 優先權：今日劃位 > 最近劃位 > 全部課程
+            if (isFirstLoad) {
+                if (hasTodayCourses) {
+                    currentCategory = 'today';
+                } else if (hasUpcomingCourses) {
+                    currentCategory = 'upcoming';
+                } else {
+                    currentCategory = 'all';
+                }
+                isFirstLoad = false;
+            }
+
+            // 同步按鈕發亮狀態
+            window.filterCourses(currentCategory, true);
         });
 
         onValue(ref(db, 'seats'), (snapshot) => {
@@ -218,7 +299,6 @@
             Object.keys(data).forEach(courseId => {
                 const seats = data[courseId];
                 let soldCount = 0;
-                
                 Object.keys(seats).forEach(seatId => {
                     if (seatId === '_settings') return;
                     if (seats[seatId].status === 'sold') {
@@ -234,7 +314,6 @@
             const data = snapshot.val() || {};
             waitlistStatus = {};
             Object.keys(data).forEach(courseId => {
-                // ★★★ 修正：計算候補人數時，排除已軟刪除 (deleted) 的項目 ★★★
                 let count = 0;
                 Object.values(data[courseId]).forEach(w => {
                     if (w.status !== 'deleted') count++;
@@ -255,7 +334,13 @@
             });
 
             let finalCourses = visibleCourses;
-            if (currentCategory !== 'all') {
+            
+            // ★★★ 篩選邏輯：支援今日劃位與最近劃位 ★★★
+            if (currentCategory === 'today') {
+                finalCourses = visibleCourses.filter(c => c.start1 && isToday(new Date(c.start1).getTime()));
+            } else if (currentCategory === 'upcoming') {
+                finalCourses = visibleCourses.filter(c => c.start1 && isFutureDay(new Date(c.start1).getTime()));
+            } else if (currentCategory !== 'all') {
                 finalCourses = visibleCourses.filter(c => c.grade === currentCategory);
             }
 
@@ -264,7 +349,6 @@
 
         setInterval(refreshDisplay, 1000);
 
-        // ★★★ 核心修正：getStatusBadge 嚴格邏輯 ★★★
         function getStatusBadge(c, now) {
             const start1 = new Date(c.start1).getTime();
             const end1 = c.end1 ? new Date(c.end1).getTime() : 9999999999999;
@@ -283,17 +367,13 @@
             const waitlistLimit = c.waitlistLimit || 0;
             const isWaitlistFull = (waitlistLimit > 0 && waitlistCount >= waitlistLimit);
 
-            // 1. 一階開始前
             if (now < start1) return '<div class="status-badge status-closed">尚未開放</div>';
 
-            // 2. 一階期間 (Start1 ~ End1)
             if (now >= start1 && now < end1) {
                 if (isFull) {
-                    // 若有二階，一階額滿不顯示候補
                     if (hasStart2) {
                         return '<div class="status-badge status-full">🔴 此階段已額滿</div>';
                     } else {
-                        // 若無二階，視同最後階段，可顯示候補
                         if (c.waitlistEnabled) {
                             if (isWaitlistFull) return '<div class="status-badge status-full">🔴 候補已額滿</div>';
                             return '<div class="status-badge status-wait">🟡 開放候補中</div>';
@@ -304,12 +384,10 @@
                 return '<div class="status-badge status-open">🟢 開放劃位中</div>';
             }
 
-            // 3. 一階結束 ~ 二階開始前 (整理中)
             if (hasEnd1 && hasStart2 && now >= end1 && now < start2) {
                 return '<div class="status-badge status-closed">⛔ 座位整理中</div>';
             }
 
-            // 4. 二階期間 (Start2 ~ End2)
             if (hasStart2 && now >= start2 && now < end2) {
                 if (isFull) {
                     if (c.waitlistEnabled) {
@@ -321,12 +399,10 @@
                 return '<div class="status-badge status-open">🟢 開放劃位中</div>';
             }
 
-            // 5. 全部結束 (End2 之後，或無二階且 End1 之後)
             if ((hasEnd2 && now >= end2) || (!hasStart2 && hasEnd1 && now >= end1)) {
                 return '<div class="status-badge status-full">🔴 劃位已結束</div>';
             }
             
-            // 預設 (理論上不會執行到這)
             return '<div class="status-badge status-closed">尚未開放</div>';
         }
 
@@ -387,16 +463,20 @@
             });
         }
 
-        window.filterCourses = function(category) {
+        // ★★★ 點擊按鈕的觸發邏輯 ★★★
+        window.filterCourses = function(category, noRefresh = false) {
             currentCategory = category;
             document.querySelectorAll('.filter-btn').forEach(btn => {
-                if (btn.textContent === category || (category === 'all' && btn.textContent === '全部課程')) {
+                if (btn.textContent === category || 
+                   (category === 'all' && btn.textContent === '全部課程') ||
+                   (category === 'today' && btn.textContent === '🔥 今日劃位') ||
+                   (category === 'upcoming' && btn.textContent === '⏳ 最近劃位')) {
                     btn.classList.add('active');
                 } else {
                     btn.classList.remove('active');
                 }
             });
-            refreshDisplay();
+            if (!noRefresh) refreshDisplay();
         };
     </script>
 </body>

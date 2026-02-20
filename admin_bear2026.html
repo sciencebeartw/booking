@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>🐻 山熊科學 - 後台指揮中心</title>
+    <title>山熊科學 - 後台指揮中心</title>
     <link rel="icon" href="icon.png" type="image/png">
     <link rel="apple-touch-icon" href="icon.png">
     <script src="https://cdn.tiny.cloud/1/2nwvnffdvbvf93d6ry0sov7w0d7yabtr1d6tp8l38cb6hoh1/tinymce/6/tinymce.min.js" referrerpolicy="origin"></script>
@@ -101,8 +101,8 @@
 
         /* 學費單樣式 */
         .bill-config-area { background: white; padding: 20px; border-radius: 10px; margin-bottom: 20px; max-width: 800px; margin: 0 auto 20px auto; }
-        .bill-preview-container { background: #333; padding: 20px; border-radius: 10px; display: flex; flex-direction: column; align-items: center; min-height: 600px; }
-        .bill-controls { background: white; padding: 10px; border-radius: 8px; width: 210mm; display: flex; gap: 10px; align-items: center; justify-content: space-between; margin-bottom: 15px; box-sizing: border-box; }
+        .bill-preview-container { background: transparent; padding: 20px; border-radius: 10px; display: flex; flex-direction: column; align-items: center; min-height: 600px; }
+        .bill-controls { background: white; padding: 10px; border-radius: 8px; width: 210mm; display: flex; gap: 10px; align-items: center; justify-content: space-between; margin-bottom: 15px; box-sizing: border-box; box-shadow: 0 2px 5px rgba(0,0,0,0.1); }
         
         .bill-container {
             width: 210mm; height: 148mm; background: white; padding: 5mm; 
@@ -132,7 +132,7 @@
         #billArea .col-3 { width: 19%; max-width: 19%; text-align: right; padding-right: 15px !important; white-space: nowrap; overflow: hidden; box-sizing: border-box; } 
         
         .note-cell { font-size: 14px; color: #000; vertical-align: top; line-height: 1.4; padding: 5px; height: 200px; white-space: pre-wrap; position: relative; box-sizing: border-box; z-index: 1; word-break: break-all; }
-        .note-cell::before { content: ""; position: absolute; top: 5px; left: 5px; right: 5px; bottom: 5px; background-image: url('logo1.png'); background-repeat: no-repeat; background-position: center center; background-size: contain; opacity: 0.1; z-index: -1; }
+        .note-cell::before { content: ""; position: absolute; top: 5px; left: 5px; right: 5px; bottom: 5px; background-image: url('logo1.png'); background-repeat: no-repeat; background-position: center center; background-size: contain; opacity: 0.25; z-index: -1; }
         .row-total { height: 40px !important; }
         .total-cell { background: #fffbe6 !important; height: 40px !important; padding: 0; vertical-align: top; }
         .total-wrapper { display: flex; align-items: baseline; justify-content: center; width: 100%; height: 100%; font-size: 20px; font-weight: bold; box-sizing: border-box; padding-top: 0; }
@@ -282,7 +282,7 @@
                 <button onclick="switchTab('bills')">💰 學費單生成</button>
                 <button onclick="switchTab('print')">🖨️ 座位表輸出</button>
             </div>
-            <a href="index.html" class="btn-home" target="_blank">🏠 回首頁</a>
+            <a href="index.html" class="btn-home" target="_blank">回首頁</a>
         </div>
     </div>
 
@@ -359,6 +359,8 @@
         <div id="courseFormView" class="form-container" style="display:none;">
             <h2 id="formTitle" style="margin-top:0;">➕ 新增課程</h2>
             <input type="hidden" id="c_id"> 
+            
+            <!-- 第一列：年級 + 科目 + 老師 -->
             <div class="form-row">
                 <div class="form-group">
                     <label>年級分類 (Grade)</label>
@@ -375,27 +377,75 @@
                     <datalist id="subject_list"></datalist>
                 </div>
                 <div class="form-group">
-                    <label>班別 (Class Type)</label>
-                    <input list="class_type_list" id="c_class_type" placeholder="例如：週一四班" onchange="autoFillTime()">
-                    <datalist id="class_type_list">
-                        <option value="週一四班"></option><option value="週二五班"></option><option value="週三六班"></option>
-                        <option value="週一班"></option><option value="週二班"></option><option value="週三班"></option>
-                        <option value="週四班"></option><option value="週五班"></option><option value="週六班"></option>
-                        <option value="週日班"></option><option value="週六早上班"></option><option value="週六下午班"></option>
-                        <option value="週六晚上班"></option><option value="週日早上班"></option><option value="週日下午班"></option>
-                        <option value="週日晚上班"></option>
-                    </datalist>
-                </div>
-            </div>
-            <div class="form-row">
-                <div class="form-group">
                     <label>授課老師</label>
                     <input list="teacher_list" id="c_teacher" placeholder="選擇或輸入老師">
                     <datalist id="teacher_list">
                         <option value="白熊老師"></option><option value="阿喵老師"></option><option value="小彥老師"></option>
                         <option value="小東老師"></option><option value="李翔老師"></option><option value="冠維老師"></option>
                         <option value="小揚老師"></option><option value="黃道老師"></option><option value="化鈞老師"></option>
+                        <option value="Nick老師"></option><option value="周逸老師"></option><option value="黃浩老師"></option>
+                        <option value="小天老師"></option><option value="富山老師"></option><option value="黃韋老師"></option>
+                        <option value="蕭業老師"></option><option value="郭序老師"></option><option value="詩佩老師"></option>
                     </datalist>
+                </div>
+            </div>
+
+            <!-- 第二列：班別 + 上課時間 -->
+            <div class="form-row">
+                <div class="form-group">
+                    <label>班別 (Class Type)</label>
+                    <input list="class_type_list" id="c_class_type" placeholder="例如：週一班" onchange="autoFillTime()">
+                    <datalist id="class_type_list">
+                        <option value="週一班"></option>
+                        <option value="週二班"></option>
+                        <option value="週三班"></option>
+                        <option value="週四班"></option>
+                        <option value="週五班"></option>
+                        <option value="週一、四班"></option>
+                        <option value="週二、五班"></option>
+                        <option value="週三、六班"></option>
+                        <option value="週六班"></option>
+                        <option value="週日班"></option>
+                        <option value="週六上午班"></option>
+                        <option value="週六下午班"></option>
+                        <option value="週六晚上班"></option>
+                        <option value="週日上午班"></option>
+                        <option value="週日下午班"></option>
+                        <option value="週日晚上班"></option>
+                    </datalist>
+                </div>
+                <div class="form-group">
+                    <label>上課時間 (自動代入)</label>
+                    <input type="text" id="c_time_desc" placeholder="例如：每週四 18:30-21:30">
+                </div>
+            </div>
+
+            <!-- 第三列：費用 + 堂數 -->
+            <div class="form-row">
+                <div class="form-group">
+                    <label>費用</label>
+                    <input type="text" id="c_price" placeholder="例如：21600" value="21600" onblur="formatPrice(this)">
+                </div>
+                <div class="form-group">
+                    <label>堂數</label>
+                    <input type="text" id="c_lessons" placeholder="例如：12" value="12">
+                </div>
+            </div>
+
+            <!-- 第四列：封面圖片 -->
+            <div class="form-group">
+                <label>封面圖片 (建議 800x400)</label>
+                <input type="file" id="c_image_file" accept="image/*" onchange="previewImage(this)">
+                <input type="hidden" id="c_image_url">
+                <img id="imgPreview" src="" alt="圖片預覽">
+                <div id="uploadStatus" style="font-size:12px; color:#666; margin-top:5px;"></div>
+            </div>
+
+            <!-- 第五列：開課日期 + 使用教室 -->
+            <div class="form-row">
+                <div class="form-group">
+                    <label>開課日期 (輸入 7/2 自動轉)</label>
+                    <input type="text" id="c_start_date" placeholder="例如：2026/07/02 (四)" onblur="formatDate(this)">
                 </div>
                 <div class="form-group">
                     <label>使用教室 (切換將重置下方座位表)</label>
@@ -403,21 +453,22 @@
                         <option value="high_red">高中紅教室</option><option value="high_orange">高中橘教室</option><option value="high_green">高中綠教室</option>
                         <option value="high_yellow">高中黃教室</option><option value="high_blue">高中藍教室</option><option value="middle_new_orange">國中新橘教室</option>
                         <option value="middle_new_blue">國中新藍教室</option><option value="middle_new_yellow">國中新黃教室</option><option value="middle_new_red">國中新紅教室</option>
-                        <option value="middle_big_red">國中大紅教室</option><option value="middle_da_chiao">國中大橘教室</option><option value="middle_big_green">國中大綠教室</option>
+                        <option value="middle_big_red">國中大紅教室</option><option value="middle_big_orange">國中大橘教室</option><option value="middle_big_green">國中大綠教室</option>
                         <option value="test_room">🧪 測試專用教室</option>
                     </select>
                 </div>
             </div>
 
+            <!-- 第六列：座位表編輯器 -->
             <div class="form-group" id="seatEditorContainer">
                 <label style="color:#e74c3c;">🪑 座位表編輯器 (點擊格子可切換狀態)</label>
-                <div style="font-size:12px; color:#666; margin-bottom:5px;">
+                <div style="font-size:12px; color:#666; margin-bottom:5px; text-align: center;">
                     狀態循環：🟩座位 ➜ ⬜走道 ➜ ⬛不開放 ➜ 🟫柱子 ➜ 🚪門 ➜ (回頭)
                 </div>
-                <div id="editorLockMsg" style="display:none; color:red; font-weight:bold; background:#ffeeba; padding:10px; border-radius:5px; margin-bottom:10px;">
+                <div id="editorLockMsg" style="display:none; color:red; font-weight:bold; background:#ffeeba; padding:10px; border-radius:5px; margin-bottom:10px; text-align: center;">
                     🔒 此課程已有售出紀錄，為保護訂單資料，座位表已鎖定不可編輯。
                 </div>
-                <div class="classroom-wrapper">
+                <div class="classroom-wrapper" style="margin: 0 auto;">
                     <div class="classroom-inner">
                         <div class="stage-box">講　台</div>
                         <div id="editorGrid"></div>
@@ -426,33 +477,7 @@
                 <button type="button" onclick="resetSeatEditor()" class="warning" style="font-size:12px; padding:5px 10px;">↺ 重置為預設範本</button>
             </div>
 
-            <div class="form-row">
-                <div class="form-group">
-                    <label>上課時間 (自動代入)</label>
-                    <input type="text" id="c_time_desc" placeholder="例如：每週四 18:30-21:30">
-                </div>
-                <div class="form-group">
-                    <label>開課日期 (輸入 7/2 自動轉)</label>
-                    <input type="text" id="c_start_date" placeholder="例如：2026/07/02 (四)" onblur="formatDate(this)">
-                </div>
-            </div>
-            <div class="form-group">
-                <label>封面圖片 (建議 800x400)</label>
-                <input type="file" id="c_image_file" accept="image/*" onchange="previewImage(this)">
-                <input type="hidden" id="c_image_url">
-                <img id="imgPreview" src="" alt="圖片預覽">
-                <div id="uploadStatus" style="font-size:12px; color:#666; margin-top:5px;"></div>
-            </div>
-            <div class="form-row" style="background:#e8f6f3; padding:10px; border-radius:5px; margin-bottom:20px;">
-                <div class="form-group">
-                    <label>前台顯示時間 (開始)</label>
-                    <input type="datetime-local" id="c_display_start">
-                </div>
-                <div class="form-group">
-                    <label>前台顯示時間 (結束)</label>
-                    <input type="datetime-local" id="c_display_end">
-                </div>
-            </div>
+            <!-- 第七列：一階劃位時間 -->
             <div class="form-row">
                 <div class="form-group">
                     <label style="color:#e74c3c;">★ 一階劃位 (開始)</label>
@@ -463,6 +488,8 @@
                     <input type="datetime-local" id="c_end1">
                 </div>
             </div>
+
+            <!-- 第八列：二階劃位時間 -->
             <div class="form-row">
                 <div class="form-group">
                     <label>二階劃位 (開始)</label>
@@ -474,6 +501,19 @@
                 </div>
             </div>
             
+            <!-- 第九列：前台顯示時間 -->
+            <div class="form-row" style="background:#e8f6f3; padding:10px; border-radius:5px; margin-bottom:20px;">
+                <div class="form-group">
+                    <label>前台顯示時間 (開始)</label>
+                    <input type="datetime-local" id="c_display_start">
+                </div>
+                <div class="form-group">
+                    <label>前台顯示時間 (結束)</label>
+                    <input type="datetime-local" id="c_display_end">
+                </div>
+            </div>
+
+            <!-- 第十列：候補設定 -->
             <div class="form-row" style="background:#fff3e0; padding:10px; border-radius:5px; margin-bottom:20px;">
                 <div class="form-group" style="display:flex; align-items:center; gap:10px;">
                     <input type="checkbox" id="c_waitlist_enabled" style="width:auto; transform:scale(1.5);">
@@ -485,30 +525,23 @@
                 </div>
             </div>
 
-            <div class="form-row">
-                <div class="form-group">
-                    <label>費用</label>
-                    <input type="text" id="c_price" placeholder="例如：21600" onblur="formatPrice(this)">
-                </div>
-                <div class="form-group">
-                    <label>堂數</label>
-                    <input type="text" id="c_lessons" placeholder="例如：12" value="12">
-                </div>
-            </div>
+            <!-- 第十一列：課程介紹 -->
             <div class="form-group">
                 <label>課程介紹 / 注意事項</label>
                 <textarea id="c_desc"></textarea>
             </div>
+
+            <!-- 第十二列：按鈕 -->
             <div style="display:flex; gap:10px;">
                 <button onclick="saveCourse()" class="success" style="flex:1;" id="btnSave">確認新增課程</button>
                 <button onclick="hideCourseForm()" class="warning" id="btnCancel">取消返回</button>
             </div>
         </div>
-    </div>
+      </div>
 
     <div id="tab-banners" class="page-section">
-        <div class="form-container">
-            <h3>上傳新橫幅</h3>
+        <div class="center-box">
+            <h3>🖼️ 上傳新橫幅</h3>
             <input type="file" id="b_file" accept="image/*">
             <button onclick="uploadBanner()" class="success">上傳</button>
             <div id="bannerStatus"></div>
@@ -537,7 +570,7 @@
                 <input type="file" id="csvSchoolFile" accept=".csv">
                 <button onclick="importSchoolCSV()" class="warning">📂 匯入 CSV</button>
                 <span id="csvStatus" style="color:green; font-weight:bold; margin-left:10px;"></span>
-                <div style="font-size:12px; color:#666; margin-top:5px;">格式：學校(第1欄), 姓名(第5欄) - 支援 114國一總名單格式</div>
+                <div style="font-size:12px; color:#666; margin-top:5px;">系統會自動尋找標題列中的「學校」與「姓名」欄位</div>
             </div>
 
             <div style="display:flex; gap:10px;">
@@ -547,6 +580,9 @@
         </div>
 
         <div class="bill-preview-container">
+            <div style="width: 210mm; margin-bottom:10px; color:#e74c3c; font-weight:bold; font-size:16px; background:#fff3cd; padding:10px; border-radius:8px; box-sizing: border-box; box-shadow: 0 2px 5px rgba(0,0,0,0.1);">
+                💡 提示：可以直接點擊學費單上的「姓名、學校、備註、項目、日期、金額與總計」欄位進行手動修改！
+            </div>
             <div class="bill-controls">
                 <button onclick="prevBill()" style="background:#5f6368; color:white; border:none; padding:5px 15px; border-radius:5px; cursor:pointer;">◀ 上一張</button>
                 <span id="billCounter" style="font-weight:bold; font-size:16px;">0 / 0</span>
@@ -629,12 +665,12 @@
     <div id="tab-print" class="page-section">
         <div class="center-box">
             <h3>🖨️ 座位表圖片產生器</h3>
-            <div style="margin-bottom:15px; color:#555; font-size:14px;">
-                💡 提示：點擊下方的空位可以直接輸入學生姓名，輸入完畢請務必按下「儲存手動修改」。<br>
-                ⚠️ 注意：此處的修改僅供列印使用，不會影響前台劃位結果。
+            <div style="width: 100%; max-width: 500px; margin: 0 auto 15px auto; color:#e74c3c; font-weight:bold; font-size:13px; background:#fff3cd; padding:15px; border-radius:8px; box-sizing: border-box; box-shadow: 0 2px 5px rgba(0,0,0,0.1); text-align: left; line-height: 1.6;">
+                💡 提示：點擊下方的「空位」或「上方標題列」，都可以直接手動修改文字！<br>
+                ⚠️ 注意：此處的修改僅供列印使用，不會影響前台的線上劃位結果。<br>⚠️ 若要保存修改，請記得使用「另存新檔」。
             </div>
-            <div style="display:flex; gap:10px; justify-content:center; align-items:center;">
-                <select id="printSourceSelector" class="big-selector" style="width:200px;" onchange="updatePrintCourseList()">
+            <div style="display:flex; flex-direction:column; gap:10px; justify-content:center; align-items:center;">
+                <select id="printSourceSelector" class="big-selector" style="width:100%; max-width:500px;" onchange="updatePrintCourseList()">
                     <option value="live">線上劃位結果 (Live)</option>
                     <option value="manual">手動排位存檔 (Saved)</option>
                     <option value="empty">空白教室範本 (Empty)</option>
@@ -695,7 +731,13 @@
         import { db, ref, set, remove, push, update, storage, storageRef, uploadBytes, getDownloadURL, get } from './firebase-config.js';
         import { onValue } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-database.js";
 
-        tinymce.init({ selector: '#c_desc', plugins: 'image link lists media table', toolbar: 'undo redo | formatselect | bold italic backcolor | alignleft aligncenter alignright alignjustify | bullist numlist outdent indent | removeformat | image', height: 400, menubar: true });
+        tinymce.init({ 
+            selector: '#c_desc', 
+            plugins: 'image link lists media table code', 
+            toolbar: 'undo redo | code | fontfamily fontsize | forecolor backcolor | formatselect | bold italic | alignleft aligncenter alignright alignjustify | bullist numlist outdent indent | removeformat | image', 
+            height: 400, 
+            menubar: true 
+        });
 
         const classrooms = {
             "high_red": { name: "高中紅教室", layout: [ ["1-1:X", "1-2:X", "_", "1-3", "1-4", "1-5", "_", "1-6", "1-7", "1-8", "_", "1-9:X", "1-10:X"], ["2-1", "2-2", "_", "2-3", "2-4", "2-5", "_", "2-6", "2-7", "2-8", "_", "2-9", "2-10"], ["3-1", "3-2", "_", "3-3", "3-4", "3-5", "_", "3-6", "3-7", "3-8", "_", "3-9", "3-10"], ["4-1", "4-2", "_", "4-3", "4-4", "4-5", "_", "4-6", "4-7", "4-8", "_", "4-9", "4-10"], ["5-1", "5-2", "_", "5-3", "5-4", "5-5", "_", "5-6", "5-7", "5-8", "_", "5-9", "5-10"], ["6-1", "6-2", "_", "6-3", "6-4", "6-5", "_", "6-6", "6-7", "6-8", "_", "6-9", "6-10"], ["7-1:X", "7-2:X", "_", "7-3:X", "7-4:X", "7-5:X", "_", "7-6:X", "7-7:X", "7-8:X", "_", "7-9:X", "7-10:X"], ["8-1:X", "8-2:X", "_", "8-3:X", "8-4:X", "8-5:X", "_", "8-6:X", "8-7:X", "8-8:X", "_", "_", "DOOR"] ] },
@@ -708,7 +750,7 @@
             "middle_new_yellow": { name: "國中新黃教室", layout: [ ["1-1:X", "1-2", "1-3", "_", "1-4", "1-5", "1-6", "_", "1-7", "1-8:X"], ["PILLAR", "2-2", "2-3", "_", "2-4", "2-5", "2-6", "_", "2-7", "2-8:X"], ["3-1:X", "3-2", "3-3", "_", "3-4", "3-5", "3-6", "_", "3-7", "3-8"], ["4-1", "4-2", "4-3", "_", "4-4", "4-5", "4-6", "_", "4-7", "4-8"], ["5-1", "5-2", "5-3", "_", "5-4", "5-5", "5-6", "_", "5-7", "5-8"], ["6-1:X", "6-2", "6-3", "_", "6-4", "6-5", "6-6", "_", "6-7", "6-8"], ["DOOR", "_", "_", "_", "_", "_", "_", "_", "_", "_"] ] },
             "middle_new_red": { name: "國中新紅教室", layout: [ ["1-1", "1-2:X", "1-3", "_", "1-4", "1-5", "1-6", "1-7", "_", "1-8", "1-9:X", "1-10:X"], ["2-1", "2-2", "2-3", "_", "2-4", "2-5", "2-6", "2-7", "_", "2-8", "2-9", "2-10"], ["3-1", "3-2", "3-3", "_", "3-4", "3-5", "3-6", "3-7", "_", "3-8", "3-9", "3-10"], ["DOOR", "_", "_", "_", "_", "_", "_", "_", "_", "_", "_", "_"], ["4-1", "4-2", "4-3", "_", "4-4", "4-5", "4-6", "4-7", "_", "4-8", "4-9", "4-10"], ["5-1", "5-2", "5-3", "_", "5-4", "5-5", "5-6", "5-7", "_", "5-8", "5-9", "5-10"], ["6-1", "6-2", "6-3", "_", "6-4", "6-5", "6-6", "6-7", "_", "6-8", "6-9", "6-10"], ["7-1", "7-2", "7-3", "_", "7-4", "7-5", "7-6", "7-7", "_", "7-8", "7-9", "7-10"], ["8-1:X", "8-2:X", "8-3:X","_","8-4:X", "8-5:X", "8-6:X", "8-7:X", "_", "8-8:X", "8-9:X", "8-10:X"] ] },
             "middle_big_red": { name: "國中大紅教室", layout: [ ["1-1:X", "1-2", "_", "1-3", "1-4", "1-5", "_", "1-6", "1-7", "1-8", "_", "1-9", "1-10:X"], ["2-1", "2-2", "_", "2-3", "2-4", "2-5", "_", "2-6", "2-7", "2-8", "_", "2-9", "2-10"], ["3-1", "3-2", "_", "3-3", "3-4", "3-5", "_", "3-6", "3-7", "3-8", "_", "3-9", "3-10"], ["4-1", "4-2", "_", "4-3", "4-4", "4-5", "_", "4-6", "4-7", "4-8", "_", "4-9", "4-10"], ["5-1", "5-2", "_", "5-3", "5-4", "5-5", "_", "5-6", "5-7", "5-8", "_", "5-9", "5-10"], ["6-1", "6-2", "_", "6-3", "6-4", "6-5", "_", "6-6", "6-7", "6-8", "_", "6-9", "6-10"], ["7-1:X", "7-2:X", "_", "7-3:X", "7-4:X", "7-5:X", "_", "7-6:X", "7-7:X", "7-8:X", "_", "7-9:X", "7-10:X"], ["_","_","_","_","_","_","_","_","_","_","_","_","DOOR"] ] },
-            "middle_da_chiao": { name: "國中大橘教室", layout: [ ["1-1:X", "1-2:X", "1-3", "_", "1-4", "1-5", "1-6", "_", "1-7", "1-8:X"], ["2-1", "2-2", "2-3", "_", "2-4", "2-5", "2-6", "_", "2-7", "2-8"], ["3-1", "3-2", "3-3", "_", "3-4", "3-5", "3-6", "_", "3-7", "3-8"], ["4-1", "4-2", "4-3", "_", "4-4", "4-5", "4-6", "_", "4-7", "4-8"], ["5-1", "5-2", "5-3", "_", "5-4", "5-5", "5-6", "_", "_", "DOOR"] ] },
+            "middle_big_orange": { name: "國中大橘教室", layout: [ ["1-1:X", "1-2:X", "1-3", "_", "1-4", "1-5", "1-6", "_", "1-7", "1-8:X"], ["2-1", "2-2", "2-3", "_", "2-4", "2-5", "2-6", "_", "2-7", "2-8"], ["3-1", "3-2", "3-3", "_", "3-4", "3-5", "3-6", "_", "3-7", "3-8"], ["4-1", "4-2", "4-3", "_", "4-4", "4-5", "4-6", "_", "4-7", "4-8"], ["5-1", "5-2", "5-3", "_", "5-4", "5-5", "5-6", "_", "_", "DOOR"] ] },
             "middle_big_green": { name: "國中大綠教室", layout: [ ["DOOR", "_", "_", "_", "_", "_"], ["1-1", "1-2", "1-3", "_", "1-4", "1-5"], ["2-1", "2-2", "2-3", "_", "2-4", "2-5"], ["3-1", "3-2", "3-3", "_", "3-4", "3-5"], ["PILLAR", "4-2", "4-3", "_", "4-4", "4-5"] ] },
             "test_room": { name: "測試專用教室", layout: [ ["1-1", "1-2"] ] }
         };
@@ -762,7 +804,36 @@
             "升高三課程": ["高三粘立物理", "高三周逸化學", "高三黃浩數學", "高三明軒數學", "學測英文", "學測黃浩數學", "學測明軒數學", "學測自然"]
         };
         window.updateSubjects = function() { const grade = document.getElementById('c_grade').value; const list = document.getElementById('subject_list'); list.innerHTML = ""; if (subjectsByGrade[grade]) { subjectsByGrade[grade].forEach(s => list.innerHTML += `<option value="${s}">`); } };
-        window.autoFillTime = function() { const type = document.getElementById('c_class_type').value; const timeInput = document.getElementById('c_time_desc'); if (type.includes("週")) { const day = type.replace("班", "").replace("週", "每週"); timeInput.value = `${day} 18:30-21:30`; } };
+       window.autoFillTime = function() { 
+            const type = document.getElementById('c_class_type').value; 
+            const timeInput = document.getElementById('c_time_desc'); 
+            
+            // 針對特殊班別設定專屬時間
+            if (type === "週一、四班") {
+                timeInput.value = "每週一、四 16:50-18:20";
+            } else if (type === "週二、五班") {
+                timeInput.value = "每週二、五 16:50-18:20";
+            } else if (type === "週三、六班") {
+                timeInput.value = "每週三 16:50-18:20 及 每週六 08:30-10:00";
+            } else if (type === "週六上午班") {
+                timeInput.value = "每週六 09:00-12:00";
+            } else if (type === "週六下午班") {
+                timeInput.value = "每週六 13:00-16:00";
+            } else if (type === "週六晚上班") {
+                timeInput.value = "每週六 18:00-21:00";
+            } else if (type === "週日上午班") {
+                timeInput.value = "每週日 09:00-12:00";
+            } else if (type === "週日下午班") {
+                timeInput.value = "每週日 13:00-16:00";
+            } else if (type === "週日晚上班") {
+                timeInput.value = "每週日 18:00-21:00";
+            } 
+            // 其他單天平日班 (如週一班、週五班)，維持預設的 18:30-21:30
+            else if (type.includes("週")) { 
+                const day = type.replace("班", "").replace("週", "每週"); 
+                timeInput.value = `${day} 18:30-21:30`; 
+            } 
+        };
         window.formatPrice = function(input) { let val = input.value.replace(/[^0-9]/g, ''); if (val) input.value = "$" + parseInt(val).toLocaleString(); };
         window.formatDate = function(input) { const val = input.value.trim(); if (/^\d{1,2}\/\d{1,2}$/.test(val)) { const [m, d] = val.split('/'); const date = new Date(2026, m - 1, d); const weekDay = ['日', '一', '二', '三', '四', '五', '六'][date.getDay()]; const mm = m.padStart(2, '0'); const dd = d.padStart(2, '0'); input.value = `2026/${mm}/${dd} (${weekDay})`; } };
 
@@ -778,17 +849,13 @@
 
         function updateDatalists() {
             const subjects = new Set();
-            const classTypes = new Set();
             Object.values(coursesData).forEach(c => {
                 if(c.subject) subjects.add(c.subject);
-                if(c.classType) classTypes.add(c.classType);
             });
             const subList = document.getElementById('subject_list');
             subList.innerHTML = "";
             subjects.forEach(s => subList.innerHTML += `<option value="${s}">`);
-            const typeList = document.getElementById('class_type_list');
-            typeList.innerHTML = "";
-            classTypes.forEach(t => typeList.innerHTML += `<option value="${t}">`);
+            // class_type_list 保持 HTML 寫死的預設選項，不再動態覆蓋
         }
 
         // ★★★ V33.0 新增：座位編輯器核心邏輯 ★★★
@@ -904,12 +971,22 @@
             renderEditorGrid();
         }
 
-        // ★★★ V33.0 結束 ★★★
+        // ★★★ V34.4 結束 ★★★
 
         window.saveCourse = async function() {
             const btn = document.getElementById('btnSave');
-            const pwd = document.getElementById('adminPwd').value.trim();
-            if (!pwd) { alert("⚠️ 請先輸入管理員密碼！"); return; }
+            let pwd = document.getElementById('adminPwd').value.trim();
+            
+            // ★★★ 智慧密碼提示邏輯 ★★★
+            if (!pwd) { 
+                pwd = prompt("⚠️ 您尚未輸入密碼！\n請直接在此輸入管理員密碼，系統會自動幫您填入上方：");
+                if (!pwd || !pwd.trim()) {
+                    return; // 如果按取消或沒輸入，就直接中斷不儲存
+                }
+                pwd = pwd.trim();
+                // 順便幫櫃檯把密碼填回最上方的格子，方便接下來的操作！
+                document.getElementById('adminPwd').value = pwd; 
+            }
 
             btn.disabled = true;
             btn.textContent = "處理中...";
@@ -1084,6 +1161,7 @@
             document.getElementById('btnSave').textContent = "確認新增課程";
             document.querySelectorAll('input').forEach(i => i.value = '');
             document.getElementById('c_lessons').value = "12";
+            document.getElementById('c_price').value = "21600"; // 預設費用
             document.getElementById('c_waitlist_enabled').checked = false; 
             document.getElementById('c_waitlist_limit').value = "0"; 
             tinymce.get('c_desc').setContent('');
@@ -1117,8 +1195,13 @@
         }
 
         window.deleteCourse = function(courseId) {
-            const pwd = document.getElementById('adminPwd').value.trim();
-            if (!pwd) return alert("請先輸入管理員密碼！");
+            let pwd = document.getElementById('adminPwd').value.trim();
+            if (!pwd) { 
+                pwd = prompt("⚠️ 您尚未輸入密碼！\n請直接在此輸入管理員密碼，系統會自動幫您填入上方：");
+                if (!pwd || !pwd.trim()) return;
+                pwd = pwd.trim();
+                document.getElementById('adminPwd').value = pwd; 
+            }
             if (confirm("⚠️ 確定要刪除？")) remove(ref(db, `courses/${courseId}`));
         };
 
@@ -1285,8 +1368,13 @@
         };
 
         window.toggleReserve = async function(courseId, seatId, info) {
-            const pwd = document.getElementById('adminPwd').value.trim();
-            if (!pwd) { alert("⚠️ 請先輸入管理員密碼才能進行操作！"); return; }
+            let pwd = document.getElementById('adminPwd').value.trim();
+            if (!pwd) { 
+                pwd = prompt("⚠️ 您尚未輸入密碼！\n請直接在此輸入管理員密碼，系統會自動幫您填入上方：");
+                if (!pwd || !pwd.trim()) return;
+                pwd = pwd.trim();
+                document.getElementById('adminPwd').value = pwd; 
+            }
 
             if (info && info.status === 'sold') {
                 if (confirm(`確定要釋出 ${seatId} (${info.studentName}) 嗎？`)) {
@@ -1338,7 +1426,13 @@
 
         window.confirmOpSell = function() {
             if (!opCourseId || !opSeatId) return;
-            const pwd = document.getElementById('adminPwd').value.trim();
+            let pwd = document.getElementById('adminPwd').value.trim();
+            if (!pwd) { 
+                pwd = prompt("⚠️ 您尚未輸入密碼！\n請直接在此輸入管理員密碼，系統會自動幫您填入上方：");
+                if (!pwd || !pwd.trim()) return;
+                pwd = pwd.trim();
+                document.getElementById('adminPwd').value = pwd; 
+            }
             
             const name = prompt("請輸入學生姓名 (留空則為'現場保留')", "現場保留");
             const phone = prompt("請輸入家長電話 (留空則為'0000000000')", "0000000000");
@@ -1375,8 +1469,13 @@
         }
 
         window.releaseSeat = function(courseId, seatId, currentStatus) {
-            const pwd = document.getElementById('adminPwd').value.trim();
-            if (!pwd) return alert("請先輸入管理員密碼！");
+            let pwd = document.getElementById('adminPwd').value.trim();
+            if (!pwd) { 
+                pwd = prompt("⚠️ 您尚未輸入密碼！\n請直接在此輸入管理員密碼，系統會自動幫您填入上方：");
+                if (!pwd || !pwd.trim()) return;
+                pwd = pwd.trim();
+                document.getElementById('adminPwd').value = pwd; 
+            }
 
             if (currentStatus === 'deleted') {
                 if (confirm("⚠️ 確定要【永久刪除】此紀錄嗎？刪除後無法復原。")) {
@@ -1393,8 +1492,13 @@
         };
 
         window.editOrder = async function(courseId, seatId, oldPhone, orderId, oldName) {
-            const pwd = document.getElementById('adminPwd').value.trim();
-            if (!pwd) return alert("請先輸入管理員密碼！");
+            let pwd = document.getElementById('adminPwd').value.trim();
+            if (!pwd) { 
+                pwd = prompt("⚠️ 您尚未輸入密碼！\n請直接在此輸入管理員密碼，系統會自動幫您填入上方：");
+                if (!pwd || !pwd.trim()) return;
+                pwd = pwd.trim();
+                document.getElementById('adminPwd').value = pwd; 
+            }
 
             const newName = prompt("修改學生姓名：", oldName);
             if (newName === null) return;
@@ -1438,8 +1542,13 @@
         }
 
         window.exportBookingCSV = function() {
-            const pwd = document.getElementById('adminPwd').value.trim();
-            if (!pwd) return alert("請先輸入管理員密碼！");
+            let pwd = document.getElementById('adminPwd').value.trim();
+            if (!pwd) { 
+                pwd = prompt("⚠️ 您尚未輸入密碼！\n請直接在此輸入管理員密碼，系統會自動幫您填入上方：");
+                if (!pwd || !pwd.trim()) return;
+                pwd = pwd.trim();
+                document.getElementById('adminPwd').value = pwd; 
+            }
 
             const filterId = document.getElementById('classSelector').value;
             let csv = "\uFEFF訂單編號,課程,時間,狀態,座位,姓名,電話\n";
@@ -1452,8 +1561,13 @@
         };
 
         window.exportWaitlistCSV = function() {
-            const pwd = document.getElementById('adminPwd').value.trim();
-            if (!pwd) return alert("請先輸入管理員密碼！");
+            let pwd = document.getElementById('adminPwd').value.trim();
+            if (!pwd) { 
+                pwd = prompt("⚠️ 您尚未輸入密碼！\n請直接在此輸入管理員密碼，系統會自動幫您填入上方：");
+                if (!pwd || !pwd.trim()) return;
+                pwd = pwd.trim();
+                document.getElementById('adminPwd').value = pwd; 
+            }
 
             const filterId = document.getElementById('waitlistSelector').value;
             let csv = "\uFEFF課程,登記時間,狀態,序號,姓名,電話,備註\n";
@@ -1507,8 +1621,13 @@
         });
 
         window.uploadBanner = async function() {
-            const pwd = document.getElementById('adminPwd').value.trim();
-            if (!pwd) return alert("請先輸入管理員密碼！");
+            let pwd = document.getElementById('adminPwd').value.trim();
+            if (!pwd) { 
+                pwd = prompt("⚠️ 您尚未輸入密碼！\n請直接在此輸入管理員密碼，系統會自動幫您填入上方：");
+                if (!pwd || !pwd.trim()) return;
+                pwd = pwd.trim();
+                document.getElementById('adminPwd').value = pwd; 
+            }
             const fileInput = document.getElementById('b_file');
             if (fileInput.files.length === 0) return alert("請選擇圖片");
             const file = fileInput.files[0];
@@ -1524,8 +1643,13 @@
         };
 
         window.deleteBanner = function(key) {
-            const pwd = document.getElementById('adminPwd').value.trim();
-            if (!pwd) return alert("請先輸入管理員密碼！");
+            let pwd = document.getElementById('adminPwd').value.trim();
+            if (!pwd) { 
+                pwd = prompt("⚠️ 您尚未輸入密碼！\n請直接在此輸入管理員密碼，系統會自動幫您填入上方：");
+                if (!pwd || !pwd.trim()) return;
+                pwd = pwd.trim();
+                document.getElementById('adminPwd').value = pwd; 
+            }
             if (confirm("確定刪除此橫幅？")) remove(ref(db, `banners/${key}`));
         };
 
@@ -1645,8 +1769,13 @@
         }
 
         window.deleteWaitlist = function(courseId, waitlistId, currentStatus) {
-            const pwd = document.getElementById('adminPwd').value.trim();
-            if (!pwd) return alert("請先輸入管理員密碼！");
+            let pwd = document.getElementById('adminPwd').value.trim();
+            if (!pwd) { 
+                pwd = prompt("⚠️ 您尚未輸入密碼！\n請直接在此輸入管理員密碼，系統會自動幫您填入上方：");
+                if (!pwd || !pwd.trim()) return;
+                pwd = pwd.trim();
+                document.getElementById('adminPwd').value = pwd; 
+            }
 
             if (currentStatus === 'deleted') {
                 if (confirm("確定要【永久刪除】此候補嗎？")) {
@@ -1663,8 +1792,13 @@
         };
 
         window.editWaitlist = function(courseId, waitlistId, oldName, oldPhone, oldNote) {
-            const pwd = document.getElementById('adminPwd').value.trim();
-            if (!pwd) return alert("請先輸入管理員密碼！");
+            let pwd = document.getElementById('adminPwd').value.trim();
+            if (!pwd) { 
+                pwd = prompt("⚠️ 您尚未輸入密碼！\n請直接在此輸入管理員密碼，系統會自動幫您填入上方：");
+                if (!pwd || !pwd.trim()) return;
+                pwd = pwd.trim();
+                document.getElementById('adminPwd').value = pwd; 
+            }
 
             const newName = prompt("修改姓名", oldName);
             const newPhone = prompt("修改電話", oldPhone);
@@ -1783,7 +1917,6 @@
             }
         });
 
-        // ★★★ 修正這裡：掛載到 window 讓下拉選單能觸發 ★★★
         window.renderCourseConfig = function() {
             const container = document.getElementById('courseConfigList');
             container.innerHTML = "";
@@ -1813,8 +1946,13 @@
         };
 
         window.saveAllBillConfigs = function() {
-            const pwd = document.getElementById('adminPwd').value.trim();
-            if (!pwd) return alert("請先輸入管理員密碼！");
+            let pwd = document.getElementById('adminPwd').value.trim();
+            if (!pwd) { 
+                pwd = prompt("⚠️ 您尚未輸入密碼！\n請直接在此輸入管理員密碼，系統會自動幫您填入上方：");
+                if (!pwd || !pwd.trim()) return;
+                pwd = pwd.trim();
+                document.getElementById('adminPwd').value = pwd; 
+            }
 
             const updates = {};
             Object.keys(coursesData).forEach(key => {
@@ -1848,24 +1986,37 @@
                 const text = e.target.result;
                 const lines = text.split('\n');
                 let count = 0;
-                lines.forEach(line => {
+
+                if (lines.length === 0) return;
+
+                // 讀取第一行標題，尋找「學校」與「姓名」的索引 (並清除 BOM 與引號)
+                const headers = lines[0].split(',').map(h => h.trim().replace(/["']/g, '').replace(/^\uFEFF/, ''));
+                const schoolIdx = headers.findIndex(h => h.includes('學校'));
+                const nameIdx = headers.findIndex(h => h.includes('姓名'));
+
+                if (schoolIdx === -1 || nameIdx === -1) {
+                    return alert("❌ CSV 檔案標題列必須包含「學校」與「姓名」欄位！");
+                }
+
+                for (let i = 1; i < lines.length; i++) {
+                    const line = lines[i];
+                    if (!line.trim()) continue;
                     const parts = line.split(',');
-                    if (parts.length >= 5) {
-                        const school = parts[0].trim();
-                        const name = parts[4].trim();
-                        if (name && school && school !== '學校') { 
+                    if (parts.length > Math.max(schoolIdx, nameIdx)) {
+                        const school = parts[schoolIdx].trim().replace(/["']/g, '');
+                        const name = parts[nameIdx].trim().replace(/["']/g, '');
+                        if (name && school) { 
                             schoolMap[name] = school;
                             count++;
                         }
                     }
-                });
+                }
                 document.getElementById('csvStatus').textContent = `✅ 已匯入 ${count} 筆學校資料`;
                 window.processBills(); 
             };
             reader.readAsText(file);
         };
 
-        // ★★★ 修正這裡：掛載到 window 讓 HTML 內的 onchange 抓得到 ★★★
         window.processBills = function() {
             const billType = document.getElementById('billTypeSelector').value;
             const studentMap = {};
@@ -1977,7 +2128,6 @@
             return "";
         }
 
-        // V34.0 新增：學費單預覽切換功能
         window.prevBill = function() {
             if (currentBillIndex > 0) {
                 loadBill(currentBillIndex - 1);
@@ -2088,6 +2238,7 @@
             saveArea.style.display = 'none';
 
             if (source === 'live') {
+                saveArea.style.display = 'flex'; // Live 模式也允許另存新檔
                 Object.keys(coursesData).forEach(key => {
                     const c = coursesData[key];
                     const option = document.createElement('option');
@@ -2259,11 +2410,31 @@
 
         // ★★★ V34.0 新增：手動儲存座位表 (另存新檔) ★★★
         window.saveManualLayout = function() {
-            const pwd = document.getElementById('adminPwd').value.trim();
-            if (!pwd) return alert("請先輸入管理員密碼！");
+            let pwd = document.getElementById('adminPwd').value.trim();
+            if (!pwd) { 
+                pwd = prompt("⚠️ 您尚未輸入密碼！\n請直接在此輸入管理員密碼，系統會自動幫您填入上方：");
+                if (!pwd || !pwd.trim()) return;
+                pwd = pwd.trim();
+                document.getElementById('adminPwd').value = pwd; 
+            }
 
             const saveName = document.getElementById('manualSaveName').value.trim();
             if (!saveName) return alert("請輸入存檔名稱！");
+
+            // 檢查是否同名
+            let existingKey = null;
+            for (let key in printLayouts) {
+                if (printLayouts[key].name === saveName) {
+                    existingKey = key;
+                    break;
+                }
+            }
+
+            if (existingKey) {
+                if (!confirm(`⚠️ 檔名「${saveName}」已存在，是否要覆蓋原本的存檔？`)) {
+                    return;
+                }
+            }
 
             const source = document.getElementById('printSourceSelector').value;
             const selectedId = document.getElementById('printCourseSelector').value;
@@ -2294,7 +2465,7 @@
                 baseLayout = printLayouts[selectedId].layout;
             }
 
-            const saveId = "LAYOUT_" + Date.now();
+            const saveId = existingKey ? existingKey : "LAYOUT_" + Date.now();
             const saveData = {
                 name: saveName,
                 classroomName: classroomName,
