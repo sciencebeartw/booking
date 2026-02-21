@@ -24,7 +24,7 @@
         header img { height: 40px; }
         header h1 { margin: 0; font-size: 20px; letter-spacing: 1px; }
         .version-badge { background: var(--accent); font-size: 12px; padding: 3px 8px; border-radius: 12px; font-weight: bold; margin-left: 10px; }
-        .author-badge { background: #f39c12; font-size: 12px; padding: 3px 8px; border-radius: 12px; font-weight: bold; margin-left: auto; color: white; }
+        .author-badge { background: #f39c12; font-size: 12px; padding: 3px 8px; border-radius: 12px; font-weight: bold; color: white; }
 
         /* 佈局容器 */
         .layout { display: flex; margin-top: 70px; min-height: calc(100vh - 70px); }
@@ -77,6 +77,10 @@
         <h1>行政團隊系統操作白皮書</h1>
         <span class="version-badge">V35.0 旗艦版</span>
         <span class="author-badge">總架構設計：阿喵老師</span>
+        <!-- ★★★ 新增：右上角返回按鈕 ★★★ -->
+        <a href="admin_bear2026.html" style="margin-left: auto; background: #e74c3c; color: white; text-decoration: none; padding: 8px 16px; border-radius: 20px; font-size: 14px; font-weight: bold; transition: 0.2s; box-shadow: 0 2px 5px rgba(0,0,0,0.2);">
+            🔙 返回指揮中心
+        </a>
     </header>
 
     <div class="layout">
@@ -155,7 +159,7 @@
             <h3>📊 戰情室：劃位監控與熱更新 (Monitor)</h3>
             <p>這是劃位當天大家會盯最久的地方，完全不需按 F5 重新整理，所有戰況即時跳動。</p>
             <ul>
-                <li><strong>視覺化熱區：</strong> 🟥 紅色代表已售出（滑鼠移入顯示個資）、🟧 橘色代表正有家長在填單中。</li>
+                <li><strong>視覺化熱區：</strong> <span style="color:#e74c3c; font-weight:bold;">🟥 紅色</span> 代表已售出（滑鼠移入顯示個資）、<span style="color:#f39c12; font-weight:bold;">🟧 橘色</span> 代表正有家長在填單中。</li>
                 <li><strong>上帝之手 (強制操作)：</strong> 行政人員可隨時點擊座位進行「踢除釋出」或「黑箱保留」。點擊保留位，還能直接跳出視窗轉為「代填售出」（專治現場繳費的阿嬤）。</li>
                 <li><strong>資料快照防閃爍 (Anti-Thrashing)：</strong> 系統導入了進階的快照比對技術，即使前線湧入大量訂單，後台的下拉選單與列表也不會因為過度重繪而「閃退或閃白」，確保行政操作的絕對穩定。</li>
             </ul>
