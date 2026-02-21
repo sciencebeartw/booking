@@ -1,0 +1,349 @@
+<!DOCTYPE html>
+<html lang="zh-TW">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>山熊科學 - 橫幅產生器 (V36.0 雲端直連版)</title>
+    <!-- 引入 html2canvas (截圖) -->
+    <script src="https://html2canvas.hertzen.com/dist/html2canvas.min.js"></script>
+    <!-- 引入 TinyMCE (強大編輯器) -->
+    <script src="https://cdn.tiny.cloud/1/2nwvnffdvbvf93d6ry0sov7w0d7yabtr1d6tp8l38cb6hoh1/tinymce/6/tinymce.min.js" referrerpolicy="origin"></script>
+    <style>
+        /* 載入本地端的華康儷金黑 */
+        @font-face {
+            font-family: 'LiJinHei';
+            src: local('華康儷金黑 W8-GB5'), local('DFLiKingHei-W8'), url('儷金黑.ttc');
+        }
+
+        :root {
+            --bg-green: #025c15; /* 預設深綠 */
+            --bg-blue: #134e70;  /* 預設深藍 */
+        }
+
+        body {
+            font-family: "Microsoft JhengHei", sans-serif;
+            background-color: #f0f2f5;
+            padding: 20px;
+            text-align: center;
+            margin: 0;
+        }
+        h1 { color: #2c3e50; }
+        
+        .controls {
+            margin-bottom: 20px;
+            background: white;
+            padding: 15px;
+            border-radius: 10px;
+            display: inline-block;
+            box-shadow: 0 4px 6px rgba(0,0,0,0.1);
+        }
+        
+        .theme-group {
+            display: inline-flex;
+            align-items: center;
+            margin: 0 10px;
+            background: #f8f9fa;
+            padding: 5px 10px;
+            border-radius: 8px;
+            border: 1px solid #ddd;
+        }
+        
+        input[type="color"] {
+            width: 35px;
+            height: 35px;
+            border: none;
+            border-radius: 5px;
+            cursor: pointer;
+            padding: 0;
+            background: transparent;
+        }
+
+        button {
+            padding: 10px 20px;
+            font-size: 16px;
+            cursor: pointer;
+            border: none;
+            border-radius: 5px;
+            font-weight: bold;
+            margin-left: 10px;
+            transition: 0.2s;
+        }
+        
+        .btn-green { background-color: var(--bg-green); color: white; } 
+        .btn-blue { background-color: var(--bg-blue); color: white; }
+        .btn-download { background-color: #e74c3c; color: white; margin-left: 20px;}
+        .btn-upload { background-color: #3498db; color: white; } /* 新增：雲端上傳按鈕樣式 */
+        button:hover { opacity: 0.8; transform: translateY(-2px); }
+        button:disabled { background-color: #95a5a6; cursor: not-allowed; transform: none; opacity: 1; }
+
+        /* 橫幅主體設定 (1200x550) */
+        .banner-wrapper {
+            margin: 0 auto 50px auto;
+            width: 1200px;
+            height: 550px; 
+            position: relative;
+            box-shadow: 0 10px 30px rgba(0,0,0,0.2);
+            overflow: hidden;
+            display: flex;
+            flex-direction: column;
+            justify-content: center;
+            align-items: center;
+            font-family: 'LiJinHei', "Microsoft JhengHei", sans-serif;
+            box-sizing: border-box;
+            padding: 15px;
+        }
+
+        .banner-wrapper::before {
+            content: "";
+            position: absolute;
+            top: 0; left: 0; right: 0; bottom: 0;
+            background-image: url('pattern.png'); 
+            background-repeat: repeat;
+            background-size: 1200px;
+            opacity: 1; 
+            z-index: 1;
+        }
+
+        .banner-content {
+            position: relative;
+            z-index: 2;
+            width: 95%; /* 👈 釋放橫向寬度，避免文字換行破圖 */
+            text-align: center;
+        }
+
+        .theme-green { background-color: var(--bg-green); } 
+        .theme-blue { background-color: var(--bg-blue); }
+
+        .banner-header { display: flex; justify-content: space-between; width: 1200px; margin: 0 auto; margin-top: 50px; align-items: center; }
+        .banner-header h2 { margin: 0; color: #333; font-family: "Microsoft JhengHei", sans-serif; }
+        .action-group { display: flex; gap: 10px; }
+
+        .mce-content-body { outline: none !important; }
+        
+        .mce-editor-area {
+            color: white;
+            line-height: 1.4;
+            letter-spacing: 2px;
+        }
+    </style>
+</head>
+<body>
+
+    <h1>🐻 山熊科學 - 首頁橫幅產生器與雲端圖庫</h1>
+    <div class="controls">
+        <strong style="font-size: 18px; vertical-align: middle;">主題切換與調色：</strong>
+        
+        <div class="theme-group">
+            <input type="color" id="colorGreen" value="#025c15" onchange="updateThemeColor('green', this.value)" title="點擊更改綠色">
+            <button class="btn-green" onclick="setTheme('theme-green')">國中小部 (切換)</button>
+        </div>
+
+        <div class="theme-group">
+            <input type="color" id="colorBlue" value="#134e70" onchange="updateThemeColor('blue', this.value)" title="點擊更改藍色">
+            <button class="btn-blue" onclick="setTheme('theme-blue')">高中部 (切換)</button>
+        </div>
+
+        <button class="btn-download" onclick="downloadAllBanners()">📥 批次下載全部圖檔</button>
+        
+        <div style="margin-top: 15px; color: #e74c3c; font-size: 15px; text-align: left; padding-left: 10px; line-height: 1.6;">
+            💡 <b>武庫全開！技術長操作提示：</b><br>
+            1. <b>🧹 貼上洗白</b>：從 Word 貼字過來跑版？選起來點擊 <b>「橡皮擦 (清除格式)」</b> 瞬間洗白。<br>
+            2. <b>🖼️ 圖片直貼</b>：想加插圖？直接把去背圖 <b>「複製貼上」</b> 橫幅內，可自由拉大小！<br>
+            3. <b>🧮 數理符號</b>：點擊 <b>「Ω」</b> 可插入特殊符號，還支援 <b>X² (上標)</b>、<b>H₂O (下標)</b>。<br>
+            4. <b>📊 隱形表格</b>：排版對不齊？點擊 <b>「表格圖示」</b> 畫格子，字塞進去絕對切齊！<br>
+            5. <b>☁️ 雲端互通</b>：點擊「存入雲端圖庫」，未來即可在後台直接套用！
+        </div>
+    </div>
+
+    <!-- 橫幅 1：主視覺與時間 -->
+    <div class="banner-header">
+        <h2>圖 1：主視覺與時間 (防折行完美版)</h2>
+        <div class="action-group">
+            <button class="btn-download" onclick="downloadBanner('banner1', '主視覺橫幅')">📥 下載</button>
+            <button class="btn-upload" onclick="uploadBannerToCloud('banner1', '主視覺橫幅')">☁️ 存入雲端圖庫</button>
+        </div>
+    </div>
+    <div id="banner1" class="banner-wrapper theme-green">
+        <div class="banner-content mce-editor-area">
+            <div style="font-size: 65px; margin-bottom: 10px;">升小五<span style="color: #f8a95b;">邏輯數學</span>課程</div>
+            <div style="font-size: 60px; margin-bottom: 10px;">開放劃位：6/12</div>
+            <div style="font-size: 85px; font-weight: bold; margin-bottom: 15px; letter-spacing: 2px;">19:00-20:00 21:00-22:00</div>
+            <div style="font-size: 28px; margin-bottom: 10px;">*<span style="color: #f8a95b;">重複劃位</span>及<span style="color: #f8a95b;">無效釋出</span>座位將於 21:00 釋出，同時開放<span style="color: #f8a95b;">候補</span>選項。</div>
+            <div style="font-size: 24px; line-height: 1.5;">*請預先測試並仔細核對上課科目及時間　　*劃位時間到免刷 F5，按鈕自動變綠<br>*請注意！購買人姓名請填學生姓名　　*若因資料錯填而無法確認報名者將無效釋出</div>
+        </div>
+    </div>
+
+    <!-- 橫幅 2：戰術指南 -->
+    <div class="banner-header">
+        <h2>圖 2：戰術指南 (防擠壓完美版)</h2>
+        <div class="action-group">
+            <button class="btn-download" onclick="downloadBanner('banner2', '戰術指南橫幅')">📥 下載</button>
+            <button class="btn-upload" onclick="uploadBannerToCloud('banner2', '戰術指南橫幅')">☁️ 存入雲端圖庫</button>
+        </div>
+    </div>
+    <div id="banner2" class="banner-wrapper theme-green">
+        <div class="banner-content mce-editor-area">
+            <div style="font-size: 55px; color: #f8a95b; margin-bottom: 25px;">⚡ 劃位戰術終極指南 ⚡</div>
+            <div style="background: rgba(0,0,0,0.4); padding: 35px 45px; border-radius: 20px; display: inline-block; text-align: left; font-size: 32px; line-height: 1.6; letter-spacing: 1px;">
+                <div style="margin-bottom: 12px;">✅ 免刷 F5！系統時間一到，首頁按鈕將自動亮起綠燈。</div>
+                <div style="margin-bottom: 12px;">🛡️ 點到即鎖定！系統將給予您專屬的 90 秒從容填寫資料。</div>
+                <div style="color: #ff9999;">🚫 嚴禁無痕模式！使用無痕或外掛將觸發地獄級圖片驗證！</div>
+            </div>
+            <div style="font-size: 24px; color: #ffcccc; margin-top: 25px;">*為求公平，同一裝置同時僅能佔用一席座位，多寶家庭請使用多台裝置分流。</div>
+        </div>
+    </div>
+
+    <!-- 橫幅 3：劃位後的下一步 -->
+    <div class="banner-header">
+        <h2>圖 3：劃位成功後的下一步</h2>
+        <div class="action-group">
+            <button class="btn-download" onclick="downloadBanner('banner3', '繳費提醒橫幅')">📥 下載</button>
+            <button class="btn-upload" onclick="uploadBannerToCloud('banner3', '繳費提醒橫幅')">☁️ 存入雲端圖庫</button>
+        </div>
+    </div>
+    <div id="banner3" class="banner-wrapper theme-green">
+        <div class="banner-content mce-editor-area">
+            <div style="font-size: 55px; color: #f8a95b; margin-bottom: 25px;">💰 劃位成功後的下一步</div>
+            <div style="background: rgba(0,0,0,0.4); padding: 35px 45px; border-radius: 20px; display: inline-block; text-align: left; font-size: 32px; line-height: 1.6; letter-spacing: 1px;">
+                <div style="margin-bottom: 12px;"><span style="color: #2ecc71;">❶</span> 請務必截圖保存您的「訂單編號」與「座位」</div>
+                <div style="margin-bottom: 12px;"><span style="color: #2ecc71;">❷</span> 主動傳 LINE (@bearhigh) 告知我們「學生姓名」</div>
+                <div><span style="color: #2ecc71;">❸</span> 等候櫃檯確認無誤後，發送專屬學費單給您</div>
+            </div>
+            <div style="font-size: 24px; color: #ffcccc; margin-top: 25px;">*請於收到學費單後 3 日內完成繳費，逾期系統將無情釋出給候補同學哦！</div>
+        </div>
+    </div>
+
+    <!-- ★★★ 引入 Firebase 與模組化腳本 ★★★ -->
+    <script type="module">
+        import { db, ref as dbRef, push, set, storage, storageRef, uploadBytes, getDownloadURL } from './firebase-config.js';
+
+        let adminSessionPwd = ""; // 暫存密碼，不用每次打
+
+        tinymce.init({
+            selector: '.mce-editor-area',
+            inline: true,
+            paste_data_images: true, 
+            plugins: 'lists link code charmap image table', 
+            toolbar: 
+                'undo redo removeformat | ' +               
+                'fontfamily fontsize lineheight | ' +       
+                'bold italic underline strikethrough | ' +  
+                'superscript subscript charmap | ' +        
+                'forecolor backcolor | ' +                  
+                'alignleft aligncenter alignright | ' +     
+                'image table code',                         
+                
+            font_family_formats: '華康儷金黑=LiJinHei; 微軟正黑體="Microsoft JhengHei"; Arial=arial,helvetica,sans-serif;',
+            font_size_formats: '16px 20px 24px 28px 32px 36px 48px 55px 60px 65px 70px 80px 85px 105px 120px'
+        });
+
+        // 綁定到 window 讓 HTML onclick 可以呼叫
+        window.updateThemeColor = function(theme, colorHex) {
+            document.documentElement.style.setProperty(`--bg-${theme}`, colorHex);
+        }
+
+        window.setTheme = function(themeClass) {
+            const banners = document.querySelectorAll('.banner-wrapper');
+            banners.forEach(banner => {
+                banner.classList.remove('theme-green', 'theme-blue');
+                banner.classList.add(themeClass);
+            });
+        }
+
+        window.downloadBanner = function(bannerId, filename) {
+            tinymce.triggerSave();
+            tinymce.activeEditor.getBody().blur();
+            
+            setTimeout(() => {
+                const element = document.getElementById(bannerId);
+                html2canvas(element, { scale: 2, backgroundColor: null, useCORS: true }).then(canvas => {
+                    const link = document.createElement('a');
+                    link.download = `${filename}.png`;
+                    link.href = canvas.toDataURL("image/png");
+                    link.click();
+                });
+            }, 200);
+        }
+
+        window.downloadAllBanners = async function() {
+            tinymce.activeEditor.getBody().blur();
+            alert("開始產生圖片，請稍候...");
+            await new Promise(r => setTimeout(r, 500)); 
+            
+            const ids = ['banner1', 'banner2', 'banner3'];
+            const names = ['主視覺橫幅', '戰術指南橫幅', '繳費提醒橫幅'];
+
+            for (let i = 0; i < ids.length; i++) {
+                const element = document.getElementById(ids[i]);
+                await html2canvas(element, { scale: 2, backgroundColor: null, useCORS: true }).then(canvas => {
+                    const link = document.createElement('a');
+                    link.download = `${names[i]}.png`;
+                    link.href = canvas.toDataURL("image/png");
+                    link.click();
+                });
+                await new Promise(r => setTimeout(r, 500)); 
+            }
+        }
+
+        // ★★★ 核心上傳邏輯：一鍵上傳至 Firebase Storage 與 Database ★★★
+        window.uploadBannerToCloud = async function(bannerId, defaultName) {
+            if (!adminSessionPwd) {
+                let pwd = prompt("🔒 系統安全鎖：\n請輸入管理員密碼以上傳至雲端圖庫：");
+                if (!pwd || !pwd.trim()) return;
+                adminSessionPwd = pwd.trim();
+            }
+
+            const btn = event.target;
+            const originalText = btn.textContent;
+            btn.textContent = "⏳ 魔法連線中...";
+            btn.disabled = true;
+
+            try {
+                // 1. 關閉編輯器游標
+                tinymce.triggerSave();
+                tinymce.activeEditor.getBody().blur();
+                await new Promise(r => setTimeout(r, 200));
+
+                // 2. 截圖轉為 Blob (二進位圖片檔)
+                const element = document.getElementById(bannerId);
+                const canvas = await html2canvas(element, { scale: 2, backgroundColor: null, useCORS: true });
+                const blob = await new Promise(resolve => canvas.toBlob(resolve, 'image/png'));
+
+                // 3. 詢問存檔名稱
+                const saveName = prompt("請為這張橫幅命名（這會顯示在後台圖庫中）：", defaultName + "_" + new Date().toLocaleDateString('zh-TW'));
+                if (!saveName) {
+                    btn.textContent = originalText;
+                    btn.disabled = false;
+                    return;
+                }
+                
+                btn.textContent = "☁️ 雲端上傳中...";
+
+                // 4. 上傳圖片到 Storage
+                const fileName = `banner_gallery/${Date.now()}_${bannerId}.png`;
+                const sRef = storageRef(storage, fileName);
+                await uploadBytes(sRef, blob, { contentType: 'image/png' });
+                const url = await getDownloadURL(sRef);
+
+                // 5. 寫入 Database 紀錄
+                const newDocRef = push(dbRef(db, 'banner_gallery'));
+                await set(newDocRef, {
+                    name: saveName,
+                    url: url,
+                    createdAt: Date.now(),
+                    adminPwd: adminSessionPwd
+                });
+
+                alert(`✅ 成功存入雲端圖庫！\n圖檔名：${saveName}\n您現在可以在後台直接挑選它了。`);
+            } catch (error) {
+                console.error(error);
+                alert("❌ 上傳失敗，可能是密碼錯誤或網路問題：" + error.message);
+                adminSessionPwd = ""; // 密碼錯誤就清空重來
+            } finally {
+                btn.textContent = originalText;
+                btn.disabled = false;
+            }
+        };
+    </script>
+</body>
+</html>

@@ -10,12 +10,23 @@
     <script src="https://html2canvas.hertzen.com/dist/html2canvas.min.js"></script>
     <style>
         body { font-family: "Microsoft JhengHei", sans-serif; background-color: #f0f2f5; padding: 20px; margin: 0; }
-        .navbar { background-color: #2c3e50; padding: 15px; border-radius: 10px; margin-bottom: 20px; display: flex; justify-content: space-between; align-items: center; color: white; }
-        .nav-title { font-size: 24px; font-weight: bold; display: flex; align-items: center; }
-        .nav-tabs button { background: none; border: none; color: #bdc3c7; font-size: 18px; cursor: pointer; margin-left: 15px; padding: 5px 10px; transition: 0.3s; }
+        
+        /* ★★★ 修正 Navbar 使其支援 RWD 彈性換行 ★★★ */
+        /* 導覽列優化：拔除 margin，改用 gap，確保換行時邊緣切齊 */
+        .navbar { background-color: #2c3e50; padding: 15px; border-radius: 10px; margin-bottom: 20px; display: flex; flex-wrap: wrap; justify-content: space-between; align-items: center; gap: 15px; color: white; }
+        .nav-title { font-size: 24px; font-weight: bold; display: flex; align-items: center; white-space: nowrap; }
+        .nav-right { display: flex; flex-wrap: wrap; align-items: center; justify-content: flex-end; gap: 15px; flex-grow: 1; }
+        .nav-tabs { display: flex; flex-wrap: wrap; gap: 8px; justify-content: flex-start; }
+        .nav-tabs button { background: none; border: none; color: #bdc3c7; font-size: 17px; cursor: pointer; padding: 6px 10px; margin: 0; transition: 0.3s; white-space: nowrap; }
         .nav-tabs button.active { color: white; border-bottom: 3px solid #e74c3c; font-weight: bold; }
-        .nav-right { display: flex; align-items: center; }
-        .btn-home { background: #e74c3c; color: white; text-decoration: none; padding: 8px 15px; border-radius: 5px; font-weight: bold; font-size: 14px; margin-left: 20px; }
+        .btn-home { background: #e74c3c; color: white; text-decoration: none; padding: 8px 15px; border-radius: 5px; font-weight: bold; font-size: 14px; white-space: nowrap; transition: 0.2s; }
+        
+        /* ★★★ RWD 完美置中魔法 (螢幕小於 950px 時觸發) ★★★ */
+        @media (max-width: 950px) {
+            .navbar { flex-direction: column; justify-content: center; text-align: center; }
+            .nav-right { justify-content: center; flex-direction: column; width: 100%; gap: 20px; }
+            .nav-tabs { justify-content: center; width: 100%; }
+        }
         
         .global-pwd-bar { background: #fff3e0; padding: 10px 20px; border-radius: 10px; border: 2px solid #f39c12; margin-bottom: 20px; display: flex; align-items: center; gap: 10px; font-weight: bold; color: #d35400; box-shadow: 0 2px 5px rgba(0,0,0,0.1); }
         
@@ -159,7 +170,7 @@
         .config-row { display: flex; align-items: center; gap: 10px; margin-bottom: 8px; padding-bottom: 8px; border-bottom: 1px dashed #eee; }
         .config-row input { padding: 5px; border: 1px solid #ccc; border-radius: 3px; }
 
-        /* 座位編輯器樣式 (V33.0) */
+        /* 座位編輯器樣式 */
         #seatEditorContainer .classroom-wrapper { overflow-x: auto; padding-bottom: 20px; text-align: center; -webkit-overflow-scrolling: touch; background: #f9f9f9; border: 1px dashed #ccc; padding: 20px; border-radius: 10px; margin-top: 10px; }
         #seatEditorContainer .classroom-inner { display: inline-block; margin: 0 auto; }
         #seatEditorContainer .stage-box { width: 100%; margin: 0 auto 20px auto; padding: 12px; border: 3px solid #333; background-color: #fff; font-weight: bold; font-size: 22px; letter-spacing: 8px; text-align: center; box-sizing: border-box; }
@@ -178,7 +189,7 @@
             #seatEditorContainer .seat { flex: 0 1 40px; min-width: 21px; height: auto; aspect-ratio: 45 / 55; font-size: clamp(8px, 2.5vw, 12px) !important; border-radius: 3px; padding: 0; }
         }
 
-        /* ★★★ V34.2 新增：座位表輸出樣式 (A4 橫向 + 自動縮放) ★★★ */
+        /* 座位表輸出樣式 */
         #printArea {
             background: white;
             padding: 20px;
@@ -191,14 +202,14 @@
         
         .print-container {
             display: inline-block;
-            width: 297mm; /* A4 橫向寬度 */
-            height: 210mm; /* A4 橫向高度 */
+            width: 297mm; 
+            height: 210mm; 
             border: 2px solid black;
             padding: 15mm;
             background: white;
             box-sizing: border-box;
             position: relative;
-            overflow: hidden; /* 防止內容溢出 */
+            overflow: hidden; 
         }
 
         .print-header {
@@ -221,15 +232,14 @@
             text-align: center;
         }
 
-        /* 縮放容器：負責將內容縮放到適合 A4 的大小 */
         .print-content-scaler {
             display: flex;
             flex-direction: column;
             align-items: center;
-            justify-content: flex-start; /* 從上方開始 */
+            justify-content: flex-start; 
             width: 100%;
             height: 100%;
-            transform-origin: top center; /* 從上方中間開始縮放 */
+            transform-origin: top center; 
         }
 
         .print-row {
@@ -261,6 +271,15 @@
         .print-seat.pillar { background-color: #ccc; color: white; border: 1px solid #999; cursor: default; }
         .print-seat.blocked { background: repeating-linear-gradient(45deg, #eee, #eee 10px, #ccc 10px, #ccc 20px); color: transparent; cursor: default; }
 
+        /* 雲端圖庫 Modal 樣式 */
+        .gallery-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(200px, 1fr)); gap: 15px; max-height: 60vh; overflow-y: auto; padding: 10px; margin-top: 15px; }
+        .gallery-item { background: #f8f9fa; border: 1px solid #ddd; border-radius: 8px; overflow: hidden; position: relative; transition: 0.2s; }
+        .gallery-item:hover { box-shadow: 0 5px 15px rgba(0,0,0,0.2); transform: translateY(-3px); }
+        .gallery-img { width: 100%; height: 100px; object-fit: cover; cursor: pointer; }
+        .gallery-info { padding: 8px; font-size: 12px; text-align: center; color: #333; font-weight: bold; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+        .btn-gallery-del { position: absolute; top: 5px; right: 5px; background: rgba(231,76,60,0.9); color: white; border: none; border-radius: 50%; width: 25px; height: 25px; cursor: pointer; font-size: 12px; line-height: 25px; text-align: center; padding: 0; }
+        .btn-gallery-del:hover { background: #c0392b; }
+
     </style>
 </head>
 <body>
@@ -282,8 +301,11 @@
                 <button onclick="switchTab('bills')">💰 學費單生成</button>
                 <button onclick="switchTab('print')">🖨️ 座位表輸出</button>
             </div>
-            <a href="admin_guide.html" class="btn-home" style="background:#8e44ad;" target="_blank">📖 系統手冊</a>
-            <a href="index.html" class="btn-home" target="_blank">回首頁</a>
+            <!-- 右側獨立按鈕群，保持並排 -->
+            <div style="display: flex; gap: 10px;">
+                <a href="admin_guide.html" class="btn-home" style="background:#8e44ad;" target="_blank">系統手冊</a>
+                <a href="index.html" class="btn-home" target="_blank">回首頁</a>
+            </div>
         </div>
     </div>
 
@@ -361,7 +383,6 @@
             <h2 id="formTitle" style="margin-top:0;">➕ 新增課程</h2>
             <input type="hidden" id="c_id"> 
             
-            <!-- 第一列：年級 + 科目 + 老師 -->
             <div class="form-row">
                 <div class="form-group">
                     <label>年級分類 (Grade)</label>
@@ -391,7 +412,6 @@
                 </div>
             </div>
 
-            <!-- 第二列：班別 + 上課時間 -->
             <div class="form-row">
                 <div class="form-group">
                     <label>班別 (Class Type)</label>
@@ -421,7 +441,6 @@
                 </div>
             </div>
 
-            <!-- 第三列：費用 + 堂數 -->
             <div class="form-row">
                 <div class="form-group">
                     <label>費用</label>
@@ -433,16 +452,22 @@
                 </div>
             </div>
 
-            <!-- 第四列：封面圖片 -->
-            <div class="form-group">
+            <!-- ★★★ V36.1 封面圖庫按鈕 ★★★ -->
+            <div class="form-group" style="background:#e8f6f3; padding:15px; border-radius:8px;">
                 <label>封面圖片 (建議 800x400)</label>
+                <div style="display:flex; gap:10px; align-items:center; margin-bottom: 10px;">
+                    <button type="button" onclick="openCoverGalleryModal()" class="success" style="flex:1;">🖼️ 從雲端封面圖庫挑選</button>
+                    <button type="button" onclick="document.getElementById('coverBatchUpload').click()" class="warning" style="flex:1;">📂 批次上傳新封面至圖庫</button>
+                    <input type="file" id="coverBatchUpload" multiple accept="image/*" style="display:none;" onchange="uploadMultipleCovers(this)">
+                </div>
+                
+                <div style="font-size:14px; margin-bottom:5px; color:#555;">或選擇單張檔案上傳：</div>
                 <input type="file" id="c_image_file" accept="image/*" onchange="previewImage(this)">
-                <input type="hidden" id="c_image_url">
-                <img id="imgPreview" src="" alt="圖片預覽">
-                <div id="uploadStatus" style="font-size:12px; color:#666; margin-top:5px;"></div>
+                <input type="text" id="c_image_url" placeholder="封面圖網址 (選完圖庫會自動填入)" style="width:100%; margin-top:5px; font-size:12px; color:#666;" readonly>
+                <img id="imgPreview" src="" alt="圖片預覽" style="max-width:300px; margin-top:10px; display:none; border-radius:8px; box-shadow:0 2px 5px rgba(0,0,0,0.2);">
+                <div id="uploadStatus" style="font-size:12px; color:#666; margin-top:5px; font-weight:bold;"></div>
             </div>
 
-            <!-- 第五列：開課日期 + 使用教室 -->
             <div class="form-row">
                 <div class="form-group">
                     <label>開課日期 (輸入 7/2 自動轉)</label>
@@ -460,7 +485,6 @@
                 </div>
             </div>
 
-            <!-- 第六列：座位表編輯器 -->
             <div class="form-group" id="seatEditorContainer">
                 <label style="color:#e74c3c;">🪑 座位表編輯器 (點擊格子可切換狀態)</label>
                 <div style="font-size:12px; color:#666; margin-bottom:5px; text-align: center;">
@@ -478,7 +502,6 @@
                 <button type="button" onclick="resetSeatEditor()" class="warning" style="font-size:12px; padding:5px 10px;">↺ 重置為預設範本</button>
             </div>
 
-            <!-- 第七列：一階劃位時間 -->
             <div class="form-row">
                 <div class="form-group">
                     <label style="color:#e74c3c;">★ 一階劃位 (開始)</label>
@@ -490,7 +513,6 @@
                 </div>
             </div>
 
-            <!-- 第八列：二階劃位時間 -->
             <div class="form-row">
                 <div class="form-group">
                     <label>二階劃位 (開始)</label>
@@ -502,7 +524,6 @@
                 </div>
             </div>
             
-            <!-- 第九列：前台顯示時間 -->
             <div class="form-row" style="background:#e8f6f3; padding:10px; border-radius:5px; margin-bottom:20px;">
                 <div class="form-group">
                     <label>前台顯示時間 (開始)</label>
@@ -514,7 +535,6 @@
                 </div>
             </div>
 
-            <!-- 第十列：候補設定 -->
             <div class="form-row" style="background:#fff3e0; padding:10px; border-radius:5px; margin-bottom:20px;">
                 <div class="form-group" style="display:flex; align-items:center; gap:10px;">
                     <input type="checkbox" id="c_waitlist_enabled" style="width:auto; transform:scale(1.5);">
@@ -526,26 +546,29 @@
                 </div>
             </div>
 
-            <!-- 第十一列：課程介紹 -->
             <div class="form-group">
                 <label>課程介紹 / 注意事項</label>
                 <textarea id="c_desc"></textarea>
             </div>
 
-            <!-- 第十二列：按鈕 -->
             <div style="display:flex; gap:10px;">
                 <button onclick="saveCourse()" class="success" style="flex:1;" id="btnSave">確認新增課程</button>
                 <button onclick="hideCourseForm()" class="warning" id="btnCancel">取消返回</button>
             </div>
         </div>
-      </div>
+    </div>
 
+    <!-- ★★★ 橫幅按鈕完美對齊版 ★★★ -->
     <div id="tab-banners" class="page-section">
         <div class="center-box">
-            <h3>🖼️ 上傳新橫幅</h3>
-            <input type="file" id="b_file" accept="image/*">
-            <button onclick="uploadBanner()" class="success">上傳</button>
-            <div id="bannerStatus"></div>
+            <h3 style="margin-bottom: 20px;">🖼️ 上傳新橫幅</h3>
+            <div style="display: flex; align-items: center; justify-content: center; flex-wrap: wrap; gap: 10px;">
+                <input type="file" id="b_file" accept="image/*" style="padding: 8px; font-size: 14px; width: 220px; box-sizing: border-box; height: 42px; border: 1px solid #ccc; border-radius: 5px; background: #fff;">
+                <button onclick="uploadBanner()" class="success" style="margin: 0; height: 42px; box-sizing: border-box; display: inline-flex; align-items: center; justify-content: center;">上傳電腦圖檔</button>
+                <button onclick="openBannerGalleryModal()" class="warning" style="margin: 0; height: 42px; box-sizing: border-box; display: inline-flex; align-items: center; justify-content: center;">☁️ 從雲端圖庫挑選</button>
+                <a href="banner_maker.html" target="_blank" style="margin: 0; height: 42px; box-sizing: border-box; display: inline-flex; align-items: center; justify-content: center; padding: 0 20px; font-size: 16px; cursor: pointer; border: none; border-radius: 5px; font-weight: bold; transition: 0.2s; background-color: #3498db; color: white; text-decoration: none;">🎨 開啟橫幅產生器</a>
+            </div>
+            <div id="bannerStatus" style="margin-top: 10px;"></div>
         </div>
         <div id="bannerList" class="banner-list"></div>
     </div>
@@ -728,6 +751,18 @@
         </div>
     </div>
 
+    <!-- ★★★ V36.0 新增：共用雲端圖庫 Modal ★★★ -->
+    <div id="galleryModal" class="preview-modal" onclick="closeGalleryModal()">
+        <div class="preview-box" onclick="event.stopPropagation()" style="max-width: 800px; width: 90%;">
+            <h3 id="galleryModalTitle" style="margin-top: 0; color: #2c3e50; border-bottom: 2px solid #eee; padding-bottom: 10px;">☁️ 雲端圖庫</h3>
+            <div id="galleryModalDesc" style="font-size: 13px; color: #666; margin-bottom: 10px;">點擊圖片即可套用</div>
+            <div id="galleryGrid" class="gallery-grid">
+                <!-- 圖庫內容將由 JS 載入 -->
+            </div>
+            <button onclick="closeGalleryModal()" style="margin-top:20px; background:#7f8c8d; width: 100%; font-size: 16px; padding: 10px;">關閉圖庫</button>
+        </div>
+    </div>
+
     <script type="module">
         import { db, ref, set, remove, push, update, storage, storageRef, uploadBytes, getDownloadURL, get } from './firebase-config.js';
         import { onValue } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-database.js";
@@ -801,7 +836,23 @@
             resetSeatEditor();
         };
         window.hideCourseForm = function() { document.getElementById('courseListView').style.display = 'block'; document.getElementById('courseFormView').style.display = 'none'; };
-        window.previewImage = function(input) { if (input.files && input.files[0]) { const reader = new FileReader(); reader.onload = function(e) { document.getElementById('imgPreview').src = e.target.result; document.getElementById('imgPreview').style.display = 'block'; }; reader.readAsDataURL(input.files[0]); } };
+        
+        // ★★★ V36.1 更新：預覽圖片時也支援網路圖片 (從圖庫抓回來的) ★★★
+        window.previewImage = function(input) { 
+            const img = document.getElementById('imgPreview');
+            if (input.files && input.files[0]) { 
+                const reader = new FileReader(); 
+                reader.onload = function(e) { 
+                    img.src = e.target.result; 
+                    img.style.display = 'block'; 
+                }; 
+                reader.readAsDataURL(input.files[0]); 
+                document.getElementById('c_image_url').value = "";
+            } else if (typeof input === 'string') {
+                img.src = input;
+                img.style.display = 'block';
+            }
+        };
         
         const subjectsByGrade = {
             "升小五課程": ["小五邏輯數學"],
@@ -1086,16 +1137,14 @@
             document.getElementById('c_start_date').value = c.startDate || "";
             document.getElementById('c_display_start').value = c.displayStart || "";
             document.getElementById('c_display_end').value = c.displayEnd || "";
+            
             document.getElementById('c_image_url').value = c.image;
+            window.previewImage(c.image);
             
             document.getElementById('c_waitlist_enabled').checked = c.waitlistEnabled || false;
             document.getElementById('c_waitlist_limit').value = c.waitlistLimit || 0;
 
             tinymce.get('c_desc').setContent(c.desc);
-            
-            const img = document.getElementById('imgPreview');
-            img.src = c.image;
-            img.style.display = 'block';
 
             const courseSeats = seatsData[key] || {};
             let hasSold = false;
@@ -1129,7 +1178,7 @@
         window.resetForm = function() {
             document.getElementById('formTitle').textContent = "➕ 新增課程";
             document.getElementById('btnSave').textContent = "確認新增課程";
-            document.querySelectorAll('input').forEach(i => i.value = '');
+            document.querySelectorAll('input:not([type="password"])').forEach(i => i.value = '');
             document.getElementById('c_lessons').value = "12";
             document.getElementById('c_price').value = "21600"; 
             document.getElementById('c_waitlist_enabled').checked = false; 
@@ -1144,7 +1193,6 @@
         };
 
         function renderCourseList() {
-            // ★★★ 防閃爍機制 ★★★
             const newDataStr = JSON.stringify(coursesData);
             if (currentCourseListStr === newDataStr) return;
             currentCourseListStr = newDataStr;
@@ -1162,13 +1210,14 @@
                         <h3>[${c.grade}] ${c.subject} ${c.classType || ''}</h3>
                         <p>👨‍🏫 ${c.teacher} | ⏰ ${c.timeDescription || '-'}</p>
                     </div>
-                    <button class="btn-delete" onclick="window.deleteCourse('${key}')">刪除</button>
+                    <button class="btn-delete" onclick="window.deleteCourse('${key}', event)">刪除</button>
                 `;
                 listDiv.appendChild(card);
             });
         }
 
-        window.deleteCourse = function(courseId) {
+        window.deleteCourse = function(courseId, event) {
+            if(event) event.stopPropagation();
             let pwd = document.getElementById('adminPwd').value.trim();
             if (!pwd) { 
                 pwd = prompt("⚠️ 您尚未輸入密碼！\n請直接在此輸入管理員密碼，系統會自動幫您填入上方：");
@@ -1428,7 +1477,6 @@
         };
 
         function updateClassSelector() {
-            // ★★★ 防閃爍機制 (只比對選項內容) ★★★
             const optionsData = Object.keys(coursesData).map(k => `${k}-${coursesData[k].grade}-${coursesData[k].subject}-${coursesData[k].classType}`).join('|');
             if (currentClassSelectorStr === optionsData) return;
             currentClassSelectorStr = optionsData;
@@ -1593,7 +1641,7 @@
                 const b = data[key];
                 const item = document.createElement('div');
                 item.className = 'banner-item';
-                item.innerHTML = `<img src="${b.url}"><button class="btn-delete" onclick="window.deleteBanner('${key}')">刪除</button>`;
+                item.innerHTML = `<img src="${b.url}"><button class="btn-delete" onclick="window.deleteBanner('${key}', event)">刪除</button>`;
                 list.appendChild(item);
             });
         });
@@ -1620,7 +1668,8 @@
             fileInput.value = "";
         };
 
-        window.deleteBanner = function(key) {
+        window.deleteBanner = function(key, event) {
+            if(event) event.stopPropagation();
             let pwd = document.getElementById('adminPwd').value.trim();
             if (!pwd) { 
                 pwd = prompt("⚠️ 您尚未輸入密碼！\n請直接在此輸入管理員密碼，系統會自動幫您填入上方：");
@@ -1628,7 +1677,7 @@
                 pwd = pwd.trim();
                 document.getElementById('adminPwd').value = pwd; 
             }
-            if (confirm("確定刪除此橫幅？")) remove(ref(db, `banners/${key}`));
+            if (confirm("確定刪除此首頁橫幅？")) remove(ref(db, `banners/${key}`));
         };
 
         const waitlistRef = ref(db, 'waitlist');
@@ -1639,7 +1688,6 @@
         });
 
         function updateWaitlistSelector() {
-            // ★★★ 防閃爍機制 (只比對選項內容) ★★★
             const optionsData = Object.keys(coursesData).map(k => `${k}-${coursesData[k].grade}-${coursesData[k].subject}-${coursesData[k].classType}`).join('|');
             if (currentWaitlistSelectorStr === optionsData) return;
             currentWaitlistSelectorStr = optionsData;
@@ -1854,7 +1902,7 @@
             const statusDiv = document.getElementById('sweeperStatus');
             
             setInterval(() => {
-                const now = Date.now() + serverTimeOffset; // ★★★ 導入伺服器時間校準 ★★★
+                const now = Date.now() + serverTimeOffset; 
                 let clearedCount = 0;
 
                 Object.keys(seatsData).forEach(courseId => {
@@ -1891,10 +1939,8 @@
             window.processBills();
         };
 
-        // 監聽 print_layouts 資料
         onValue(ref(db, 'print_layouts'), (snapshot) => {
             printLayouts = snapshot.val() || {};
-            // 如果當前在 print 頁面，更新選單
             if (document.getElementById('tab-print').classList.contains('active')) {
                 updatePrintCourseList();
             }
@@ -1924,7 +1970,6 @@
                 container.appendChild(div);
             });
 
-            // 渲染完設定後，自動觸發一次 processBills 以更新預覽
             window.processBills();
         };
 
@@ -1939,7 +1984,6 @@
 
             const updates = {};
             Object.keys(coursesData).forEach(key => {
-                // 只儲存有顯示在畫面上的設定 (避免覆蓋到另一部別的設定)
                 if (document.getElementById(`bill_date_${key}`)) {
                     const date = document.getElementById(`bill_date_${key}`).value;
                     const count = document.getElementById(`bill_count_${key}`).value;
@@ -1972,7 +2016,6 @@
 
                 if (lines.length === 0) return;
 
-                // 讀取第一行標題，尋找「學校」與「姓名」的索引 (並清除 BOM 與引號)
                 const headers = lines[0].split(',').map(h => h.trim().replace(/["']/g, '').replace(/^\uFEFF/, ''));
                 const schoolIdx = headers.findIndex(h => h.includes('學校'));
                 const nameIdx = headers.findIndex(h => h.includes('姓名'));
@@ -2020,7 +2063,6 @@
                 const c = coursesData[courseId];
                 if (!c) return;
 
-                // 檢查是否勾選
                 const checkbox = document.getElementById(`bill_check_${courseId}`);
                 if (!checkbox || !checkbox.checked) return;
 
@@ -2044,7 +2086,6 @@
                             };
                         }
                         
-                        // 優先使用輸入框的值，若無則用預設值
                         let priceInput = document.getElementById(`bill_price_${courseId}`);
                         let price = priceInput ? parseInt(priceInput.value) : (parseInt(c.billPrice) || parseInt(c.price.replace(/[$,]/g, '')) || 0);
                         
@@ -2068,7 +2109,6 @@
             });
 
             billStudents = Object.values(studentMap);
-            // 重置預覽：確保無資料時畫面被清空
             if (billStudents.length > 0) {
                 loadBill(0);
             } else {
@@ -2174,7 +2214,7 @@
                 items: [{ name: "科目名稱", dateHtml: "日期", price: 0 }]
             };
             billStudents.push(emptyStudent); 
-            loadBill(billStudents.length - 1); // 切換到最後一張 (新增的)
+            loadBill(billStudents.length - 1); 
         };
 
         window.downloadCurrentBill = function() {
@@ -2207,7 +2247,6 @@
             alert("✅ 全部下載完成！");
         };
 
-        // ★★★ V34.0 新增：座位表輸出邏輯 (分流版) ★★★
         window.initPrintPage = function() {
             updatePrintCourseList();
         };
@@ -2221,7 +2260,7 @@
             saveArea.style.display = 'none';
 
             if (source === 'live') {
-                saveArea.style.display = 'flex'; // Live 模式也允許另存新檔
+                saveArea.style.display = 'flex'; 
                 Object.keys(coursesData).forEach(key => {
                     const c = coursesData[key];
                     const option = document.createElement('option');
@@ -2230,7 +2269,7 @@
                     selector.appendChild(option);
                 });
             } else if (source === 'manual') {
-                saveArea.style.display = 'flex'; // 顯示存檔區
+                saveArea.style.display = 'flex'; 
                 Object.keys(printLayouts).forEach(key => {
                     const layout = printLayouts[key];
                     const option = document.createElement('option');
@@ -2239,7 +2278,7 @@
                     selector.appendChild(option);
                 });
             } else if (source === 'empty') {
-                saveArea.style.display = 'flex'; // 顯示存檔區
+                saveArea.style.display = 'flex'; 
                 Object.keys(classrooms).forEach(key => {
                     const c = classrooms[key];
                     const option = document.createElement('option');
@@ -2282,12 +2321,11 @@
                 if (!saved) return;
 
                 classroomName = saved.classroomName;
-                classType = `班級：${saved.name}`; // 使用存檔名稱
+                classType = `班級：${saved.name}`; 
                 time = `上課時間：${saved.time || ''}`;
                 teacher = `老師：${saved.teacher || ''}`;
                 
-                layoutToRender = saved.layout; // 這是存檔時的 layout (含名字)
-                // 手動模式下，名字直接存在 layout 裡，不需要 currentSeats
+                layoutToRender = saved.layout; 
 
             } else if (source === 'empty') {
                 const c = classrooms[selectedId];
@@ -2298,18 +2336,16 @@
                 time = "上課時間：";
                 teacher = "老師：";
                 layoutToRender = c.layout;
-                currentSeats = {}; // 空白
+                currentSeats = {}; 
             }
 
             if (!layoutToRender) return;
 
-            // 更新標頭 (可編輯)
             document.getElementById('p_classroom').textContent = classroomName;
             document.getElementById('p_classType').textContent = classType;
             document.getElementById('p_time').textContent = time;
             document.getElementById('p_teacher').textContent = teacher;
             
-            // 開啟標頭編輯功能 (方便手動模式修改)
             document.getElementById('p_classType').contentEditable = true;
             document.getElementById('p_time').contentEditable = true;
             document.getElementById('p_teacher').contentEditable = true;
@@ -2323,13 +2359,6 @@
                     
                     let code = seatCode;
                     let isBlocked = false;
-                    
-                    // 處理手動存檔的格式 (可能已經包含名字)
-                    let manualName = "";
-                    if (source === 'manual' && printLayouts[selectedId].seatMap) {
-                         // 這裡需要知道 seatId，但 layout 只有 code
-                         // 我們假設 code 就是 key
-                    }
 
                     if (code.includes(':X')) { code = code.split(':')[0]; isBlocked = true; }
 
@@ -2342,13 +2371,12 @@
                         seat.classList.add('pillar');
                         seat.textContent = "柱";
                     } else {
-                        // 正常座位
                         if (isBlocked) {
                             seat.classList.add('blocked');
                             seat.textContent = code; 
                         } else {
-                            seat.dataset.id = code; // 綁定 ID
-                            seat.contentEditable = true; // 允許編輯
+                            seat.dataset.id = code; 
+                            seat.contentEditable = true; 
 
                             if (source === 'live') {
                                 const info = currentSeats[code];
@@ -2363,7 +2391,6 @@
                                     if (saved.seatMap[code].length > 3) seat.style.fontSize = "14px";
                                 }
                             }
-                            // empty 模式不填字
                         }
                     }
                     rowDiv.appendChild(seat);
@@ -2371,19 +2398,15 @@
                 grid.appendChild(rowDiv);
             });
 
-            // ★★★ V34.3 自動縮放邏輯 (修復大教室縮太小) ★★★
             setTimeout(() => {
                 const container = document.querySelector('.print-container');
                 const gridEl = document.getElementById('printGrid');
                 
-                // 先重置縮放，才能取得真實大小
                 gridEl.style.transform = 'none';
                 
-                // 動態取得 A4 容器的可用內部寬度 (扣除左右 padding 的安全距離)
                 const availableWidth = container.clientWidth - 40; 
                 const gridWidth = gridEl.scrollWidth;
 
-                // 只有在格子寬度超過可用寬度時才縮小，且依據實際超出的比例精準縮放
                 if (gridWidth > availableWidth && availableWidth > 0) {
                     const scale = availableWidth / gridWidth;
                     gridEl.style.transform = `scale(${scale})`; 
@@ -2391,7 +2414,6 @@
             }, 100); 
         };
 
-        // ★★★ V34.0 新增：手動儲存座位表 (另存新檔) ★★★
         window.saveManualLayout = function() {
             let pwd = document.getElementById('adminPwd').value.trim();
             if (!pwd) { 
@@ -2404,7 +2426,6 @@
             const saveName = document.getElementById('manualSaveName').value.trim();
             if (!saveName) return alert("請輸入存檔名稱！");
 
-            // 檢查是否同名
             let existingKey = null;
             for (let key in printLayouts) {
                 if (printLayouts[key].name === saveName) {
@@ -2422,7 +2443,6 @@
             const source = document.getElementById('printSourceSelector').value;
             const selectedId = document.getElementById('printCourseSelector').value;
             
-            // 抓取當前畫面上的資料
             const seatMap = {};
             document.querySelectorAll('.print-seat[data-id]').forEach(seat => {
                 const text = seat.textContent.trim();
@@ -2431,13 +2451,11 @@
                 }
             });
 
-            // 抓取標頭
             const classType = document.getElementById('p_classType').textContent;
             const time = document.getElementById('p_time').textContent;
             const teacher = document.getElementById('p_teacher').textContent;
             const classroomName = document.getElementById('p_classroom').textContent;
 
-            // 決定 Layout 來源 (為了下次能還原格子形狀)
             let baseLayout = [];
             if (source === 'live') {
                 const c = coursesData[selectedId];
@@ -2452,7 +2470,7 @@
             const saveData = {
                 name: saveName,
                 classroomName: classroomName,
-                classType: classType, // 這裡存的是完整標題字串
+                classType: classType, 
                 time: time,
                 teacher: teacher,
                 layout: baseLayout,
@@ -2461,10 +2479,8 @@
                 adminPwd: pwd
             };
 
-            // 寫入 print_layouts 節點 (與 seats 分開)
             update(ref(db, `print_layouts/${saveId}`), saveData).then(() => {
                 alert("✅ 已另存新檔！您可以在「手動排位存檔」中找到它。");
-                // 重新整理選單
                 document.getElementById('printSourceSelector').value = 'manual';
                 updatePrintCourseList();
             }).catch(err => alert("存檔失敗：" + err.message));
@@ -2472,7 +2488,6 @@
 
         window.downloadSeatingChart = function() {
             const element = document.querySelector('.print-container');
-            // 檔名取自標題
             const title = document.getElementById('p_classType').textContent.replace('班級：', '').trim() || "座位表";
             const filename = `${title}_座位表.png`;
 
@@ -2482,6 +2497,169 @@
                 link.href = canvas.toDataURL("image/png");
                 link.click();
             });
+        };
+
+        // ★★★ V36.0 雲端圖庫邏輯 (共用模組) ★★★
+        let bannerGalleryData = {};
+        let coverGalleryData = {};
+        let currentGalleryType = 'banner'; 
+        
+        onValue(ref(db, 'banner_gallery'), (snapshot) => {
+            bannerGalleryData = snapshot.val() || {};
+            if (document.getElementById('galleryModal').style.display === 'flex' && currentGalleryType === 'banner') {
+                renderGalleryGrid();
+            }
+        });
+
+        onValue(ref(db, 'cover_gallery'), (snapshot) => {
+            coverGalleryData = snapshot.val() || {};
+            if (document.getElementById('galleryModal').style.display === 'flex' && currentGalleryType === 'cover') {
+                renderGalleryGrid();
+            }
+        });
+
+        window.openBannerGalleryModal = function() {
+            currentGalleryType = 'banner';
+            document.getElementById('galleryModalTitle').textContent = "☁️ 雲端橫幅圖庫";
+            document.getElementById('galleryModalDesc').textContent = "點擊圖片即可將其設為首頁輪播圖！";
+            document.getElementById('galleryModal').style.display = 'flex';
+            renderGalleryGrid();
+        };
+
+        window.openCoverGalleryModal = function() {
+            currentGalleryType = 'cover';
+            document.getElementById('galleryModalTitle').textContent = "🖼️ 雲端課程封面圖庫";
+            document.getElementById('galleryModalDesc').textContent = "點擊圖片即可將其設為本課程封面！";
+            document.getElementById('galleryModal').style.display = 'flex';
+            renderGalleryGrid();
+        };
+
+        window.closeGalleryModal = function() {
+            document.getElementById('galleryModal').style.display = 'none';
+        };
+
+        window.renderGalleryGrid = function() {
+            const grid = document.getElementById('galleryGrid');
+            grid.innerHTML = "";
+            
+            const dataSource = currentGalleryType === 'banner' ? bannerGalleryData : coverGalleryData;
+            const keys = Object.keys(dataSource).sort((a, b) => dataSource[b].createdAt - dataSource[a].createdAt);
+            
+            if (keys.length === 0) {
+                grid.innerHTML = "<div style='grid-column: 1 / -1; text-align: center; color: #999; padding: 20px;'>雲端圖庫目前是空的。</div>";
+                return;
+            }
+
+            keys.forEach(key => {
+                const item = dataSource[key];
+                const date = new Date(item.createdAt).toLocaleDateString();
+                const div = document.createElement('div');
+                div.className = 'gallery-item';
+                div.innerHTML = `
+                    <button class="btn-gallery-del" onclick="deleteGalleryItem('${key}', event)" title="從圖庫永久刪除">✕</button>
+                    <img src="${item.url}" class="gallery-img" onclick="selectFromGallery('${item.url}', '${item.name}')" title="點擊套用">
+                    <div class="gallery-info" title="${item.name}">${item.name}<br><span style="font-size:10px;color:#999;">${date}</span></div>
+                `;
+                grid.appendChild(div);
+            });
+        };
+
+        window.selectFromGallery = async function(url, name) {
+            if (currentGalleryType === 'banner') {
+                let pwd = document.getElementById('adminPwd').value.trim();
+                if (!pwd) { 
+                    pwd = prompt("⚠️ 您尚未輸入密碼！\n請直接在此輸入管理員密碼，系統會自動幫您填入上方：");
+                    if (!pwd || !pwd.trim()) return;
+                    pwd = pwd.trim();
+                    document.getElementById('adminPwd').value = pwd; 
+                }
+                
+                if(confirm(`確定要將「${name}」加入首頁輪播圖嗎？`)) {
+                    try {
+                        await push(ref(db, 'banners'), { url: url, createdAt: Date.now(), adminPwd: pwd, source: 'gallery' });
+                        alert("✅ 成功加入首頁輪播圖！");
+                        closeGalleryModal();
+                    } catch(err) {
+                        alert("加入失敗：" + err.message);
+                    }
+                }
+            } else if (currentGalleryType === 'cover') {
+                document.getElementById('c_image_url').value = url;
+                window.previewImage(url);
+                closeGalleryModal();
+            }
+        };
+
+        window.deleteGalleryItem = async function(key, event) {
+            event.stopPropagation(); 
+            let pwd = document.getElementById('adminPwd').value.trim();
+            if (!pwd) { 
+                pwd = prompt("⚠️ 刪除圖庫需要管理員密碼：\n系統會自動幫您填入上方：");
+                if (!pwd || !pwd.trim()) return;
+                pwd = pwd.trim();
+                document.getElementById('adminPwd').value = pwd; 
+            }
+            
+            const targetNode = currentGalleryType === 'banner' ? 'banner_gallery' : 'cover_gallery';
+            
+            if(confirm("⚠️ 確定要從雲端圖庫中永久刪除這張圖片嗎？")) {
+                try {
+                    await remove(ref(db, `${targetNode}/${key}`));
+                } catch(err) {
+                    alert("刪除失敗：" + err.message);
+                }
+            }
+        };
+
+        // ★★★ V36.1 封面圖庫批次上傳邏輯 ★★★
+        window.uploadMultipleCovers = async function(input) {
+            let pwd = document.getElementById('adminPwd').value.trim();
+            if (!pwd) { 
+                pwd = prompt("🔒 批次上傳需要管理員密碼：\n系統會自動幫您填入上方：");
+                if (!pwd || !pwd.trim()) {
+                    input.value = ""; 
+                    return;
+                }
+                pwd = pwd.trim();
+                document.getElementById('adminPwd').value = pwd; 
+            }
+
+            const files = input.files;
+            if (files.length === 0) return;
+
+            const statusEl = document.getElementById('uploadStatus');
+            statusEl.style.color = "#3498db";
+
+            for (let i = 0; i < files.length; i++) {
+                const file = files[i];
+                statusEl.textContent = `🚀 正在上傳第 ${i + 1} / ${files.length} 張圖片：${file.name}...`;
+                
+                try {
+                    const storagePath = `cover_gallery/${Date.now()}_${file.name}`;
+                    const imgRef = storageRef(storage, storagePath);
+                    await uploadBytes(imgRef, file, { contentType: file.type });
+                    const url = await getDownloadURL(imgRef);
+
+                    await push(ref(db, 'cover_gallery'), { 
+                        name: file.name.split('.')[0], 
+                        url: url, 
+                        createdAt: Date.now(), 
+                        adminPwd: pwd 
+                    });
+                } catch (err) {
+                    console.error(`上傳 ${file.name} 失敗:`, err);
+                    alert(`❌ 圖片 ${file.name} 上傳失敗！請檢查密碼或網路。`);
+                    input.value = "";
+                    statusEl.textContent = "";
+                    return; 
+                }
+            }
+
+            statusEl.style.color = "#27ae60";
+            statusEl.textContent = `✅ 批次上傳完成！共存入 ${files.length} 張封面。`;
+            input.value = ""; 
+            
+            setTimeout(() => { statusEl.textContent = ""; }, 3000);
         };
 
     </script>

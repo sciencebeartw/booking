@@ -57,6 +57,7 @@
         .box.success { background: #e8f6f3; border-left: 6px solid #27ae60; color: #0e6655; }
         .box.tech { background: #f4f6f7; border: 2px solid var(--primary); color: #2c3e50; }
         .box.magic { background: linear-gradient(135deg, #f6d365 0%, #fda085 100%); color: #fff; text-shadow: 0 1px 2px rgba(0,0,0,0.2); }
+        .box.cloud { background: linear-gradient(135deg, #e0c3fc 0%, #8ec5fc 100%); color: #fff; text-shadow: 0 1px 2px rgba(0,0,0,0.2); }
 
         .highlight { background: #ffeeba; padding: 2px 6px; border-radius: 4px; font-weight: bold; color: #d35400; }
         .tag { background: var(--primary); color: white; padding: 2px 8px; border-radius: 4px; font-size: 12px; margin-right: 5px; }
@@ -75,7 +76,7 @@
     <header>
         <img src="logo1.png" alt="山熊科學">
         <h1>行政團隊系統操作白皮書</h1>
-        <span class="version-badge">V35.1 旗艦版</span>
+        <span class="version-badge">V36.1 雲端生態版</span>
         <span class="author-badge">總架構設計：阿喵老師</span>
         <a href="admin_bear2026.html" style="margin-left: auto; background: #e74c3c; color: white; text-decoration: none; padding: 8px 16px; border-radius: 20px; font-size: 14px; font-weight: bold; transition: 0.2s; box-shadow: 0 2px 5px rgba(0,0,0,0.2);">
             🔙 返回指揮中心
@@ -94,22 +95,35 @@
                 </ul>
             </div>
             <div class="nav-group">
-                <div class="nav-title">II. 後台指揮中心模組</div>
+                <div class="nav-title">II. 雲端圖庫生態系</div>
                 <ul>
-                    <li><a href="#ch2-1" class="nav-link">戰情室：劃位監控與熱更新</a></li>
-                    <li><a href="#ch2-2" class="nav-link">建築師：智慧課程與座位編輯</a></li>
-                    <li><a href="#ch2-3" class="nav-link">名單局：候補排序與匯出</a></li>
-                    <li><a href="#ch2-4" class="nav-link">財務處：AI 學費單生成引擎</a></li>
-                    <li><a href="#ch2-5" class="nav-link">報表室：A4 自動縮放座位表</a></li>
+                    <li><a href="#ch2-1" class="nav-link">橫幅產生器 (Banner Maker)</a></li>
+                    <li><a href="#ch2-2" class="nav-link">課程封面雲端圖庫</a></li>
                 </ul>
             </div>
             <div class="nav-group">
-                <div class="nav-title">III. 前台體驗與防作弊</div>
+                <div class="nav-title">III. 後台指揮中心模組</div>
                 <ul>
-                    <li><a href="#ch3-1" class="nav-link">首頁：動態雷達與隱形門</a></li>
-                    <li><a href="#ch3-2" class="nav-link">戰場：原子鎖與防閃爍技術</a></li>
-                    <li><a href="#ch3-3" class="nav-link">查詢：雙重驗證個資堡壘</a></li>
-                    <li><a href="#ch3-4" class="nav-link">SOP：防禦性心理威懾</a></li>
+                    <li><a href="#ch3-1" class="nav-link">戰情室：劃位監控與熱更新</a></li>
+                    <li><a href="#ch3-2" class="nav-link">建築師：智慧課程與座位編輯</a></li>
+                    <li><a href="#ch3-3" class="nav-link">名單局：候補排序與匯出</a></li>
+                    <li><a href="#ch3-4" class="nav-link">財務處：AI 學費單生成引擎</a></li>
+                    <li><a href="#ch3-5" class="nav-link">報表室：A4 自動縮放座位表</a></li>
+                </ul>
+            </div>
+            <div class="nav-group">
+                <div class="nav-title">IV. 前台體驗與防作弊</div>
+                <ul>
+                    <li><a href="#ch4-1" class="nav-link">首頁：動態雷達與隱形門</a></li>
+                    <li><a href="#ch4-2" class="nav-link">戰場：原子鎖與防閃爍技術</a></li>
+                    <li><a href="#ch4-3" class="nav-link">查詢：雙重驗證個資堡壘</a></li>
+                    <li><a href="#ch4-4" class="nav-link">SOP：防禦性心理威懾</a></li>
+                </ul>
+            </div>
+            <div class="nav-group">
+                <div class="nav-title">V. 附錄報告</div>
+                <ul>
+                    <li><a href="#ch5-1" class="nav-link">CTO 資安防護深度報告</a></li>
                 </ul>
             </div>
         </nav>
@@ -122,14 +136,14 @@
                 <p style="margin-bottom: 0;">本網頁為山熊科學核心行政團隊之專屬操作白皮書與技術架構解析。本系統具備超越業界的極致防護與自動化機制，<strong>請勿將此網址、截圖或內部邏輯外流給任何家長或競業</strong>，以維護系統之絕對防禦力。</p>
             </div>
 
-            <p>各位夥伴，歡迎來到山熊科學劃位系統的「大腦」。這不是一個普通的表單網頁，而是一個經歷了無數次攻防推演、專為應付瞬間高併發流量與竹科工程師家長挑戰而打造的<strong>旗艦級自動化系統 (V35.1)</strong>。熟悉這裡的每一項武器，妳就能輕鬆掌控數百人的劃位流量！</p>
+            <p>各位夥伴，歡迎來到山熊科學劃位系統的「大腦」。這不是一個普通的表單網頁，而是一個經歷了無數次攻防推演、專為應付瞬間高併發流量與竹科工程師家長挑戰而打造的<strong>旗艦級自動化系統 (V36.1)</strong>。熟悉這裡的每一項武器，妳就能輕鬆掌控數百人的劃位流量！</p>
 
             <hr>
 
             <h2 id="ch1-1">I. 系統核心與安全架構</h2>
             <p>在進入具體操作前，我們必須先了解系統的底層防護。這套系統擁有極致的安全潔癖，確保了資料的絕對正確性。</p>
             
-            <h3>🛡️ 全域十三道智慧密碼鎖</h3>
+            <h3 id="ch1-1">🛡️ 全域十三道智慧密碼鎖</h3>
             <p>為了防止誤觸與惡意破壞，系統在後台佈署了 13 道安全關卡（涵蓋刪除、釋出、匯出、存檔等）。</p>
             <div class="box tech">
                 <div class="box-title">✨ UX 極致優化：自動記憶魔法</div>
@@ -153,9 +167,31 @@
 
             <hr>
 
-            <h2 id="ch2-1">II. 後台指揮中心模組解析</h2>
+            <h2 id="ch2-1">II. 雲端圖庫生態系 (V36 旗艦亮點)</h2>
+            <p>告別手動排版與瑣碎的檔案管理！我們將首頁橫幅與課程封面全面雲端化，並配備了專屬的設計工具。</p>
+
+            <div class="box cloud" id="ch2-1">
+                <div class="box-title">🎨 山熊專屬橫幅產生器 (Banner Maker)</div>
+                這是一個獨立的高科技設計畫布（可從後台導覽列點擊進入）。我們將首頁輪播圖的排版寫入程式碼，並搭載了強大的 <strong>TinyMCE 行內編輯器</strong>。
+            </div>
+            <ul>
+                <li><strong>一鍵調色與換底：</strong> 內建「國中綠」與「高中藍」兩套色彩美學，搭配高級動物暗紋。您甚至可以使用調色盤自訂專屬色系。</li>
+                <li><strong>直覺式編輯：</strong> 點擊圖片上的任何文字，即會浮出如同 Word 般的工具列。支援改顏色、換字體、調大小、插入特殊數學符號甚至小插圖。</li>
+                <li><strong>☁️ 上傳雲端圖庫：</strong> 橫幅設計完畢後，不需下載再上傳！點擊<strong>「☁️ 存入雲端圖庫」</strong>，系統會自動高畫質截圖並上傳至 Firebase 雲端保險箱。之後只要到後台的「橫幅管理」點擊「從雲端圖庫挑選」，即可一鍵套用至前台首頁！</li>
+            </ul>
+
+            <h3 id="ch2-2">🖼️ 課程封面雲端圖庫與批次上傳</h3>
+            <p>建立課程時，不再需要一張一張從電腦裡撈圖片了。</p>
+            <ul>
+                <li><strong>📂 批次上傳：</strong> 在建立課程的「封面圖片」區塊，點擊「批次上傳新封面至圖庫」。您可以一次選取電腦裡的幾十張封面圖，系統會自動把它們全部上傳到雲端圖庫備用。</li>
+                <li><strong>🖼️ 九宮格雲端畫廊：</strong> 建立新課程時，只要點擊「從雲端封面圖庫挑選」，系統會彈出一個超美的九宮格畫廊展示所有存檔。點選任意一張，圖片網址會自動帶入課程表單中，省去一切繁瑣操作！</li>
+            </ul>
+
+            <hr>
+
+            <h2 id="ch3-1">III. 後台指揮中心模組解析</h2>
             
-            <h3>📊 戰情室：劃位監控與熱更新 (Monitor)</h3>
+            <h3 id="ch3-1">📊 戰情室：劃位監控與熱更新 (Monitor)</h3>
             <p>這是劃位當天大家會盯最久的地方，完全不需按 F5 重新整理，所有戰況即時跳動。</p>
             <ul>
                 <li><strong>視覺化熱區：</strong> <span style="color:#e74c3c; font-weight:bold;">🟥 紅色</span> 代表已售出（滑鼠移入顯示個資）、<span style="color:#f39c12; font-weight:bold;">🟧 橘色</span> 代表正有家長在填單中。</li>
@@ -163,7 +199,7 @@
                 <li><strong>資料快照防閃爍 (Anti-Thrashing)：</strong> 系統導入了進階的快照比對技術，即使前線湧入大量訂單，後台的下拉選單與列表也不會因為過度重繪而「閃退或閃白」，確保行政操作的絕對穩定。</li>
             </ul>
 
-            <h3 id="ch2-2">📝 建築師：智慧課程與座位編輯 (Courses)</h3>
+            <h3 id="ch3-2">📝 建築師：智慧課程與座位編輯 (Courses)</h3>
             <p>這裡是建立課程的兵工廠，我們將行政的「打字時間」壓縮到了極致。</p>
             <ol>
                 <li><strong>極致自動化連動：</strong> 費用已預設填入 `$21600`。最神奇的是，當您在下拉選單選擇「週一、四班」或「週六上午班」時，系統會<strong>自動判定並秒速填入對應的上課時間</strong>（例如自動填入 16:50-18:20 或 09:00-12:00），完全不需要手動打字！</li>
@@ -172,16 +208,16 @@
                 <li><strong>雙階段精準時間鎖：</strong> 支援一階與二階時間設定，精準控制流量分流。</li>
             </ol>
 
-            <h3 id="ch2-3">📋 名單局：候補排序與匯出 (Waitlist)</h3>
+            <h3 id="ch3-3">📋 名單局：候補排序與匯出 (Waitlist)</h3>
             <ul>
                 <li><strong>自動排序演算法：</strong> 系統以毫秒級的精度記錄家長送出的時間，並自動計算出絕對公平的「候補序號 (Seq)」。</li>
                 <li><strong>雙重刪除機制：</strong> 點擊一次刪除為「軟刪除」（資料變灰保留底稿，方便查帳與應付客訴）；再點擊一次才為「永久刪除」，極度考究行政實務需求。</li>
             </ul>
 
-            <h3 id="ch2-4">💰 財務處：AI 學費單生成引擎 (Bills)</h3>
+            <h3 id="ch3-4">💰 財務處：AI 學費單生成引擎 (Bills)</h3>
             <div class="box magic">
                 <div class="box-title">🚀 節省 40 小時的旗艦級功能</div>
-                這套學費單引擎是 V35 的技術結晶。從參數設定、名單匯入到生成圖片，全部在雲端 3 秒內完成，徹底告別傳統 Excel 與 Word 合併列印的夢魘！
+                這套學費單引擎是技術結晶。從參數設定、名單匯入到生成圖片，全部在雲端 3 秒內完成，徹底告別傳統 Excel 與 Word 合併列印的夢魘！
             </div>
             <ul>
                 <li><strong>一鍵切換部別：</strong> 選擇「國中小部」或「高中部」時，底下的匯款銀行帳號與立案字號會瞬間自動切換。</li>
@@ -190,7 +226,7 @@
                 <li><strong>A5 完美比例與批次下載：</strong> 學費單已設定為標準 A5 比例，並加上了 25% 完美透明度的山熊浮水印。按下「📥 全部下載」，系統自動將所有單據轉成高解析度圖片檔，全選列印一氣呵成！</li>
             </ul>
 
-            <h3 id="ch2-5">🖨️ 報表室：A4 自動縮放座位表 (Print)</h3>
+            <h3 id="ch3-5">🖨️ 報表室：A4 自動縮放座位表 (Print)</h3>
             <p>專為現場印發表單設計的獨立模組，與前台線上劃位資料<strong>絕對隔離</strong>，保障安全。</p>
             <ul>
                 <li><strong>智慧型縮放技術 (Auto-Scaling)：</strong> 不論是國中的超大教室，還是高中的迷你教室，系統會自動偵測可用寬度，進行完美的比例縮小，保證印在 A4 紙上「絕對不破版」。</li>
@@ -199,17 +235,17 @@
 
             <hr>
 
-            <h2 id="ch3-1">III. 前台體驗與防作弊機制</h2>
+            <h2 id="ch4-1">IV. 前台體驗與防作弊機制</h2>
             <p>前線戰場的設計哲學是：<strong>「對真人極度友善，對機器人殘酷無情」</strong>。</p>
 
-            <h3>🏠 首頁：隱形門與動態雷達 (index.html)</h3>
+            <h3 id="ch4-1">🏠 首頁：隱形門與動態雷達 (index.html)</h3>
             <ul>
                 <li><span class="tag">動態時光機雷達</span>系統載入時會自動掃描所有課程。如果今天有戰役，首頁會自動生出紅色的 <strong>「🔥 今日劃位」</strong> 並強制聚焦；如果今天太平但未來有戰役，則顯示橘色的 <strong>「⏳ 最近劃位」</strong>。這確保家長在尖峰時刻 0.1 秒就能找到目標。</li>
                 <li><span class="tag">隱形傳送門</span>我們取消了俗氣的「管理員登入」按鈕。請對著左上角的「山熊科學 Logo」連續點擊 5 下，輸入密鑰後，系統才會「動態拼湊」出後台網址。這招空城計讓工程師家長翻遍原始碼也無從駭起。</li>
                 <li><span class="tag">即時燈號技術</span>六段式精準燈號（尚未開放/開放中/額滿/整理中/候補中/已結束），每秒自動刷新，完全不需按 F5。</li>
             </ul>
 
-            <h3 id="ch3-2">⚔️ 劃位戰場：原子鎖與防閃爍技術 (booking.html)</h3>
+            <h3 id="ch4-2">⚔️ 劃位戰場：原子鎖與防閃爍技術 (booking.html)</h3>
             <div class="box tech">
                 <div class="box-title">盾牌一：獨家「先鎖定、後驗證」與 90 秒補償機制</div>
                 傳統系統要填完資料、過完驗證碼才能搶位，導致手速快的人常因「選紅綠燈」輸給運氣好的人。我們的系統導入了<strong>原子操作 (Atomic Transaction)</strong>，只要家長點擊格子的那一瞬間，系統強制給予他 <strong>90 秒的絕對無敵保護期</strong>。這段時間內就算 Google 考他三組圖片，座位也穩如泰山。
@@ -219,10 +255,10 @@
                 <li><strong>手機端 45:55 魔法：</strong> 座位表在手機上會自動根據螢幕大小擠壓縮放，但永遠保持「45寬:55高」的指尖人體工學比例，字體 <code>clamp()</code> 智慧縮放，絕不破版！</li>
             </ul>
 
-            <h3 id="ch3-3">🔍 查詢頁：雙重驗證個資堡壘 (check.html)</h3>
+            <h3 id="ch4-3">🔍 查詢頁：雙重驗證個資堡壘 (check.html)</h3>
             <p>因應最新個資法規，我們徹底封死了舊系統「輸入名字就能查」的隱私漏洞。現在必須同時輸入<strong>「學生姓名」與「完整 10 碼家長手機」</strong>，兩者 100% 吻合才能調閱訂單。且具備防呆提示，引導家長自行確認資料是否打錯。</p>
 
-            <h3 id="ch3-4">📜 SOP頁：防禦性心理威懾 (sop.html)</h3>
+            <h3 id="ch4-4">📜 SOP頁：防禦性心理威懾 (sop.html)</h3>
             <p>這是一份精心設計的「戰略文件」，我們導入了高階的<strong>「期望值管理」</strong>：</p>
             <ul>
                 <li><strong>破解九宮格客訴 (免責聲明)：</strong> 明白告知家長遇到九宮格是因為「流量洪峰、共用IP、擋廣告套件、非自然手勢」等四個不可抗力因素。並宣導「我們已為此提供 90 秒充裕時間」，讓家長遇到驗證碼時不會恐慌，也無法以此作為客訴理由。</li>
@@ -233,7 +269,8 @@
 
             <hr>
 
-            <h2 id="ch3-1">III. CTO 資安防護深度報告</h2>
+            <h2 id="ch5-1">V. 附錄報告</h2>
+            <h3 id="ch5-1">CTO 資安防護深度報告</h3>
             <div class="box tech">
                 <div class="box-title">致：山熊科學經營團隊</div>
                 <p>針對線上劃位，技術部已針對所有「技術作弊」場景進行了多輪攻防推演。本系統採取的防禦等級已超越一般商用標準。</p>
@@ -248,7 +285,7 @@
                 <p><strong>五、 經濟效益分析：為何「作弊」是不划算的？</strong><br>
                 要寫出一支能完美模仿真人生理特徵（滑鼠路徑、觸控微震）的腳本需要耗費極大成本。即便成功，也僅能爭取到 0.5 秒優勢，最終仍須面對不可控的 AI 驗證。對於竹科家長而言，花費數十小時開發腳本，遠不如準時坐在電腦前「用手點擊」來得划算。</p>
                 <p><strong>技術長結語：</strong><br>
-                本系統 V35.1 版本透過「大數據行為分析」與「伺服器硬核邏輯」的雙重鎖死，已將系統安全性、公平性與行政效率推至頂峰。這是一套能讓家長感受公平、讓行政感到優雅的旗艦級劃位系統。<br><br>
+                本系統 V36.0 版本透過「大數據行為分析」與「伺服器硬核邏輯」的雙重鎖死，已將系統安全性、公平性與行政效率推至頂峰。這是一套能讓家長感受公平、讓行政感到優雅的旗艦級劃位系統。<br><br>
                 <em>山熊科學技術部 敬上 🐻🔥🏆</em></p>
             </div>
             
