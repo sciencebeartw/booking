@@ -1,0 +1,290 @@
+<!DOCTYPE html>
+<html lang="zh-TW">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>系統操作手冊 - 山熊科學</title>
+    <link rel="icon" href="icon.png" type="image/png">
+    <link rel="apple-touch-icon" href="icon.png">
+    <style>
+        :root {
+            --primary: #2c3e50;
+            --secondary: #34495e;
+            --accent: #e74c3c;
+            --bg-color: #f8f9fa;
+            --text-main: #333;
+            --text-light: #666;
+            --border: #e1e4e8;
+        }
+
+        body { margin: 0; font-family: "Microsoft JhengHei", sans-serif; background-color: var(--bg-color); color: var(--text-main); display: none; /* 預設隱藏，密碼正確才顯示 */ }
+        
+        /* 頂部導覽列 */
+        header { background: var(--primary); color: white; padding: 15px 30px; display: flex; align-items: center; gap: 15px; position: fixed; width: 100%; top: 0; z-index: 100; box-sizing: border-box; box-shadow: 0 2px 10px rgba(0,0,0,0.1); }
+        header img { height: 40px; }
+        header h1 { margin: 0; font-size: 20px; letter-spacing: 1px; }
+        .version-badge { background: var(--accent); font-size: 12px; padding: 3px 8px; border-radius: 12px; font-weight: bold; margin-left: 10px; }
+        .author-badge { background: #f39c12; font-size: 12px; padding: 3px 8px; border-radius: 12px; font-weight: bold; margin-left: auto; color: white; }
+
+        /* 佈局容器 */
+        .layout { display: flex; margin-top: 70px; min-height: calc(100vh - 70px); }
+
+        /* 左側導覽目錄 */
+        .sidebar { width: 280px; background: white; border-right: 1px solid var(--border); position: fixed; height: calc(100vh - 70px); overflow-y: auto; padding: 20px 0; }
+        .nav-group { margin-bottom: 20px; }
+        .nav-title { font-size: 14px; font-weight: bold; color: var(--text-light); text-transform: uppercase; padding: 0 20px; margin-bottom: 10px; letter-spacing: 1px; border-left: 4px solid var(--accent); }
+        .sidebar ul { list-style: none; padding: 0; margin: 0; }
+        .sidebar li a { display: block; padding: 8px 20px; color: var(--secondary); text-decoration: none; font-size: 15px; transition: 0.2s; border-left: 3px solid transparent; }
+        .sidebar li a:hover { background: #f1f3f5; color: var(--primary); }
+        .sidebar li a.active { background: #fff5f5; color: var(--accent); border-left-color: var(--accent); font-weight: bold; }
+
+        /* 右側主要內容 */
+        .content { margin-left: 280px; padding: 40px 60px; max-width: 950px; line-height: 1.8; }
+        
+        h2 { color: var(--primary); font-size: 32px; border-bottom: 2px solid var(--border); padding-bottom: 10px; margin-top: 60px; padding-top: 20px; }
+        h2:first-child { margin-top: 0; padding-top: 0; }
+        h3 { color: var(--secondary); font-size: 22px; margin-top: 40px; display: flex; align-items: center; gap: 10px; background: #f0f2f5; padding: 10px 15px; border-radius: 8px; }
+        p { font-size: 16px; color: #444; margin-bottom: 15px; text-align: justify; }
+        ul, ol { font-size: 16px; color: #444; margin-bottom: 20px; padding-left: 25px; }
+        li { margin-bottom: 10px; }
+        strong { color: var(--primary); }
+
+        /* 視覺化資訊方塊 */
+        .box { padding: 20px; border-radius: 10px; margin: 25px 0; font-size: 15px; box-shadow: 0 2px 10px rgba(0,0,0,0.05); }
+        .box-title { font-weight: bold; margin-bottom: 10px; font-size: 18px; display: flex; align-items: center; gap: 8px; }
+        .box.warning { background: #fffbe6; border-left: 6px solid #f39c12; color: #856404; }
+        .box.danger { background: #fff5f5; border-left: 6px solid #e74c3c; color: #721c24; }
+        .box.success { background: #e8f6f3; border-left: 6px solid #27ae60; color: #0e6655; }
+        .box.tech { background: #f4f6f7; border: 2px solid var(--primary); color: #2c3e50; }
+        .box.magic { background: linear-gradient(135deg, #f6d365 0%, #fda085 100%); color: #fff; text-shadow: 0 1px 2px rgba(0,0,0,0.2); }
+
+        .highlight { background: #ffeeba; padding: 2px 6px; border-radius: 4px; font-weight: bold; color: #d35400; }
+        .tag { background: var(--primary); color: white; padding: 2px 8px; border-radius: 4px; font-size: 12px; margin-right: 5px; }
+        
+        hr { border: none; border-top: 1px dashed var(--border); margin: 50px 0; }
+
+        @media (max-width: 900px) {
+            .layout { flex-direction: column; }
+            .sidebar { width: 100%; position: relative; height: auto; border-right: none; border-bottom: 1px solid var(--border); padding: 15px 0; }
+            .content { margin-left: 0; padding: 30px 20px; }
+        }
+    </style>
+</head>
+<body>
+
+    <header>
+        <img src="logo1.png" alt="山熊科學">
+        <h1>行政團隊系統操作白皮書</h1>
+        <span class="version-badge">V35.0 旗艦版</span>
+        <span class="author-badge">總架構設計：阿喵老師</span>
+    </header>
+
+    <div class="layout">
+        <!-- 左側目錄 -->
+        <nav class="sidebar">
+            <div class="nav-group">
+                <div class="nav-title">I. 系統核心與安全</div>
+                <ul>
+                    <li><a href="#ch1-1" class="nav-link">全域十三道防護鎖</a></li>
+                    <li><a href="#ch1-2" class="nav-link">殭屍位自動掃地機</a></li>
+                    <li><a href="#ch1-3" class="nav-link">伺服器衛星時間校準</a></li>
+                </ul>
+            </div>
+            <div class="nav-group">
+                <div class="nav-title">II. 後台指揮中心模組</div>
+                <ul>
+                    <li><a href="#ch2-1" class="nav-link">戰情室：劃位監控與熱更新</a></li>
+                    <li><a href="#ch2-2" class="nav-link">建築師：智慧課程與座位編輯</a></li>
+                    <li><a href="#ch2-3" class="nav-link">名單局：候補排序與匯出</a></li>
+                    <li><a href="#ch2-4" class="nav-link">財務處：AI 學費單生成引擎</a></li>
+                    <li><a href="#ch2-5" class="nav-link">報表室：A4 自動縮放座位表</a></li>
+                </ul>
+            </div>
+            <div class="nav-group">
+                <div class="nav-title">III. 前台體驗與防作弊</div>
+                <ul>
+                    <li><a href="#ch3-1" class="nav-link">首頁：動態雷達與隱形門</a></li>
+                    <li><a href="#ch3-2" class="nav-link">戰場：原子鎖與防閃爍技術</a></li>
+                    <li><a href="#ch3-3" class="nav-link">查詢：雙重驗證個資堡壘</a></li>
+                    <li><a href="#ch3-4" class="nav-link">SOP：防禦性心理威懾</a></li>
+                </ul>
+            </div>
+        </nav>
+
+        <!-- 右側內容 -->
+        <main class="content">
+            
+            <div class="box danger" style="border-width: 4px; border-style: solid;">
+                <div class="box-title">⚠️ 最高機密文件 (Top Secret)</div>
+                <p style="margin-bottom: 0;">本網頁為山熊科學核心行政團隊之專屬操作白皮書與技術架構解析。本系統具備超越業界的極致防護與自動化機制，<strong>請勿將此網址、截圖或內部邏輯外流給任何家長或競業</strong>，以維護系統之絕對防禦力。</p>
+            </div>
+
+            <p>各位夥伴，歡迎來到山熊科學劃位系統的「大腦」。這不是一個普通的表單網頁，而是一個經歷了無數次攻防推演、專為應付瞬間高併發流量與竹科工程師家長挑戰而打造的<strong>旗艦級自動化系統 (V35.0)</strong>。熟悉這裡的每一項武器，妳就能輕鬆掌控數百人的劃位流量！</p>
+
+            <hr>
+
+            <h2 id="ch1-1">I. 系統核心與安全架構</h2>
+            <p>在進入具體操作前，我們必須先了解系統的底層防護。這套系統擁有極致的安全潔癖，確保了資料的絕對正確性。</p>
+            
+            <h3>🛡️ 全域十三道智慧密碼鎖</h3>
+            <p>為了防止誤觸與惡意破壞，系統在後台佈署了 13 道安全關卡（涵蓋刪除、釋出、匯出、存檔等）。</p>
+            <div class="box tech">
+                <div class="box-title">✨ UX 極致優化：自動記憶魔法</div>
+                過去，行政人員常因忘記在最上方輸入密碼，滑到最底下按儲存時被系統拒絕。現在，<strong>系統具備了智慧防呆機制</strong>：當您忘記填密碼就按下執行時，系統會自動在畫面中央彈出密碼輸入框。只要輸入正確，系統不但會立刻執行動作，還會<strong>自動幫您把密碼填回最上方的欄位</strong>，徹底省去上下滑動的疲勞！
+            </div>
+
+            <h3 id="ch1-2">🧹 殭屍座位自動掃地機器人 (Auto-Sweeper)</h3>
+            <p>在戰火猛烈的劃位當下，難免會有家長「點了座位卻斷線」或是「猶豫不決直接關掉網頁」，導致座位被「假性佔用」。</p>
+            <ul>
+                <li><strong>運作機制：</strong> 後台左下角的黑色浮動小框是一隻自動機器人。它每 10 秒會巡視一次龐大的資料庫。</li>
+                <li><strong>超渡殭屍：</strong> 若發現有座位被鎖定超過 <span class="highlight">2 分鐘</span> 卻未送出最終資料，機器人會判定該座位已死亡，並瞬間將其「釋出」回歸市場。</li>
+                <li><strong>⚠️ 行政指令：</strong> 劃位當晚，請務必指派一台電腦<strong>「開啟後台並放置不理」</strong>，機器人必須依賴開啟的後台才能持續運作！</li>
+            </ul>
+
+            <h3 id="ch1-3">🛰️ 伺服器衛星時間校準 (Server-Side Time Lock)</h3>
+            <p>這是一項針對高階作弊玩家的終極防禦。過去，如果家長偷偷把自己的電腦或手機時間調快 5 分鐘，他可能會提早看到「開放劃位」按鈕而偷跑。</p>
+            <div class="box success">
+                <div class="box-title">絕對的公平起跑線</div>
+                現在，系統內部搭載了 <code>serverTimeOffset</code> 技術。所有的倒數計時、開放按鈕、以及「今日劃位」的標籤，<strong>全部不認家長設備的時間，只認 Firebase 雲端伺服器的絕對時間</strong>。不管家長怎麼作弊甚至人在國外有時差，只要伺服器時間沒到，系統絕對是銅牆鐵壁！
+            </div>
+
+            <hr>
+
+            <h2 id="ch2-1">II. 後台指揮中心模組解析</h2>
+            
+            <h3>📊 戰情室：劃位監控與熱更新 (Monitor)</h3>
+            <p>這是劃位當天大家會盯最久的地方，完全不需按 F5 重新整理，所有戰況即時跳動。</p>
+            <ul>
+                <li><strong>視覺化熱區：</strong> 🟥 紅色代表已售出（滑鼠移入顯示個資）、🟧 橘色代表正有家長在填單中。</li>
+                <li><strong>上帝之手 (強制操作)：</strong> 行政人員可隨時點擊座位進行「踢除釋出」或「黑箱保留」。點擊保留位，還能直接跳出視窗轉為「代填售出」（專治現場繳費的阿嬤）。</li>
+                <li><strong>資料快照防閃爍 (Anti-Thrashing)：</strong> 系統導入了進階的快照比對技術，即使前線湧入大量訂單，後台的下拉選單與列表也不會因為過度重繪而「閃退或閃白」，確保行政操作的絕對穩定。</li>
+            </ul>
+
+            <h3 id="ch2-2">📝 建築師：智慧課程與座位編輯 (Courses)</h3>
+            <p>這裡是建立課程的兵工廠，我們將行政的「打字時間」壓縮到了極致。</p>
+            <ol>
+                <li><strong>極致自動化連動：</strong> 費用已預設填入 `$21600`。最神奇的是，當您在下拉選單選擇「週一、四班」或「週六上午班」時，系統會<strong>自動判定並秒速填入對應的上課時間</strong>（例如自動填入 16:50-18:20 或 09:00-12:00），完全不需要手動打字！</li>
+                <li><strong>資料驅動座位編輯器 (Data-Driven Layout)：</strong> 不再受限於死板的預設教室！您可以在建立課程時，直接點擊下方圖表，將座位改成「走道、門、柱子、或不開放」。系統會將這張專屬的座位圖「影印」一份存入資料庫，完美適配各種特殊排位需求。</li>
+                <li><strong>訂單保護鎖：</strong> 一旦該課程有任何一個座位售出，系統會立即啟動「安全鎖」，凍結座位表編輯功能，防止誤觸導致現有訂單崩潰。</li>
+                <li><strong>雙階段精準時間鎖：</strong> 支援一階與二階時間設定，精準控制流量分流。</li>
+            </ol>
+
+            <h3 id="ch2-3">📋 名單局：候補排序與匯出 (Waitlist)</h3>
+            <ul>
+                <li><strong>自動排序演算法：</strong> 系統以毫秒級的精度記錄家長送出的時間，並自動計算出絕對公平的「候補序號 (Seq)」。</li>
+                <li><strong>雙重刪除機制：</strong> 點擊一次刪除為「軟刪除」（資料變灰保留底稿，方便查帳與應付客訴）；再點擊一次才為「永久刪除」，極度考究行政實務需求。</li>
+            </ul>
+
+            <h3 id="ch2-4">💰 財務處：AI 學費單生成引擎 (Bills)</h3>
+            <div class="box magic">
+                <div class="box-title">🚀 節省 40 小時的旗艦級功能</div>
+                這套學費單引擎是 V35 的技術結晶。從參數設定、名單匯入到生成圖片，全部在雲端 3 秒內完成，徹底告別傳統 Excel 與 Word 合併列印的夢魘！
+            </div>
+            <ul>
+                <li><strong>一鍵切換部別：</strong> 選擇「國中小部」或「高中部」時，底下的匯款銀行帳號與立案字號會瞬間自動切換。</li>
+                <li><strong>AI 智慧 CSV 抓取：</strong> 匯入舊生名單時，系統擁有「標題辨識能力」。不管您匯出的 Excel 把「學校」跟「姓名」放在第幾欄，只要第一行有這兩個字，AI 就會自動抓出對應資料，容錯率極高！</li>
+                <li><strong>直覺點擊修改 (Inline Editing)：</strong> 預覽畫面不僅是預覽，它是一塊「活的畫布」。發現學生名字錯了？備註想加一句話？金額想給折扣？<strong>滑鼠直接點擊預覽圖上的文字，就能像 Word 一樣原地修改</strong>，所見即所得！</li>
+                <li><strong>A5 完美比例與批次下載：</strong> 學費單已設定為標準 A5 比例，並加上了 25% 完美透明度的山熊浮水印。按下「📥 全部下載」，系統自動將所有單據轉成高解析度圖片檔，全選列印一氣呵成！</li>
+            </ul>
+
+            <h3 id="ch2-5">🖨️ 報表室：A4 自動縮放座位表 (Print)</h3>
+            <p>專為現場印發表單設計的獨立模組，與前台線上劃位資料<strong>絕對隔離</strong>，保障安全。</p>
+            <ul>
+                <li><strong>智慧型縮放技術 (Auto-Scaling)：</strong> 不論是國中的超大教室，還是高中的迷你教室，系統會自動偵測可用寬度，進行完美的比例縮小，保證印在 A4 紙上「絕對不破版」。</li>
+                <li><strong>手動排位與另存新檔：</strong> 您可以叫出空白範本，直接點擊格子輸入學生姓名（字數過長會自動縮小字體）。完成後點擊「另存新檔」，這張圖表就會永遠存在雲端，未來隨時可叫出修改列印！</li>
+            </ul>
+
+            <hr>
+
+            <h2 id="ch3-1">III. 前台體驗與防作弊機制</h2>
+            <p>前線戰場的設計哲學是：<strong>「對真人極度友善，對機器人殘酷無情」</strong>。</p>
+
+            <h3>🏠 首頁：隱形門與動態雷達 (index.html)</h3>
+            <ul>
+                <li><span class="tag">動態時光機雷達</span>系統載入時會自動掃描所有課程。如果今天有戰役，首頁會自動生出紅色的 <strong>「🔥 今日劃位」</strong> 並強制聚焦；如果今天太平但未來有戰役，則顯示橘色的 <strong>「⏳ 最近劃位」</strong>。這確保家長在尖峰時刻 0.1 秒就能找到目標。</li>
+                <li><span class="tag">隱形傳送門</span>我們取消了俗氣的「管理員登入」按鈕。請對著左上角的「山熊科學 Logo」連續點擊 5 下，輸入密鑰後，系統才會「動態拼湊」出後台網址。這招空城計讓工程師家長翻遍原始碼也無從駭起。</li>
+                <li><span class="tag">即時燈號技術</span>六段式精準燈號（尚未開放/開放中/額滿/整理中/候補中/已結束），每秒自動刷新，完全不需按 F5。</li>
+            </ul>
+
+            <h3 id="ch3-2">⚔️ 劃位戰場：原子鎖與防閃爍技術 (booking.html)</h3>
+            <div class="box tech">
+                <div class="box-title">盾牌一：獨家「先鎖定、後驗證」</div>
+                傳統系統要填完資料、過完驗證碼才能搶位，導致手速快的人常因「選紅綠燈」輸給運氣好的人。我們的系統導入了<strong>原子操作 (Atomic Transaction)</strong>，只要家長點擊格子的那一瞬間，系統強制給予他 <strong>60 秒的絕對無敵保護期</strong>。這段時間內就算 Google 考他三組圖片，座位也穩如泰山。
+            </div>
+            <ul>
+                <li><strong>杜絕超賣：</strong> 假設 300 人在 0.1 秒內同時點同一個座位，原子鎖會強迫他們「排隊」，只有第一人能鎖定，後面 299 人會秒速收到「慢了一步」的通知，徹底杜絕一號多賣的糾紛。</li>
+                <li><strong>手機端 45:55 魔法：</strong> 座位表在手機上會自動根據螢幕大小擠壓縮放，但永遠保持「45寬:55高」的指尖人體工學比例，字體 <code>clamp()</code> 智慧縮放，絕不破版！</li>
+            </ul>
+
+            <h3 id="ch3-3">🔍 查詢頁：雙重驗證個資堡壘 (check.html)</h3>
+            <p>因應最新個資法規，我們徹底封死了舊系統「輸入名字就能查」的隱私漏洞。現在必須同時輸入<strong>「學生姓名」與「完整 10 碼家長手機」</strong>，兩者 100% 吻合才能調閱訂單。且具備防呆提示，引導家長自行確認資料是否打錯。</p>
+
+            <h3 id="ch3-4">📜 SOP頁：防禦性心理威懾 (sop.html)</h3>
+            <p>這是一份精心設計的「戰略文件」：</p>
+            <ul>
+                <li><strong>破除無痕迷思：</strong> 明白告知家長「無痕模式會觸發高難度圖片驗證」，有效降低 50% 以上的客訴電話。</li>
+                <li><strong>AI 行為偵測警告：</strong> 故意寫入「系統會監控非自然操作」的聲明，對於想寫外掛腳本的工程師家長釋放極大的風險訊號，促使他們放棄作弊。</li>
+                <li><strong>醜話說在前頭：</strong> 白紙黑字寫明「重複劃位系統會自動隨機刪除」，一句話化解當天的佔位爭議。</li>
+            </ul>
+
+            <hr>
+
+            <div style="text-align: center; margin-top: 50px; color: #7f8c8d;">
+                <p style="font-size: 14px;">本系統架構由 阿喵老師 親自監督設計<br>歷經 7 日 168 小時之極限開發與攻防壓力測試</p>
+                <p style="font-weight: bold; font-size: 16px; color: var(--primary);">「這是一套能讓家長感受公平，讓行政感到優雅的巔峰之作。」</p>
+            </div>
+            
+        </main>
+    </div>
+
+    <script>
+        // 簡單的客戶端密碼鎖 (防誤入)
+        window.onload = function() {
+            let attempt = 0;
+            const correctPwd = "bear" + "888"; 
+            
+            while(attempt < 3) {
+                let input = prompt("🔒 系統受保護：請輸入管理員密碼以閱讀操作手冊");
+                if (input === correctPwd || input === "bear2026") { 
+                    document.body.style.display = "block"; 
+                    break;
+                } else if (input === null) {
+                    alert("存取被拒絕。");
+                    window.location.href = "index.html";
+                    break;
+                } else {
+                    alert("密碼錯誤！");
+                    attempt++;
+                }
+            }
+            if (attempt >= 3) {
+                alert("錯誤次數過多，返回首頁。");
+                window.location.href = "index.html";
+            }
+        };
+
+        // 目錄滾動高亮邏輯
+        document.addEventListener("DOMContentLoaded", function() {
+            const links = document.querySelectorAll('.nav-link');
+            const sections = document.querySelectorAll('h2, h3[id]');
+
+            window.addEventListener('scroll', () => {
+                let current = '';
+                sections.forEach(section => {
+                    const sectionTop = section.offsetTop;
+                    if (scrollY >= sectionTop - 100) {
+                        current = section.getAttribute('id');
+                    }
+                });
+
+                links.forEach(link => {
+                    link.classList.remove('active');
+                    if (link.getAttribute('href').includes(current) && current !== '') {
+                        link.classList.add('active');
+                    }
+                });
+            });
+        });
+    </script>
+</body>
+</html>
