@@ -731,6 +731,17 @@
         import { db, ref, set, remove, push, update, storage, storageRef, uploadBytes, getDownloadURL, get } from './firebase-config.js';
         import { onValue } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-database.js";
 
+        // ★★★ 防偷跑與時間校準 ★★★
+        let serverTimeOffset = 0;
+        onValue(ref(db, ".info/serverTimeOffset"), (snap) => {
+            serverTimeOffset = snap.val() || 0;
+        });
+
+        // ★★★ 防閃爍快照變數 ★★★
+        let currentCourseListStr = "";
+        let currentClassSelectorStr = "";
+        let currentWaitlistSelectorStr = "";
+
         tinymce.init({ 
             selector: '#c_desc', 
             plugins: 'image link lists media table code', 
@@ -761,7 +772,7 @@
         let seatsData = {}; 
         let waitlistDisplayList = []; 
         let schoolMap = {}; 
-        let printLayouts = {}; // V34.0 新增：手動存檔的座位表
+        let printLayouts = {}; 
 
         let billStudents = [];
         let currentBillIndex = -1;
@@ -771,9 +782,8 @@
         let bookingSort = { col: 'time', asc: false };
         let waitlistSort = { col: 'timestamp', asc: true };
 
-        // ★★★ V33.0 新增：座位編輯器全域變數 ★★★
-        let currentEditorLayout = []; // 儲存當前編輯器狀態 (2D Array)
-        let isEditorLocked = false;   // 是否鎖定 (已售出則鎖定)
+        let currentEditorLayout = []; 
+        let isEditorLocked = false;   
 
         window.switchTab = function(tabName) {
             document.querySelectorAll('.page-section').forEach(el => el.classList.remove('active'));
@@ -781,13 +791,12 @@
             document.getElementById(`tab-${tabName}`).classList.add('active');
             event.target.classList.add('active');
             if (tabName === 'bills') initBillPage();
-            if (tabName === 'print') initPrintPage(); // V34.0
+            if (tabName === 'print') initPrintPage(); 
         };
         window.showCourseForm = function() { 
             document.getElementById('courseListView').style.display = 'none'; 
             document.getElementById('courseFormView').style.display = 'block'; 
             resetForm(); 
-            // 新增時，預設載入第一個教室的範本
             resetSeatEditor();
         };
         window.hideCourseForm = function() { document.getElementById('courseListView').style.display = 'block'; document.getElementById('courseFormView').style.display = 'none'; };
@@ -808,7 +817,6 @@
             const type = document.getElementById('c_class_type').value; 
             const timeInput = document.getElementById('c_time_desc'); 
             
-            // 針對特殊班別設定專屬時間
             if (type === "週一、四班") {
                 timeInput.value = "每週一、四 16:50-18:20";
             } else if (type === "週二、五班") {
@@ -828,7 +836,6 @@
             } else if (type === "週日晚上班") {
                 timeInput.value = "每週日 18:00-21:00";
             } 
-            // 其他單天平日班 (如週一班、週五班)，維持預設的 18:30-21:30
             else if (type.includes("週")) { 
                 const day = type.replace("班", "").replace("週", "每週"); 
                 timeInput.value = `${day} 18:30-21:30`; 
@@ -855,16 +862,11 @@
             const subList = document.getElementById('subject_list');
             subList.innerHTML = "";
             subjects.forEach(s => subList.innerHTML += `<option value="${s}">`);
-            // class_type_list 保持 HTML 寫死的預設選項，不再動態覆蓋
         }
 
-        // ★★★ V33.0 新增：座位編輯器核心邏輯 ★★★
-        
-        // 1. 重置編輯器 (載入預設範本)
         window.resetSeatEditor = function() {
             if (isEditorLocked) {
                 alert("🔒 此課程已有售出紀錄，無法重置座位表！");
-                // 恢復選單為原本的教室 (如果使用者試圖切換)
                 const courseId = document.getElementById('c_id').value;
                 if (courseId && coursesData[courseId]) {
                     document.getElementById('c_classroom').value = coursesData[courseId].classroom;
@@ -876,12 +878,10 @@
             const config = classrooms[classroomType];
             if (!config) return;
 
-            // 深拷貝一份範本，以免修改到原始設定
             currentEditorLayout = JSON.parse(JSON.stringify(config.layout));
             renderEditorGrid();
         };
 
-        // 2. 渲染編輯器網格
         function renderEditorGrid() {
             const grid = document.getElementById('editorGrid');
             grid.innerHTML = "";
@@ -893,7 +893,6 @@
                     const seat = document.createElement('div');
                     seat.className = 'seat';
                     
-                    // 解析狀態
                     let displayCode = code;
                     if (code.includes(':X')) {
                         seat.classList.add('blocked');
@@ -907,14 +906,9 @@
                         seat.classList.add('pillar');
                         seat.textContent = "柱";
                     } else {
-                        // 正常座位
                         seat.textContent = code;
                     }
 
-                    // 儲存原始 ID (如果是特殊狀態，我們需要知道它原本是誰，以便切換回來)
-                    // 這裡簡化邏輯：如果當前是特殊狀態，我們假設它的 ID 是 r-c 格式或保留原值
-                    // 為了方便，我們直接操作 currentEditorLayout 陣列
-                    
                     if (!isEditorLocked) {
                         seat.onclick = () => toggleSeatType(rIndex, cIndex);
                     } else {
@@ -928,42 +922,29 @@
             });
         }
 
-        // 3. 切換座位狀態 (循環邏輯)
         function toggleSeatType(r, c) {
             const currentCode = currentEditorLayout[r][c];
             let newCode = currentCode;
 
-            // 狀態循環：
-            // 1. 正常 (如 "1-1") -> 2. 走道 ("_") -> 3. 阻擋 ("1-1:X") -> 4. 柱子 ("PILLAR") -> 5. 門 ("DOOR") -> 1. 正常
-
             if (currentCode === "_") {
-                // 走道 -> 阻擋 (需恢復 ID)
-                // 這裡有個小問題：變成走道後 ID 遺失了。
-                // 解決方案：我們用 r+1, c+1 來推算預設 ID，或者簡單地用 "X"
-                // 為了 V33.0 的穩定性，我們嘗試從原始範本找回 ID
                 const classroomType = document.getElementById('c_classroom').value;
                 const originalCode = classrooms[classroomType].layout[r][c];
-                // 如果原始就是走道，那恢復成 "X"
                 const baseId = (originalCode === "_" || originalCode === "DOOR" || originalCode === "PILLAR") ? `${r+1}-${c+1}` : originalCode.split(':')[0];
                 newCode = `${baseId}:X`;
             } 
             else if (currentCode.includes(":X")) {
-                // 阻擋 -> 柱子
                 newCode = "PILLAR";
             }
             else if (currentCode === "PILLAR") {
-                // 柱子 -> 門
                 newCode = "DOOR";
             }
             else if (currentCode === "DOOR") {
-                // 門 -> 正常 (需恢復 ID)
                 const classroomType = document.getElementById('c_classroom').value;
                 const originalCode = classrooms[classroomType].layout[r][c];
                 const baseId = (originalCode === "_" || originalCode === "DOOR" || originalCode === "PILLAR") ? `${r+1}-${c+1}` : originalCode.split(':')[0];
                 newCode = baseId;
             }
             else {
-                // 正常 -> 走道
                 newCode = "_";
             }
 
@@ -971,20 +952,16 @@
             renderEditorGrid();
         }
 
-        // ★★★ V34.4 結束 ★★★
-
         window.saveCourse = async function() {
             const btn = document.getElementById('btnSave');
             let pwd = document.getElementById('adminPwd').value.trim();
             
-            // ★★★ 智慧密碼提示邏輯 ★★★
             if (!pwd) { 
                 pwd = prompt("⚠️ 您尚未輸入密碼！\n請直接在此輸入管理員密碼，系統會自動幫您填入上方：");
                 if (!pwd || !pwd.trim()) {
-                    return; // 如果按取消或沒輸入，就直接中斷不儲存
+                    return; 
                 }
                 pwd = pwd.trim();
-                // 順便幫櫃檯把密碼填回最上方的格子，方便接下來的操作！
                 document.getElementById('adminPwd').value = pwd; 
             }
 
@@ -1017,7 +994,6 @@
 
                 if (!grade || !subject || !start1) throw new Error("請填寫完整資料！");
 
-                // ★ V33.0 修改：計算總座位數時，使用編輯器當前的 layout
                 let totalSeats = 0;
                 currentEditorLayout.forEach(row => {
                     row.forEach(seatCode => {
@@ -1047,7 +1023,6 @@
                     waitlistEnabled: waitlistEnabled,
                     waitlistLimit: parseInt(waitlistLimit) || 0,
                     totalSeats: totalSeats,
-                    // ★ V33.0 關鍵：將編輯器當下的 layout 存入資料庫 (影印存檔)
                     layout: currentEditorLayout,
                     adminPwd: pwd
                 };
@@ -1121,9 +1096,6 @@
             img.src = c.image;
             img.style.display = 'block';
 
-            // ★★★ V33.0 新增：載入座位表邏輯 ★★★
-            
-            // 1. 檢查是否有已售出的座位 (安全鎖)
             const courseSeats = seatsData[key] || {};
             let hasSold = false;
             Object.values(courseSeats).forEach(s => {
@@ -1136,18 +1108,15 @@
             
             if (hasSold) {
                 lockMsg.style.display = 'block';
-                classroomSelect.disabled = true; // 鎖定教室選擇
+                classroomSelect.disabled = true; 
             } else {
                 lockMsg.style.display = 'none';
                 classroomSelect.disabled = false;
             }
 
-            // 2. 載入 Layout
             if (c.layout) {
-                // 如果資料庫有存 layout (影印稿)，直接用
                 currentEditorLayout = JSON.parse(JSON.stringify(c.layout));
             } else {
-                // 如果沒有 (舊課程)，載入預設範本
                 const config = classrooms[c.classroom];
                 if (config) {
                     currentEditorLayout = JSON.parse(JSON.stringify(config.layout));
@@ -1161,20 +1130,24 @@
             document.getElementById('btnSave').textContent = "確認新增課程";
             document.querySelectorAll('input').forEach(i => i.value = '');
             document.getElementById('c_lessons').value = "12";
-            document.getElementById('c_price').value = "21600"; // 預設費用
+            document.getElementById('c_price').value = "21600"; 
             document.getElementById('c_waitlist_enabled').checked = false; 
             document.getElementById('c_waitlist_limit').value = "0"; 
             tinymce.get('c_desc').setContent('');
             document.getElementById('uploadStatus').textContent = "";
             document.getElementById('imgPreview').style.display = 'none';
             
-            // V33.0 重置鎖定狀態
             isEditorLocked = false;
             document.getElementById('editorLockMsg').style.display = 'none';
             document.getElementById('c_classroom').disabled = false;
         };
 
         function renderCourseList() {
+            // ★★★ 防閃爍機制 ★★★
+            const newDataStr = JSON.stringify(coursesData);
+            if (currentCourseListStr === newDataStr) return;
+            currentCourseListStr = newDataStr;
+
             const listDiv = document.getElementById('courseList');
             listDiv.innerHTML = "";
             Object.keys(coursesData).forEach(key => {
@@ -1312,7 +1285,6 @@
             mapContainer.style.display = 'block';
             mapContent.innerHTML = "";
             
-            // ★ V33.0 修改：監控畫面也優先使用資料庫存的 layout
             const c = coursesData[courseId];
             let layoutToRender = [];
             
@@ -1455,6 +1427,11 @@
         };
 
         function updateClassSelector() {
+            // ★★★ 防閃爍機制 (只比對選項內容) ★★★
+            const optionsData = Object.keys(coursesData).map(k => `${k}-${coursesData[k].grade}-${coursesData[k].subject}-${coursesData[k].classType}`).join('|');
+            if (currentClassSelectorStr === optionsData) return;
+            currentClassSelectorStr = optionsData;
+
             const selector = document.getElementById('classSelector');
             const currentVal = selector.value;
             selector.innerHTML = '<option value="all">全部課程總覽</option>';
@@ -1661,6 +1638,11 @@
         });
 
         function updateWaitlistSelector() {
+            // ★★★ 防閃爍機制 (只比對選項內容) ★★★
+            const optionsData = Object.keys(coursesData).map(k => `${k}-${coursesData[k].grade}-${coursesData[k].subject}-${coursesData[k].classType}`).join('|');
+            if (currentWaitlistSelectorStr === optionsData) return;
+            currentWaitlistSelectorStr = optionsData;
+
             const selector = document.getElementById('waitlistSelector');
             const currentVal = selector.value;
             selector.innerHTML = '<option value="all">選擇課程查看候補</option>';
@@ -1871,7 +1853,7 @@
             const statusDiv = document.getElementById('sweeperStatus');
             
             setInterval(() => {
-                const now = Date.now();
+                const now = Date.now() + serverTimeOffset; // ★★★ 導入伺服器時間校準 ★★★
                 let clearedCount = 0;
 
                 Object.keys(seatsData).forEach(courseId => {

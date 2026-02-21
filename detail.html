@@ -1,5 +1,5 @@
 <!-- 檔案：detail.html -->
-<!-- 版本：V33.0 (支援資料驅動靜態預覽) -->
+<!-- 版本：V33.1 (時間校準防偷跑 + 圖文防閃爍優化版) -->
 <!DOCTYPE html>
 <html lang="zh-TW">
 <head>
@@ -255,6 +255,12 @@
         import { db, ref, child } from './firebase-config.js';
         import { onValue } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-database.js";
 
+        // ★★★ 核心時間校準監聽 ★★★
+        let serverTimeOffset = 0;
+        onValue(ref(db, ".info/serverTimeOffset"), (snap) => {
+            serverTimeOffset = snap.val() || 0;
+        });
+
         // ★★★ 教室定義 (複製自 booking.html，確保資料一致) ★★★
         const classrooms = {
             "high_red": { name: "高中紅教室", layout: [ ["1-1:X", "1-2:X", "_", "1-3", "1-4", "1-5", "_", "1-6", "1-7", "1-8", "_", "1-9:X", "1-10:X"], ["2-1", "2-2", "_", "2-3", "2-4", "2-5", "_", "2-6", "2-7", "2-8", "_", "2-9", "2-10"], ["3-1", "3-2", "_", "3-3", "3-4", "3-5", "_", "3-6", "3-7", "3-8", "_", "3-9", "3-10"], ["4-1", "4-2", "_", "4-3", "4-4", "4-5", "_", "4-6", "4-7", "4-8", "_", "4-9", "4-10"], ["5-1", "5-2", "_", "5-3", "5-4", "5-5", "_", "5-6", "5-7", "5-8", "_", "5-9", "5-10"], ["6-1", "6-2", "_", "6-3", "6-4", "6-5", "_", "6-6", "6-7", "6-8", "_", "6-9", "6-10"], ["7-1", "7-2", "_", "7-3", "7-4", "7-5", "_", "7-6", "7-7", "7-8", "_", "7-9", "7-10"], ["8-1:X", "8-2:X", "_", "8-3:X", "8-4:X", "8-5:X", "_", "8-6:X", "8-7:X", "8-8:X", "_", "_", "DOOR"] ] },
@@ -304,6 +310,11 @@
         });
 
         let timerInterval = null;
+        
+        // ★★★ 防閃爍優化：快照變數宣告 ★★★
+        let currentImgUrl = "";
+        let currentDesc = "";
+        let currentLayoutStr = "";
 
         function renderPage(c) {
             document.getElementById('loading').style.display = 'none';
@@ -312,7 +323,13 @@
             const title = `${c.subject} ${c.classType || ''}`;
             document.title = `${title} - 課程詳情`;
             
-            document.getElementById('c_img').style.backgroundImage = `url('${c.image}')`;
+            // 1. 圖片防閃爍：網址不一樣才重載
+            if (currentImgUrl !== c.image) {
+                document.getElementById('c_img').style.backgroundImage = `url('${c.image}')`;
+                currentImgUrl = c.image;
+            }
+
+            // 一般文字更新不耗效能，維持直接更新
             document.getElementById('c_grade').textContent = c.grade;
             document.getElementById('c_title').textContent = title;
             document.getElementById('c_price').textContent = c.price;
@@ -323,11 +340,18 @@
             // 使用 classrooms 物件取得中文名稱，若無則回退到 c.classroom
             document.getElementById('c_classroom').textContent = classrooms[c.classroom] ? classrooms[c.classroom].name : c.classroom; 
             
-            document.getElementById('c_desc_content').innerHTML = c.desc;
+            // 2. TinyMCE 內容防閃爍
+            if (currentDesc !== c.desc) {
+                document.getElementById('c_desc_content').innerHTML = c.desc;
+                currentDesc = c.desc;
+            }
 
-            // ★★★ V33.0 升級：資料驅動靜態預覽 ★★★
-            // 直接傳入整個 course 物件，讓函式自己判斷要用 layout 還是預設範本
-            renderClassroomPreview(c);
+            // 3. 靜態座位表防閃爍
+            const newLayoutStr = JSON.stringify(c.layout || (classrooms[c.classroom] ? classrooms[c.classroom].layout : []));
+            if (currentLayoutStr !== newLayoutStr) {
+                renderClassroomPreview(c);
+                currentLayoutStr = newLayoutStr;
+            }
             document.getElementById('classroomPreviewSection').style.display = 'block';
 
             const start1 = new Date(c.start1);
@@ -419,7 +443,8 @@
             const hasStart2 = c.start2 && new Date(c.start2).getFullYear() < 3000;
 
             function update() {
-                const now = Date.now();
+                // ★★★ 導入伺服器時間校準 ★★★
+                const now = Date.now() + serverTimeOffset;
 
                 if (now < start1) {
                     const diff = start1 - now;

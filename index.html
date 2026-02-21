@@ -1,5 +1,5 @@
 <!-- 檔案：index.html -->
-<!-- 版本：V29.1 (新增：今日劃位與最近劃位之動態時光機) -->
+<!-- 版本：V30.0 (核心時間校準與防閃爍優化版) -->
 <!DOCTYPE html>
 <html lang="zh-TW">
 <head>
@@ -126,6 +126,12 @@
         import { db, ref } from './firebase-config.js';
         import { onValue } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-database.js";
 
+        // ★★★ 核心時間校準監聽 ★★★
+        let serverTimeOffset = 0;
+        onValue(ref(db, ".info/serverTimeOffset"), (snap) => {
+            serverTimeOffset = snap.val() || 0;
+        });
+
         let knockCount = 0;
         let knockTimer = null;
         window.secretKnock = function() {
@@ -151,9 +157,18 @@
         const nav = document.getElementById('nav');
         let currentSlide = 0;
         let slideCount = 0;
+        
+        // ★★★ 防閃爍優化：橫幅快照紀錄 ★★★
+        let currentBannersStr = ""; 
 
         onValue(ref(db, 'banners'), snapshot => {
             const data = snapshot.val() || {};
+            const newBannersStr = JSON.stringify(data);
+
+            // 如果資料跟上次一模一樣，直接中斷，不重繪 HTML
+            if (currentBannersStr === newBannersStr) return; 
+            currentBannersStr = newBannersStr;
+
             track.innerHTML = "";
             nav.innerHTML = "";
             const banners = Object.values(data);
@@ -195,22 +210,21 @@
         let waitlistStatus = {}; 
         let categories = new Set();
         let currentCategory = 'all';
-        let isFirstLoad = true; // 紀錄是否為初次載入
+        let isFirstLoad = true; 
 
-        // ★★★ 判斷是否為「今天」 ★★★
+        // ★★★ 判斷是否為「今天」 (導入伺服器時間校準) ★★★
         function isToday(timestamp) {
             const d = new Date(timestamp);
-            const today = new Date();
+            const today = new Date(Date.now() + serverTimeOffset);
             return d.getDate() === today.getDate() &&
                    d.getMonth() === today.getMonth() &&
                    d.getFullYear() === today.getFullYear();
         }
 
-        // ★★★ 判斷是否為「未來的一天」 ★★★
+        // ★★★ 判斷是否為「未來的一天」 (導入伺服器時間校準) ★★★
         function isFutureDay(timestamp) {
             const d = new Date(timestamp);
-            const today = new Date();
-            // 把時間都歸零，只比較「日期」
+            const today = new Date(Date.now() + serverTimeOffset);
             d.setHours(0, 0, 0, 0);
             today.setHours(0, 0, 0, 0);
             return d.getTime() > today.getTime();
@@ -221,8 +235,8 @@
             allCourses = [];
             categories = new Set();
             
-            let hasTodayCourses = false;    // 紀錄今天是否有劃位
-            let hasUpcomingCourses = false; // 紀錄未來是否有劃位
+            let hasTodayCourses = false;    
+            let hasUpcomingCourses = false; 
 
             if (!data) {
                 courseContainer.innerHTML = '<div class="loading">目前沒有開放的課程。</div>';
@@ -235,7 +249,6 @@
                 allCourses.push(c);
                 if (c.grade) categories.add(c.grade);
 
-                // 檢查這堂課的一階時間狀態
                 if (c.start1) {
                     const start1Time = new Date(c.start1).getTime();
                     if (isToday(start1Time)) {
@@ -246,10 +259,8 @@
                 }
             });
 
-            // 重建分類按鈕
             filterContainer.innerHTML = '<button class="filter-btn" id="btn-all" onclick="filterCourses(\'all\')">全部課程</button>';
 
-            // 互斥邏輯：有「今日劃位」就不顯示「最近劃位」
             if (hasTodayCourses) {
                 const btnToday = document.createElement('button');
                 btnToday.className = 'filter-btn special-today';
@@ -257,7 +268,6 @@
                 btnToday.onclick = () => window.filterCourses('today');
                 filterContainer.appendChild(btnToday);
             } else if (hasUpcomingCourses) {
-                // 只有在沒有今日劃位時，才顯示最近劃位
                 const btnUpcoming = document.createElement('button');
                 btnUpcoming.className = 'filter-btn special-upcoming';
                 btnUpcoming.textContent = '⏳ 最近劃位';
@@ -276,8 +286,6 @@
                 filterContainer.appendChild(btn);
             });
 
-            // ★★★ 第一次載入時的智慧預設邏輯 ★★★
-            // 優先權：今日劃位 > 最近劃位 > 全部課程
             if (isFirstLoad) {
                 if (hasTodayCourses) {
                     currentCategory = 'today';
@@ -289,7 +297,6 @@
                 isFirstLoad = false;
             }
 
-            // 同步按鈕發亮狀態
             window.filterCourses(currentCategory, true);
         });
 
@@ -326,7 +333,9 @@
         function refreshDisplay() {
             if (allCourses.length === 0) return;
             
-            const now = Date.now();
+            // ★★★ 導入伺服器時間校準 ★★★
+            const now = Date.now() + serverTimeOffset;
+            
             const visibleCourses = allCourses.filter(c => {
                 const start = c.displayStart ? new Date(c.displayStart).getTime() : 0;
                 const end = c.displayEnd ? new Date(c.displayEnd).getTime() : 9999999999999;
@@ -335,7 +344,6 @@
 
             let finalCourses = visibleCourses;
             
-            // ★★★ 篩選邏輯：支援今日劃位與最近劃位 ★★★
             if (currentCategory === 'today') {
                 finalCourses = visibleCourses.filter(c => c.start1 && isToday(new Date(c.start1).getTime()));
             } else if (currentCategory === 'upcoming') {
@@ -422,7 +430,8 @@
             const loadingEl = courseContainer.querySelector('.loading');
             if (loadingEl) courseContainer.removeChild(loadingEl);
 
-            const now = Date.now();
+            // 這裡的 now 會是由 refreshDisplay 傳進來的伺服器時間，非常精準！
+            const now = Date.now() + serverTimeOffset;
 
             courses.forEach(c => {
                 const statusBadge = getStatusBadge(c, now);
@@ -463,7 +472,6 @@
             });
         }
 
-        // ★★★ 點擊按鈕的觸發邏輯 ★★★
         window.filterCourses = function(category, noRefresh = false) {
             currentCategory = category;
             document.querySelectorAll('.filter-btn').forEach(btn => {
