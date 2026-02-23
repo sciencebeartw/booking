@@ -1589,13 +1589,13 @@ window.generateSeatingChart = function () {
                         const info = currentSeats[code];
                         if (info && info.status === 'sold') {
                             seat.textContent = info.studentName;
-                            if (info.studentName.length > 3) seat.style.fontSize = "14px";
+                            if (info.studentName.length > 3) seat.style.fontSize = "18px";
                         }
                     } else if (source === 'manual') {
                         const saved = printLayouts[selectedId];
                         if (saved.seatMap && saved.seatMap[code]) {
                             seat.textContent = saved.seatMap[code];
-                            if (saved.seatMap[code].length > 3) seat.style.fontSize = "14px";
+                            if (saved.seatMap[code].length > 3) seat.style.fontSize = "18px";
                         }
                     }
                 }
