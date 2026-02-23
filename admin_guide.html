@@ -291,7 +291,7 @@
     <header>
         <img src="logo1.png" alt="山熊科學">
         <h1>行政團隊系統操作白皮書</h1>
-        <span class="version-badge">V36.1 雲端生態版</span>
+        <span class="version-badge">V36.2 堅如磐石版</span>
         <span class="author-badge">總架構設計：阿喵老師</span>
         <button onclick="loginAdminWithGoogle()"
             style="margin-left: auto; background: #3498db; color: white; border: none; padding: 10px 20px; border-radius: 20px; font-size: 14px; font-weight: bold; cursor: pointer; transition: 0.2s; box-shadow: 0 2px 5px rgba(0,0,0,0.2);">
@@ -308,6 +308,8 @@
                     <li><a href="#ch1-1" class="nav-link">Google 雲端身分驗證</a></li>
                     <li><a href="#ch1-2" class="nav-link">殭屍位自動掃地機</a></li>
                     <li><a href="#ch1-3" class="nav-link">伺服器衛星時間校準</a></li>
+                    <li><a href="#ch1-4" class="nav-link">Firebase 核心安全規則</a></li>
+                    <li><a href="#ch1-5" class="nav-link">資料歷史軌跡軟刪除</a></li>
                 </ul>
             </div>
             <div class="nav-group">
@@ -321,6 +323,7 @@
                 <div class="nav-title">III. 後台指揮中心模組</div>
                 <ul>
                     <li><a href="#ch3-1" class="nav-link">戰情室：劃位監控與熱更新</a></li>
+                    <li><a href="#ch3-1-b" class="nav-link">戰情室：顯示姓名版圖</a></li>
                     <li><a href="#ch3-2" class="nav-link">建築師：智慧課程與座位編輯</a></li>
                     <li><a href="#ch3-3" class="nav-link">名單局：候補排序與匯出</a></li>
                     <li><a href="#ch3-4" class="nav-link">財務處：AI 學費單生成引擎</a></li>
@@ -387,6 +390,23 @@
                     雲端伺服器的絕對時間</strong>。不管家長怎麼作弊甚至人在國外有時差，只要伺服器時間沒到，系統絕對是銅牆鐵壁！
             </div>
 
+
+            <h3 id="ch1-4">🛡️ Firebase 核心安全規則 (Security Rules)</h3>
+            <p>即使前台被駭客解析出資料庫的網址，也能確保資料安然無恙的終極防護。</p>
+            <div class="box danger">
+                <div class="box-title">滴水不漏的讀寫限制</div>
+                系統針對 Firebase Realtime Database 設立了嚴格的 Security
+                Rules。這代表著「只有後台登入的管理員」才有權限讀取所有訂單、刪除或修改課程資訊。前台的學生端僅擁有將資料「寫入 (申請座位)」的權限，完全無法越權刪除或偷看別人的個資。
+            </div>
+
+            <h3 id="ch1-5">🗄️ 資料歷史軌跡軟刪除 (Soft-Delete)</h3>
+            <p>我們不再真正地在資料庫中「抹除」任何一筆紀錄。</p>
+            <ul>
+                <li><strong>痕跡保留：</strong> 當您在後台點選「釋出座位」或從名單局刪除時，系統不會執行危險的 <code>remove()</code>，而是將該訂單的狀態改為
+                    <code>status: 'deleted'</code>。</li>
+                <li><strong>防禦性修復：</strong> 這項技術徹底解決了過去「釋出後會讓座位回到原始空狀態」而發生覆寫的問題，並保留了完整的歷史軌跡，方便我們日後追查每一筆異常的退費或卡位紀錄。</li>
+            </ul>
+
             <hr>
 
             <h2 id="ch2-1">II. 雲端圖庫生態系 (V36 旗艦亮點)</h2>
@@ -419,11 +439,20 @@
             <p>這是劃位當天大家會盯最久的地方，完全不需按 F5 重新整理，所有戰況即時跳動。</p>
             <ul>
                 <li><strong>視覺化熱區：</strong> <span style="color:#e74c3c; font-weight:bold;">🟥 紅色</span>
-                    代表已售出（滑鼠移入顯示個資）、<span style="color:#f39c12; font-weight:bold;">🟧 橘色</span> 代表正有家長在填單中。</li>
-                <li><strong>上帝之手 (強制操作)：</strong> 行政人員可隨時點擊座位進行「踢除釋出」或「黑箱保留」。點擊保留位，還能直接跳出視窗轉為「代填售出」（專治現場繳費的阿嬤）。</li>
+                    代表已售出（滑鼠移入顯示個資）、<span style="color:#f39c12; font-weight:bold;">🟧 橘色</span> 代表正有家長在填單中、<span
+                        style="color:#8e44ad; font-weight:bold;">🟪 紫色</span> 代表管理員手動暫留。</li>
+                <li><strong>上帝之手 (強制操作)：</strong> 行政人員可隨時點擊座位進行「踢除釋出」或「黑箱暫留」。點擊暫留位，還能直接跳出視窗轉為「正式保留」或補填「代填售出」（專治現場繳費的阿嬤）。
+                </li>
                 <li><strong>資料快照防閃爍 (Anti-Thrashing)：</strong>
-                    系統導入了進階的快照比對技術，即使前線湧入大量訂單，後台的下拉選單與列表也不會因為過度重繪而「閃退或閃白」，確保行政操作的絕對穩定。</li>
+                    系統導入了進階的 <code>onValue</code>
+                    即時監聽快照技術，取代傳統的單次讀取。即使前線湧入大量訂單，後台的選單與列表也會無縫熱更新，且不會因為重繪而「閃退或閃白」，確保行政操作的絕對穩定。</li>
             </ul>
+
+            <h3 id="ch3-1-b">👁️ 戰情室：顯示姓名版圖 (Fusion Mode)</h3>
+            <div class="box success">
+                <div class="box-title">大局觀與微觀的終極融合</div>
+                我們開發了一鍵切換的「雙排融合顯示技術」。點擊後台的「顯示姓名版圖」按鈕，畫面上所有已售出的紅色格子，會瞬間展開為雙排：<strong>上排顯示座位號碼，下排直接顯示學生姓名</strong>。讓您不需要滑鼠一個個游移，就能一眼掃射出所有保留名單的分布狀況，大大提升了現場劃位的點名與確認效率！且該模式對於小視窗(RWD)具有極強的抗擠壓防禦。
+            </div>
 
             <h3 id="ch3-2">📝 建築師：智慧課程與座位編輯 (Courses)</h3>
             <p>這裡是建立課程的兵工廠，我們將行政的「打字時間」壓縮到了極致。</p>
