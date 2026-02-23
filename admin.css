@@ -1134,7 +1134,8 @@ tr.duplicate-row {
 }
 
 .print-seat.blocked {
-    background: repeating-linear-gradient(45deg, #eee, #eee 10px, #ccc 10px, #ccc 20px);
+    background-color: #eee;
+    background-image: url("data:image/svg+xml;base64,PHN2ZyB3aWR0aD0nMjAnIGhlaWdodD0nMjAnIHhtbG5zPSdodHRwOi8vd3d3LnczLm9yZy8yMDAwL3N2Zyc+PHJlY3Qgd2lkdGg9JzIwJyBoZWlnaHQ9JzIwJyBmaWxsPScjZWVlJy8+PHBhdGggZD0nTTAgMjBMMjAgME0tMTAgMTBMMTAtMTBNMTAgMzBMMzAgMTAnIHN0cm9rZT0nI2NjYycgc3Ryb2tlLXdpZHRoPScxMCcvPjwvc3ZnPg==");
     color: transparent;
     cursor: default;
 }
