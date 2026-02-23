@@ -2,82 +2,497 @@
 <!-- 版本：V30.0 (核心時間校準與防閃爍優化版) -->
 <!DOCTYPE html>
 <html lang="zh-TW">
+
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>山熊科學 - 課程劃位入口</title>
     <link rel="icon" href="icon.png" type="image/png">
     <link rel="apple-touch-icon" href="icon.png">
+    <script>
+        window.onerror = function (message, source, lineno, colno, error) {
+            const errDiv = document.createElement('div');
+            errDiv.style.cssText = 'position:fixed;top:0;left:0;right:0;background:red;color:white;z-index:9999;padding:10px;font-size:14px;font-weight:bold;';
+            errDiv.innerText = `[Error] ${message} at ${source}:${lineno}:${colno}`;
+            document.body.appendChild(errDiv);
+        };
+        window.addEventListener('unhandledrejection', function (event) {
+            const errDiv = document.createElement('div');
+            errDiv.style.cssText = 'position:fixed;top:45px;left:0;right:0;background:orange;color:white;z-index:9999;padding:10px;font-size:14px;font-weight:bold;';
+            errDiv.innerText = `[Promise Rejection] ${event.reason}`;
+            document.body.appendChild(errDiv);
+        });
+    </script>
     <style>
-        body { font-family: "Microsoft JhengHei", sans-serif; background-color: #f8f9fa; margin: 0; padding: 0; }
-        
-        /* 導覽列樣式 (完美置中與間距同步) */
-        header { background: #2c3e50; padding: 0; display: flex; justify-content: space-between; align-items: center; color: white; box-shadow: 0 2px 5px rgba(0,0,0,0.1); position: sticky; top: 0; z-index: 1000; }
-        .header-container { max-width: 1200px; margin: 0 auto; padding: 15px 20px; display: grid; grid-template-columns: 1fr auto 1fr; align-items: center; width: 100%; box-sizing: border-box; }
-        .header-left { grid-column: 2; display: flex; justify-content: center; align-items: center; gap: 20px; cursor: pointer; user-select: none; white-space: nowrap; }
-        .header-left img { height: 60px; }
-        .header-left h1 { margin: 0; font-size: 24px; letter-spacing: 1px; color: white; }
-        .header-right { grid-column: 3; display: flex; gap: 15px; align-items: center; justify-content: flex-end; white-space: nowrap; }
-        .nav-link { color: white; text-decoration: none; font-size: 15px; font-weight: bold; padding: 8px 12px; border-radius: 5px; transition: 0.3s; display: flex; align-items: center; gap: 5px; white-space: nowrap; }
-        .nav-link:hover { background: rgba(255,255,255,0.1); }
-        @media (max-width: 950px) { .header-container { display: flex; flex-direction: column; gap: 10px; } .header-left { white-space: normal; flex-wrap: wrap; justify-content: center; text-align: center; } .header-right { flex-wrap: wrap; justify-content: center; } .nav-link { font-size: 14px; padding: 5px 10px; } }
+        body {
+            font-family: "Microsoft JhengHei", sans-serif;
+            background-color: #f8f9fa;
+            margin: 0;
+            padding: 0;
+        }
 
-        .carousel { position: relative; width: 100%; height: 400px; overflow: hidden; background: #eee; margin-bottom: 20px; }
-        .carousel-track { display: flex; transition: transform 0.5s ease-in-out; height: 100%; }
-        .carousel-slide { min-width: 100%; height: 100%; background-size: contain; background-repeat: no-repeat; background-position: center; }
-        .carousel-nav { position: absolute; bottom: 20px; left: 50%; transform: translateX(-50%); display: flex; gap: 10px; }
-        .carousel-dot { width: 12px; height: 12px; background: rgba(0,0,0,0.3); border-radius: 50%; cursor: pointer; }
-        .carousel-dot.active { background: #e74c3c; }
-        
-        .filter-container { max-width: 1100px; margin: 0 auto; padding: 0 20px; display: flex; flex-wrap: wrap; justify-content: center; gap: 10px; }
-        .filter-btn { padding: 10px 20px; border: 1px solid #ddd; background: white; border-radius: 30px; cursor: pointer; font-size: 16px; transition: 0.3s; color: #555; }
-        .filter-btn:hover { background: #eee; }
-        .filter-btn.active { background: #2c3e50; color: white; border-color: #2c3e50; }
-        
+        /* 導覽列樣式 (完美置中與間距同步) */
+        header {
+            background: #2c3e50;
+            padding: 0;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            color: white;
+            box-shadow: 0 2px 5px rgba(0, 0, 0, 0.1);
+            position: sticky;
+            top: 0;
+            z-index: 1000;
+        }
+
+        .header-container {
+            max-width: 1200px;
+            margin: 0 auto;
+            padding: 15px 20px;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            width: 100%;
+            box-sizing: border-box;
+        }
+
+        .header-left {
+            display: flex;
+            justify-content: flex-start;
+            align-items: center;
+            gap: 20px;
+            cursor: pointer;
+            user-select: none;
+            white-space: nowrap;
+            padding-left: 30px;
+            /* added to shift title more to center */
+        }
+
+        .header-left img {
+            height: 60px;
+        }
+
+        .header-left h1 {
+            margin: 0;
+            font-size: 24px;
+            letter-spacing: 1px;
+            color: white;
+        }
+
+        .header-right {
+            display: flex;
+            gap: 15px;
+            align-items: center;
+            justify-content: flex-end;
+            white-space: nowrap;
+        }
+
+        .nav-link {
+            color: white;
+            text-decoration: none;
+            font-size: 15px;
+            font-weight: bold;
+            padding: 8px 12px;
+            border-radius: 5px;
+            transition: 0.3s;
+            display: flex;
+            align-items: center;
+            gap: 5px;
+            white-space: nowrap;
+        }
+
+        .nav-link:hover {
+            background: rgba(255, 255, 255, 0.1);
+        }
+
+        .btn-admin-login {
+            background: rgba(255, 255, 255, 0.1);
+            color: rgba(255, 255, 255, 0.7);
+            border: none;
+            padding: 8px;
+            border-radius: 50%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            cursor: pointer;
+            transition: 0.3s;
+            margin-left: 10px;
+        }
+
+        .btn-admin-login:hover {
+            background: rgba(255, 255, 255, 0.3);
+            color: white;
+        }
+
+        @media (max-width: 950px) {
+            .header-container {
+                display: flex;
+                flex-direction: column;
+                gap: 10px;
+            }
+
+            .header-left {
+                white-space: normal;
+                flex-wrap: wrap;
+                justify-content: center;
+                text-align: center;
+            }
+
+            .header-right {
+                flex-wrap: wrap;
+                justify-content: center;
+            }
+
+            .nav-link {
+                font-size: 14px;
+                padding: 5px 10px;
+            }
+        }
+
+        .carousel {
+            position: relative;
+            width: 100%;
+            height: 400px;
+            overflow: hidden;
+            background: #eee;
+            margin-bottom: 20px;
+        }
+
+        .carousel-track {
+            display: flex;
+            transition: transform 0.5s ease-in-out;
+            height: 100%;
+        }
+
+        .carousel-slide {
+            min-width: 100%;
+            height: 100%;
+            background-size: contain;
+            background-repeat: no-repeat;
+            background-position: center;
+        }
+
+        .carousel-nav {
+            position: absolute;
+            bottom: 20px;
+            left: 50%;
+            transform: translateX(-50%);
+            display: flex;
+            gap: 10px;
+        }
+
+        .carousel-dot {
+            width: 12px;
+            height: 12px;
+            background: rgba(0, 0, 0, 0.3);
+            border-radius: 50%;
+            cursor: pointer;
+        }
+
+        .carousel-dot.active {
+            background: #e74c3c;
+        }
+
+        .filter-container {
+            max-width: 1100px;
+            margin: 0 auto;
+            padding: 0 20px;
+            display: flex;
+            flex-wrap: wrap;
+            justify-content: center;
+            gap: 10px;
+        }
+
+        .filter-btn {
+            padding: 10px 20px;
+            border: 1px solid #ddd;
+            background: white;
+            border-radius: 30px;
+            cursor: pointer;
+            font-size: 16px;
+            transition: 0.3s;
+            color: #555;
+        }
+
+        .filter-btn:hover {
+            background: #eee;
+        }
+
+        .filter-btn.active {
+            background: #2c3e50;
+            color: white;
+            border-color: #2c3e50;
+        }
+
         /* ★★★ 今日劃位專屬樣式 (紅) ★★★ */
-        .filter-btn.special-today { border-color: #e74c3c; color: #e74c3c; font-weight: bold; background: #fff5f5; }
-        .filter-btn.special-today:hover { background: #ffebeb; }
-        .filter-btn.special-today.active { background: #e74c3c; color: white; border-color: #e74c3c; }
+        .filter-btn.special-today {
+            border-color: #e74c3c;
+            color: #e74c3c;
+            font-weight: bold;
+            background: #fff5f5;
+        }
+
+        .filter-btn.special-today:hover {
+            background: #ffebeb;
+        }
+
+        .filter-btn.special-today.active {
+            background: #e74c3c;
+            color: white;
+            border-color: #e74c3c;
+        }
 
         /* ★★★ 最近劃位專屬樣式 (橘) ★★★ */
-        .filter-btn.special-upcoming { border-color: #e67e22; color: #e67e22; font-weight: bold; background: #fdf2e9; }
-        .filter-btn.special-upcoming:hover { background: #fae5d3; }
-        .filter-btn.special-upcoming.active { background: #e67e22; color: white; border-color: #e67e22; }
+        .filter-btn.special-upcoming {
+            border-color: #e67e22;
+            color: #e67e22;
+            font-weight: bold;
+            background: #fdf2e9;
+        }
 
-        .container { max-width: 1100px; margin: 30px auto; padding: 0 20px; display: grid; grid-template-columns: repeat(auto-fill, minmax(320px, 1fr)); gap: 30px; justify-content: center; }
-        .container:has(> :nth-child(1):last-child) { display: flex; justify-content: center; }
-        .container:has(> :nth-child(1):last-child) .course-card { width: 100%; max-width: 400px; }
-        @media (min-width: 800px) { .container:has(> :nth-child(2):last-child) { display: flex; justify-content: center; gap: 30px; } .container:has(> :nth-child(2):last-child) .course-card { width: 100%; max-width: 400px; } }
-        .course-card { background: white; border-radius: 15px; overflow: hidden; box-shadow: 0 10px 20px rgba(0,0,0,0.05); transition: 0.3s; display: flex; flex-direction: column; border: 1px solid #eee; cursor: pointer; text-decoration: none; color: inherit; position: relative; }
-        .course-card:hover { transform: translateY(-10px); box-shadow: 0 15px 30px rgba(0,0,0,0.15); }
-        .card-img { height: 200px; background-size: cover; background-position: center; background-color: #eee; }
-        .card-body { padding: 25px; flex-grow: 1; display: flex; flex-direction: column; }
-        .card-category { font-size: 12px; color: #e74c3c; font-weight: bold; text-transform: uppercase; letter-spacing: 1px; margin-bottom: 5px; }
-        .card-title { font-size: 22px; font-weight: bold; margin-bottom: 10px; color: #2c3e50; }
-        .card-info { font-size: 15px; color: #555; margin-bottom: 15px; line-height: 1.6; }
-        .card-footer { margin-top: auto; padding-top: 15px; border-top: 1px solid #eee; display: flex; justify-content: space-between; align-items: center; }
-        .card-price { font-size: 18px; font-weight: bold; color: #27ae60; }
-        .btn-view { background: #3498db; color: white; padding: 8px 15px; border-radius: 5px; font-size: 14px; }
-        .status-badge { display: inline-block; padding: 3px 8px; border-radius: 4px; font-size: 12px; font-weight: bold; color: white; margin-left: auto; }
-        .status-open { background: #27ae60; }
-        .status-wait { background: #f39c12; }
-        .status-full { background: #e74c3c; }
-        .status-closed { background: #95a5a6; }
-        .loading { text-align: center; padding: 50px; font-size: 20px; color: #999; grid-column: 1 / -1; }
-        footer { text-align: center; padding: 40px; color: #999; font-size: 14px; background-color: #2c3e50; color: white; margin-top: 80px; }
-        
-        .float-line-container { position: fixed; bottom: 20px; right: 20px; display: flex; flex-direction: column; gap: 15px; z-index: 9999; align-items: center; }
-        .line-btn { width: 65px; height: 65px; border-radius: 50%; box-shadow: 0 4px 12px rgba(0,0,0,0.3); cursor: pointer; display: flex; flex-direction: column; align-items: center; justify-content: center; text-decoration: none; color: white; font-family: Arial, sans-serif; transition: transform 0.2s; animation: bounce 2s ease-in-out infinite; }
-        .line-btn:active { transform: scale(0.9); animation: none; }
-        .line-btn span.small { font-size: 10px; font-weight: bold; margin-bottom: 2px; letter-spacing: 0px; }
-        .line-btn span.large { font-size: 18px; font-weight: 900; letter-spacing: 1px; }
-        
-        .btn-bear { background-color: #06C755; } 
-        .btn-high { background-color: #0077CC; animation-delay: 1s; } 
+        .filter-btn.special-upcoming:hover {
+            background: #fae5d3;
+        }
 
-        @keyframes bounce { 0%, 20%, 50%, 80%, 100% { transform: translateY(0); } 40% { transform: translateY(-10px); } 60% { transform: translateY(-5px); } }
+        .filter-btn.special-upcoming.active {
+            background: #e67e22;
+            color: white;
+            border-color: #e67e22;
+        }
+
+        .container {
+            max-width: 1100px;
+            margin: 30px auto;
+            padding: 0 20px;
+            display: grid;
+            grid-template-columns: repeat(auto-fill, minmax(320px, 1fr));
+            gap: 30px;
+            justify-content: center;
+        }
+
+        .container:has(> :nth-child(1):last-child) {
+            display: flex;
+            justify-content: center;
+        }
+
+        .container:has(> :nth-child(1):last-child) .course-card {
+            width: 100%;
+            max-width: 400px;
+        }
+
+        @media (min-width: 800px) {
+            .container:has(> :nth-child(2):last-child) {
+                display: flex;
+                justify-content: center;
+                gap: 30px;
+            }
+
+            .container:has(> :nth-child(2):last-child) .course-card {
+                width: 100%;
+                max-width: 400px;
+            }
+        }
+
+        .course-card {
+            background: white;
+            border-radius: 15px;
+            overflow: hidden;
+            box-shadow: 0 10px 20px rgba(0, 0, 0, 0.05);
+            transition: 0.3s;
+            display: flex;
+            flex-direction: column;
+            border: 1px solid #eee;
+            cursor: pointer;
+            text-decoration: none;
+            color: inherit;
+            position: relative;
+        }
+
+        .course-card:hover {
+            transform: translateY(-10px);
+            box-shadow: 0 15px 30px rgba(0, 0, 0, 0.15);
+        }
+
+        .card-img {
+            height: 200px;
+            background-size: cover;
+            background-position: center;
+            background-color: #eee;
+        }
+
+        .card-body {
+            padding: 25px;
+            flex-grow: 1;
+            display: flex;
+            flex-direction: column;
+        }
+
+        .card-category {
+            font-size: 12px;
+            color: #e74c3c;
+            font-weight: bold;
+            text-transform: uppercase;
+            letter-spacing: 1px;
+            margin-bottom: 5px;
+        }
+
+        .card-title {
+            font-size: 22px;
+            font-weight: bold;
+            margin-bottom: 10px;
+            color: #2c3e50;
+        }
+
+        .card-info {
+            font-size: 15px;
+            color: #555;
+            margin-bottom: 15px;
+            line-height: 1.6;
+        }
+
+        .card-footer {
+            margin-top: auto;
+            padding-top: 15px;
+            border-top: 1px solid #eee;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+
+        .card-price {
+            font-size: 18px;
+            font-weight: bold;
+            color: #27ae60;
+        }
+
+        .btn-view {
+            background: #3498db;
+            color: white;
+            padding: 8px 15px;
+            border-radius: 5px;
+            font-size: 14px;
+        }
+
+        .status-badge {
+            display: inline-block;
+            padding: 3px 8px;
+            border-radius: 4px;
+            font-size: 12px;
+            font-weight: bold;
+            color: white;
+            margin-left: auto;
+        }
+
+        .status-open {
+            background: #27ae60;
+        }
+
+        .status-wait {
+            background: #f39c12;
+        }
+
+        .status-full {
+            background: #e74c3c;
+        }
+
+        .status-closed {
+            background: #95a5a6;
+        }
+
+        .loading {
+            text-align: center;
+            padding: 50px;
+            font-size: 20px;
+            color: #999;
+            grid-column: 1 / -1;
+        }
+
+        footer {
+            text-align: center;
+            padding: 40px;
+            color: #999;
+            font-size: 14px;
+            background-color: #2c3e50;
+            color: white;
+            margin-top: 80px;
+        }
+
+        .float-line-container {
+            position: fixed;
+            bottom: 20px;
+            right: 20px;
+            display: flex;
+            flex-direction: column;
+            gap: 15px;
+            z-index: 9999;
+            align-items: center;
+        }
+
+        .line-btn {
+            width: 65px;
+            height: 65px;
+            border-radius: 50%;
+            box-shadow: 0 4px 12px rgba(0, 0, 0, 0.3);
+            cursor: pointer;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            text-decoration: none;
+            color: white;
+            font-family: Arial, sans-serif;
+            transition: transform 0.2s;
+            animation: bounce 2s ease-in-out infinite;
+        }
+
+        .line-btn:active {
+            transform: scale(0.9);
+            animation: none;
+        }
+
+        .line-btn span.small {
+            font-size: 10px;
+            font-weight: bold;
+            margin-bottom: 2px;
+            letter-spacing: 0px;
+        }
+
+        .line-btn span.large {
+            font-size: 18px;
+            font-weight: 900;
+            letter-spacing: 1px;
+        }
+
+        .btn-bear {
+            background-color: #06C755;
+        }
+
+        .btn-high {
+            background-color: #0077CC;
+            animation-delay: 1s;
+        }
+
+        @keyframes bounce {
+
+            0%,
+            20%,
+            50%,
+            80%,
+            100% {
+                transform: translateY(0);
+            }
+
+            40% {
+                transform: translateY(-10px);
+            }
+
+            60% {
+                transform: translateY(-5px);
+            }
+        }
     </style>
 </head>
+
 <body>
 
     <header>
@@ -90,6 +505,14 @@
             <div class="header-right">
                 <a href="sop.html" class="nav-link" target="_blank">📖 劃位須知</a>
                 <a href="check.html" class="nav-link">🔍 查詢結果</a>
+                <button onclick="loginAdminWithGoogle()" class="btn-admin-login" title="管理員登入">
+                    <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"
+                        stroke-linecap="round" stroke-linejoin="round">
+                        <path
+                            d="M21 2l-2 2m-7.61 7.61a5.5 5.5 0 1 1-7.778 7.778 5.5 5.5 0 0 1 7.777-7.777zm0 0L15.5 7.5m0 0l3 3L22 7l-3-3m-3.5 3.5L19 4">
+                        </path>
+                    </svg>
+                </button>
             </div>
         </div>
     </header>
@@ -123,8 +546,10 @@
     </div>
 
     <script type="module">
-        import { db, ref } from './firebase-config.js';
+        import { db, ref, auth, signInWithPopup, GoogleAuthProvider, get, child, ref as dbRef } from './firebase-config.js';
         import { onValue } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-database.js";
+
+        console.log("[DEBUG] Firebase modules imported successfully");
 
         // ★★★ 核心時間校準監聽 ★★★
         let serverTimeOffset = 0;
@@ -132,41 +557,22 @@
             serverTimeOffset = snap.val() || 0;
         });
 
-        let knockCount = 0;
-        let knockTimer = null;
-        window.secretKnock = function() {
-            knockCount++;
-            clearTimeout(knockTimer);
-            knockTimer = setTimeout(() => { knockCount = 0; }, 2000);
-            if (knockCount >= 5) {
-                knockCount = 0;
-                const pwd = prompt("請輸入管理員密碼：");
-                if (pwd && pwd.trim() !== "") {
-                    const targetFile = "admin_" + pwd.trim() + ".html";
-                    fetch(targetFile, { method: 'HEAD' })
-                        .then(response => {
-                            if (response.ok) window.location.href = targetFile;
-                            else alert("密碼錯誤！");
-                        })
-                        .catch(error => alert("系統錯誤，請稍後再試。"));
-                }
-            }
-        };
+
 
         const track = document.getElementById('track');
         const nav = document.getElementById('nav');
         let currentSlide = 0;
         let slideCount = 0;
-        
+
         // ★★★ 防閃爍優化：橫幅快照紀錄 ★★★
-        let currentBannersStr = ""; 
+        let currentBannersStr = "";
 
         onValue(ref(db, 'banners'), snapshot => {
             const data = snapshot.val() || {};
             const newBannersStr = JSON.stringify(data);
 
             // 如果資料跟上次一模一樣，直接中斷，不重繪 HTML
-            if (currentBannersStr === newBannersStr) return; 
+            if (currentBannersStr === newBannersStr) return;
             currentBannersStr = newBannersStr;
 
             track.innerHTML = "";
@@ -206,19 +612,19 @@
         const courseContainer = document.getElementById('courseContainer');
         const filterContainer = document.getElementById('filterContainer');
         let allCourses = [];
-        let seatsStatus = {}; 
-        let waitlistStatus = {}; 
+        let seatsStatus = {};
+        let waitlistStatus = {};
         let categories = new Set();
         let currentCategory = 'all';
-        let isFirstLoad = true; 
+        let isFirstLoad = true;
 
         // ★★★ 判斷是否為「今天」 (導入伺服器時間校準) ★★★
         function isToday(timestamp) {
             const d = new Date(timestamp);
             const today = new Date(Date.now() + serverTimeOffset);
             return d.getDate() === today.getDate() &&
-                   d.getMonth() === today.getMonth() &&
-                   d.getFullYear() === today.getFullYear();
+                d.getMonth() === today.getMonth() &&
+                d.getFullYear() === today.getFullYear();
         }
 
         // ★★★ 判斷是否為「未來的一天」 (導入伺服器時間校準) ★★★
@@ -234,9 +640,9 @@
             const data = snapshot.val();
             allCourses = [];
             categories = new Set();
-            
-            let hasTodayCourses = false;    
-            let hasUpcomingCourses = false; 
+
+            let hasTodayCourses = false;
+            let hasUpcomingCourses = false;
 
             if (!data) {
                 courseContainer.innerHTML = '<div class="loading">目前沒有開放的課程。</div>';
@@ -245,7 +651,7 @@
 
             Object.keys(data).forEach(key => {
                 const c = data[key];
-                c.id = key; 
+                c.id = key;
                 allCourses.push(c);
                 if (c.grade) categories.add(c.grade);
 
@@ -277,7 +683,7 @@
 
             const gradeOrder = ["升小五課程", "升小六課程", "升國一課程", "升國二課程", "升國三課程", "升高一課程", "升高二課程", "升高三課程"];
             const sortedCategories = Array.from(categories).sort((a, b) => gradeOrder.indexOf(a) - gradeOrder.indexOf(b));
-            
+
             sortedCategories.forEach(cat => {
                 const btn = document.createElement('button');
                 btn.className = 'filter-btn';
@@ -332,10 +738,10 @@
 
         function refreshDisplay() {
             if (allCourses.length === 0) return;
-            
+
             // ★★★ 導入伺服器時間校準 ★★★
             const now = Date.now() + serverTimeOffset;
-            
+
             const visibleCourses = allCourses.filter(c => {
                 const start = c.displayStart ? new Date(c.displayStart).getTime() : 0;
                 const end = c.displayEnd ? new Date(c.displayEnd).getTime() : 9999999999999;
@@ -343,7 +749,7 @@
             });
 
             let finalCourses = visibleCourses;
-            
+
             if (currentCategory === 'today') {
                 finalCourses = visibleCourses.filter(c => c.start1 && isToday(new Date(c.start1).getTime()));
             } else if (currentCategory === 'upcoming') {
@@ -362,13 +768,13 @@
             const end1 = c.end1 ? new Date(c.end1).getTime() : 9999999999999;
             const start2 = c.start2 ? new Date(c.start2).getTime() : 9999999999999;
             const end2 = c.end2 ? new Date(c.end2).getTime() : 9999999999999;
-            
+
             const hasEnd1 = c.end1 && new Date(c.end1).getFullYear() < 3000;
             const hasStart2 = c.start2 && new Date(c.start2).getFullYear() < 3000;
             const hasEnd2 = c.end2 && new Date(c.end2).getFullYear() < 3000;
 
             const soldCount = (seatsStatus[c.id] && seatsStatus[c.id].sold) || 0;
-            const totalSeats = c.totalSeats || 999; 
+            const totalSeats = c.totalSeats || 999;
             const isFull = soldCount >= totalSeats;
 
             const waitlistCount = waitlistStatus[c.id] || 0;
@@ -410,7 +816,7 @@
             if ((hasEnd2 && now >= end2) || (!hasStart2 && hasEnd1 && now >= end1)) {
                 return '<div class="status-badge status-full">🔴 劃位已結束</div>';
             }
-            
+
             return '<div class="status-badge status-closed">尚未開放</div>';
         }
 
@@ -426,7 +832,7 @@
                     courseContainer.removeChild(child);
                 }
             });
-            
+
             const loadingEl = courseContainer.querySelector('.loading');
             if (loadingEl) courseContainer.removeChild(loadingEl);
 
@@ -446,9 +852,9 @@
                 } else {
                     card = document.createElement('a');
                     card.className = 'course-card';
-                    card.id = cardId; 
-                    card.href = `detail.html?id=${c.id}`; 
-                    
+                    card.id = cardId;
+                    card.href = `detail.html?id=${c.id}`;
+
                     card.innerHTML = `
                         <div class="card-img" style="background-image: url('${c.image || 'https://via.placeholder.com/400x200'}');"></div>
                         <div class="card-body">
@@ -472,13 +878,13 @@
             });
         }
 
-        window.filterCourses = function(category, noRefresh = false) {
+        window.filterCourses = function (category, noRefresh = false) {
             currentCategory = category;
             document.querySelectorAll('.filter-btn').forEach(btn => {
-                if (btn.textContent === category || 
-                   (category === 'all' && btn.textContent === '全部課程') ||
-                   (category === 'today' && btn.textContent === '🔥 今日劃位') ||
-                   (category === 'upcoming' && btn.textContent === '⏳ 最近劃位')) {
+                if (btn.textContent === category ||
+                    (category === 'all' && btn.textContent === '全部課程') ||
+                    (category === 'today' && btn.textContent === '🔥 今日劃位') ||
+                    (category === 'upcoming' && btn.textContent === '⏳ 最近劃位')) {
                     btn.classList.add('active');
                 } else {
                     btn.classList.remove('active');
@@ -486,6 +892,41 @@
             });
             if (!noRefresh) refreshDisplay();
         };
+
+
+        window.loginAdminWithGoogle = async function () {
+            const provider = new GoogleAuthProvider();
+            try {
+                const result = await signInWithPopup(auth, provider);
+                const user = result.user;
+
+                // 檢查是否在白名單內
+                const snapshot = await get(child(dbRef(db), `admins`));
+                let isAdmin = false;
+                if (snapshot.exists()) {
+                    const admins = snapshot.val();
+                    for (let key in admins) {
+                        if (admins[key] === user.email) {
+                            isAdmin = true;
+                            break;
+                        }
+                    }
+                }
+
+                if (isAdmin) {
+                    alert("登入成功！歡迎進入指揮中心。");
+                    window.location.href = "admin_bear2026.html";
+                } else {
+                    alert("權限不足！此帳號非系統管理員。");
+                    import('./firebase-config.js').then(module => module.signOut(module.auth));
+                }
+
+            } catch (error) {
+                console.error("登入失敗:", error);
+                alert("登入發生錯誤：" + error.message);
+            }
+        };
     </script>
 </body>
+
 </html>

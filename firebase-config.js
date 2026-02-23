@@ -6,6 +6,10 @@ import { getDatabase, ref, set, get, child, update, remove, push } from "https:/
 // ★★★ 新增：引入 Storage 相關功能 ★★★
 import { getStorage, ref as storageRef, uploadBytes, getDownloadURL } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-storage.js";
 
+// ★★★ 新增：引入 Authentication 相關功能 ★★★
+// ★★★ 新增：引入 Authentication 相關功能 ★★★
+import { getAuth, signInWithPopup, GoogleAuthProvider, signOut, onAuthStateChanged } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-auth.js";
+
 const firebaseConfig = {
   apiKey: "AIzaSyBEXgKhWRhUAFvzMad-D3QMtnGaS0Za1fA",
   authDomain: "sciencebear-booking.firebaseapp.com",
@@ -20,9 +24,11 @@ const firebaseConfig = {
 const app = initializeApp(firebaseConfig);
 const db = getDatabase(app, "https://sciencebear-booking-default-rtdb.asia-southeast1.firebasedatabase.app");
 const storage = getStorage(app); // 初始化 Storage
+const auth = getAuth(app);       // 初始化 Auth
 
 // 匯出功能
-export { 
-    db, ref, set, get, child, update, remove, push, // Database
-    storage, storageRef, uploadBytes, getDownloadURL // Storage
+export {
+  db, ref, set, get, child, update, remove, push, // Database
+  storage, storageRef, uploadBytes, getDownloadURL, // Storage
+  auth, signInWithPopup, GoogleAuthProvider, signOut, onAuthStateChanged // Auth
 };
