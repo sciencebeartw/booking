@@ -1,5 +1,6 @@
 <!DOCTYPE html>
 <html lang="zh-TW">
+
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
@@ -7,38 +8,221 @@
     <link rel="icon" href="icon.png" type="image/png">
     <link rel="apple-touch-icon" href="icon.png">
     <style>
-        body { font-family: "Microsoft JhengHei", sans-serif; background-color: #f8f9fa; margin: 0; padding: 0; }
-        header { background: #2c3e50; box-shadow: 0 2px 5px rgba(0,0,0,0.1); position: sticky; top: 0; z-index: 1000; }
-        .header-container { max-width: 1200px; margin: 0 auto; padding: 10px 20px; display: flex; justify-content: center; align-items: center; gap: 20px; }
-        .header-container img { height: 60px; }
-        .header-container h1 { margin: 0; font-size: 24px; letter-spacing: 1px; color: white; }
-        .container { max-width: 600px; margin: 40px auto; background: white; padding: 40px; border-radius: 15px; box-shadow: 0 5px 20px rgba(0,0,0,0.1); text-align: center; }
-        h1.page-title { color: #2c3e50; margin-top: 0; margin-bottom: 30px; }
-        .form-group { margin-bottom: 15px; text-align: left; }
-        label { display: block; margin-bottom: 5px; font-weight: bold; }
-        input { padding: 10px; width: 100%; font-size: 16px; border: 1px solid #ddd; border-radius: 5px; box-sizing: border-box; }
-        button { padding: 10px 20px; background: #3498db; color: white; border: none; border-radius: 5px; cursor: pointer; font-size: 16px; width: 100%; margin-top: 10px; }
-        button:hover { background: #2980b9; }
-        button:disabled { background: #ccc; cursor: not-allowed; }
-        #result { margin-top: 30px; text-align: left; }
-        .result-item { background: #f0f2f5; padding: 15px; border-radius: 8px; margin-bottom: 10px; border-left: 5px solid #27ae60; }
-        .back-btn { display: inline-block; margin-bottom: 20px; color: #3498db; text-decoration: none; font-size: 16px; font-weight: bold; border: 1px solid #3498db; padding: 8px 20px; border-radius: 20px; transition: 0.3s; float: left; }
-        .back-btn:hover { background: #3498db; color: white; }
-        footer { text-align: center; padding: 40px; color: #999; font-size: 14px; background-color: #2c3e50; color: white; margin-top: 80px; }
-        
-        /* ★★★ 雙 LINE 按鈕樣式 ★★★ */
-        .float-line-container { position: fixed; bottom: 20px; right: 20px; display: flex; flex-direction: column; gap: 15px; z-index: 9999; align-items: center; }
-        .line-btn { width: 65px; height: 65px; border-radius: 50%; box-shadow: 0 4px 12px rgba(0,0,0,0.3); cursor: pointer; display: flex; flex-direction: column; align-items: center; justify-content: center; text-decoration: none; color: white; font-family: Arial, sans-serif; transition: transform 0.2s; animation: bounce 2s ease-in-out infinite; }
-        .line-btn:active { transform: scale(0.9); animation: none; }
-        .line-btn span.small { font-size: 10px; font-weight: bold; margin-bottom: 2px; letter-spacing: 0px; }
-        .line-btn span.large { font-size: 18px; font-weight: 900; letter-spacing: 1px; }
-        
-        .btn-bear { background-color: #06C755; } /* 山熊科學 - 綠色 */
-        .btn-high { background-color: #0077CC; animation-delay: 1s; } /* 山熊升大 - 深水藍 */
+        body {
+            font-family: "Microsoft JhengHei", sans-serif;
+            background-color: #f8f9fa;
+            margin: 0;
+            padding: 0;
+        }
 
-        @keyframes bounce { 0%, 20%, 50%, 80%, 100% { transform: translateY(0); } 40% { transform: translateY(-10px); } 60% { transform: translateY(-5px); } }
+        header {
+            background: #2c3e50;
+            box-shadow: 0 2px 5px rgba(0, 0, 0, 0.1);
+            position: sticky;
+            top: 0;
+            z-index: 1000;
+        }
+
+        .header-container {
+            max-width: 1200px;
+            margin: 0 auto;
+            padding: 10px 20px;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            gap: 20px;
+        }
+
+        .header-container img {
+            height: 60px;
+        }
+
+        .header-container h1 {
+            margin: 0;
+            font-size: 24px;
+            letter-spacing: 1px;
+            color: white;
+        }
+
+        .container {
+            max-width: 600px;
+            margin: 40px auto;
+            background: white;
+            padding: 40px;
+            border-radius: 15px;
+            box-shadow: 0 5px 20px rgba(0, 0, 0, 0.1);
+            text-align: center;
+        }
+
+        h1.page-title {
+            color: #2c3e50;
+            margin-top: 0;
+            margin-bottom: 30px;
+        }
+
+        .form-group {
+            margin-bottom: 15px;
+            text-align: left;
+        }
+
+        label {
+            display: block;
+            margin-bottom: 5px;
+            font-weight: bold;
+        }
+
+        input {
+            padding: 10px;
+            width: 100%;
+            font-size: 16px;
+            border: 1px solid #ddd;
+            border-radius: 5px;
+            box-sizing: border-box;
+        }
+
+        button {
+            padding: 10px 20px;
+            background: #3498db;
+            color: white;
+            border: none;
+            border-radius: 5px;
+            cursor: pointer;
+            font-size: 16px;
+            width: 100%;
+            margin-top: 10px;
+        }
+
+        button:hover {
+            background: #2980b9;
+        }
+
+        button:disabled {
+            background: #ccc;
+            cursor: not-allowed;
+        }
+
+        #result {
+            margin-top: 30px;
+            text-align: left;
+        }
+
+        .result-item {
+            background: #f0f2f5;
+            padding: 15px;
+            border-radius: 8px;
+            margin-bottom: 10px;
+            border-left: 5px solid #27ae60;
+        }
+
+        .back-btn {
+            display: inline-block;
+            margin-bottom: 20px;
+            color: #3498db;
+            text-decoration: none;
+            font-size: 16px;
+            font-weight: bold;
+            border: 1px solid #3498db;
+            padding: 8px 20px;
+            border-radius: 20px;
+            transition: 0.3s;
+            float: left;
+        }
+
+        .back-btn:hover {
+            background: #3498db;
+            color: white;
+        }
+
+        footer {
+            text-align: center;
+            padding: 40px;
+            color: #999;
+            font-size: 14px;
+            background-color: #2c3e50;
+            color: white;
+            margin-top: 80px;
+        }
+
+        /* ★★★ 雙 LINE 按鈕樣式 ★★★ */
+        .float-line-container {
+            position: fixed;
+            bottom: 20px;
+            right: 20px;
+            display: flex;
+            flex-direction: column;
+            gap: 15px;
+            z-index: 9999;
+            align-items: center;
+        }
+
+        .line-btn {
+            width: 65px;
+            height: 65px;
+            border-radius: 50%;
+            box-shadow: 0 4px 12px rgba(0, 0, 0, 0.3);
+            cursor: pointer;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            text-decoration: none;
+            color: white;
+            font-family: Arial, sans-serif;
+            transition: transform 0.2s;
+            animation: bounce 2s ease-in-out infinite;
+        }
+
+        .line-btn:active {
+            transform: scale(0.9);
+            animation: none;
+        }
+
+        .line-btn span.small {
+            font-size: 10px;
+            font-weight: bold;
+            margin-bottom: 2px;
+            letter-spacing: 0px;
+        }
+
+        .line-btn span.large {
+            font-size: 18px;
+            font-weight: 900;
+            letter-spacing: 1px;
+        }
+
+        .btn-bear {
+            background-color: #06C755;
+        }
+
+        /* 山熊科學 - 綠色 */
+        .btn-high {
+            background-color: #0077CC;
+            animation-delay: 1s;
+        }
+
+        /* 山熊升大 - 深水藍 */
+
+        @keyframes bounce {
+
+            0%,
+            20%,
+            50%,
+            80%,
+            100% {
+                transform: translateY(0);
+            }
+
+            40% {
+                transform: translateY(-10px);
+            }
+
+            60% {
+                transform: translateY(-5px);
+            }
+        }
     </style>
 </head>
+
 <body>
 
     <header>
@@ -51,10 +235,10 @@
 
     <div class="container">
         <a href="index.html" class="back-btn">⬅ 回首頁</a>
-        <div style="clear:both;"></div> 
-        
+        <div style="clear:both;"></div>
+
         <h1 class="page-title">🔍 查詢劃位結果</h1>
-        
+
         <p style="text-align:left; color:#e74c3c; font-size:14px; background:#fff5f5; padding:10px; border-radius:5px;">
             🔒 為了保護學生個資，系統已升級安全架構。<br>
             現在必須輸入「家長手機」才能查詢訂單。
@@ -68,9 +252,9 @@
             <label>家長手機</label>
             <input type="tel" id="phoneInput" placeholder="請輸入家長手機">
         </div>
-        
+
         <button id="searchBtn" onclick="checkBooking()">查詢</button>
-        
+
         <div id="result"></div>
     </div>
 
@@ -92,72 +276,97 @@
 
     <script type="module">
         import { db, ref, get, child } from './firebase-config.js';
+        import { onValue } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-database.js";
 
         let coursesData = {};
-        
-        get(ref(db, 'courses')).then(snap => {
+        let currentUnsubscribe = null; // 用來儲存當前的訂單監聽器
+
+        // 即時監聽課程資料
+        onValue(ref(db, 'courses'), (snap) => {
             coursesData = snap.val() || {};
-        }).catch(err => {
+            // 如果畫面上已經有查詢結果，可以觸發重新渲染
+            if (document.getElementById('result').innerHTML !== "" && currentUnsubscribe) {
+                // 這裡我們暫時不自動重新觸發查詢，因為課程異動頻率低。直接依賴訂單 onValue 即可。
+            }
+        }, (err) => {
             console.error("載入課程資料失敗:", err);
         });
 
-        window.checkBooking = async function() {
+        window.checkBooking = function () {
             const name = document.getElementById('nameInput').value.trim();
             const phone = document.getElementById('phoneInput').value.trim();
             const resultDiv = document.getElementById('result');
             const btn = document.getElementById('searchBtn');
 
-            resultDiv.innerHTML = "";
-            btn.disabled = true;
-            btn.textContent = "查詢中...";
-
             if (!name || !phone) {
                 alert("請輸入「學生姓名」與「家長手機」！");
-                btn.disabled = false; btn.textContent = "查詢";
                 return;
             }
 
+            resultDiv.innerHTML = "<p style='text-align:center;'>查詢中...</p>";
+            btn.disabled = true;
+            btn.textContent = "即時監聽中...";
+
+            // 每次查詢前先取消之前的監聽
+            if (currentUnsubscribe) {
+                currentUnsubscribe();
+            }
+
             try {
-                const snapshot = await get(child(ref(db), `orders/${phone}`));
-                
-                if (snapshot.exists()) {
-                    const orders = snapshot.val();
-                    let foundAny = false;
+                const ordersRef = ref(db, `orders/${phone}`);
 
-                    Object.values(orders).forEach(b => {
-                        if (b.studentName === name) {
-                            foundAny = true;
-                            const c = coursesData[b.courseId];
-                            const courseName = c ? `${c.subject} ${c.classType || ''}` : "未知課程";
-                            const displayTime = b.displayTime || b.soldTime || "未知時間";
-                            
-                            const div = document.createElement('div');
-                            div.className = 'result-item';
-                            div.innerHTML = `
-                                <strong>${courseName}</strong><br>
-                                座位：${b.seatId}<br>
-                                訂單編號：${b.orderId || '-'}<br>
-                                劃位時間：${displayTime}
-                            `;
-                            resultDiv.appendChild(div);
+                // 改用 onValue 進行即時監聽
+                currentUnsubscribe = onValue(ordersRef, (snapshot) => {
+                    resultDiv.innerHTML = ""; // 清空舊結果
+
+                    if (snapshot.exists()) {
+                        const orders = snapshot.val();
+                        let foundAny = false;
+
+                        Object.values(orders).forEach(b => {
+                            if (b.studentName === name) {
+                                foundAny = true;
+                                const c = coursesData[b.courseId];
+                                const courseName = c ? `${c.subject} ${c.classType || ''}` : "未知課程";
+                                const displayTime = b.displayTime || b.soldTime || "未知時間";
+
+                                const div = document.createElement('div');
+                                div.className = 'result-item';
+                                div.innerHTML = `
+                                    <strong>${courseName}</strong><br>
+                                    座位：${b.seatId}<br>
+                                    訂單編號：${b.orderId || '-'}<br>
+                                    劃位時間：${displayTime}
+                                `;
+                                resultDiv.appendChild(div);
+                            }
+                        });
+
+                        if (!foundAny) {
+                            resultDiv.innerHTML = "<p style='color:red; text-align:center;'>查無此姓名的訂單，或訂單已被管理員取消。</p>";
                         }
-                    });
-
-                    if (!foundAny) {
-                        resultDiv.innerHTML = "<p style='color:red; text-align:center;'>查無此姓名的訂單，請確認輸入資料是否正確。</p>";
+                    } else {
+                        resultDiv.innerHTML = "<p style='color:red; text-align:center;'>此手機號碼無訂單紀錄。</p>";
                     }
-                } else {
-                    resultDiv.innerHTML = "<p style='color:red; text-align:center;'>此手機號碼無訂單紀錄。</p>";
-                }
+
+                    // 查詢完成後恢復按鈕狀態
+                    btn.disabled = false;
+                    btn.textContent = "查詢";
+                }, (error) => {
+                    console.error("監聽發生錯誤:", error);
+                    resultDiv.innerHTML = "<p style='color:red; text-align:center;'>查詢權限不足或發生錯誤。</p>";
+                    btn.disabled = false;
+                    btn.textContent = "查詢";
+                });
 
             } catch (error) {
                 console.error(error);
                 resultDiv.innerHTML = "<p style='color:red; text-align:center;'>查詢發生錯誤，請稍後再試。</p>";
-            } finally {
                 btn.disabled = false;
                 btn.textContent = "查詢";
             }
         };
     </script>
 </body>
+
 </html>

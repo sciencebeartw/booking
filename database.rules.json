@@ -1,0 +1,111 @@
+{
+    "rules": {
+        ".read": false,
+        // 課程、橫幅、圖庫 (保留嚴格白名單驗證)
+        "courses": {
+            ".read": true,
+            ".write": "auth != null && auth.token.email != null && root.child('admins').child(auth.token.email.replace('.', ',')).exists()"
+        },
+        "banners": {
+            ".read": true,
+            ".write": "auth != null && auth.token.email != null && root.child('admins').child(auth.token.email.replace('.', ',')).exists()"
+        },
+        "print_layouts": {
+            ".read": true,
+            ".write": "auth != null && auth.token.email != null && root.child('admins').child(auth.token.email.replace('.', ',')).exists()"
+        },
+        "banner_gallery": {
+            ".read": true,
+            ".write": "auth != null && auth.token.email != null && root.child('admins').child(auth.token.email.replace('.', ',')).exists()"
+        },
+        "cover_gallery": {
+            ".read": true,
+            ".write": "auth != null && auth.token.email != null && root.child('admins').child(auth.token.email.replace('.', ',')).exists()"
+        },
+        "admins": {
+            ".read": "auth != null && auth.token.email != null && root.child('admins').child(auth.token.email.replace('.', ',')).exists()",
+            ".write": false
+        },
+        // 候補名單
+        "waitlist": {
+            ".read": "auth != null && auth.token.email != null && root.child('admins').child(auth.token.email.replace('.', ',')).exists()",
+            "$courseId": {
+                "$waitId": {
+                    ".write": "( !data.exists() && newData.exists() ) || (auth != null && auth.token.email != null && root.child('admins').child(auth.token.email.replace('.', ',')).exists())"
+                }
+            }
+        },
+        // 訂單
+        "orders": {
+            ".read": "auth != null && auth.token.email != null && root.child('admins').child(auth.token.email.replace('.', ',')).exists()",
+            "$phone": {
+                ".read": true,
+                ".indexOn": [
+                    "orderId"
+                ],
+                "$orderId": {
+                    ".write": "( !data.exists() && newData.exists() ) || (auth != null && auth.token.email != null && root.child('admins').child(auth.token.email.replace('.', ',')).exists())"
+                }
+            }
+        },
+        // 座位：劃位核心邏輯
+        "seats": {
+            ".read": true,
+            ".indexOn": [
+                "status"
+            ],
+            "$courseId": {
+                ".indexOn": [
+                    "status"
+                ],
+                "_settings": {
+                    ".read": true,
+                    ".write": "auth != null && auth.token.email != null && root.child('admins').child(auth.token.email.replace('.', ',')).exists()"
+                },
+                "$seatId": {
+                    ".write": "
+                    // 1. 真．管理員擁有無敵權限 (Gemini 貢獻：防堵假管理員)
+            (auth != null && auth.token.email != null && root.child('admins').child(auth.token.email.replace('.', ',')).exists()) ||
+            
+            // 2. 家長放棄座位：軟刪除且驗證本人 (Antigravity 貢獻：防堵亂刪別人座位)
+            (
+              data.exists() && newData.exists() && 
+              data.child('status').val() === 'locked' &&
+              newData.child('status').val() === 'deleted' && 
+              data.child('user').val() === newData.child('user').val()
+            ) ||
+            
+            // 3. 學生家長一般劃位：上鎖與結帳 (雙重防護)
+            (
+              newData.exists() &&
+              $seatId !== '_settings' &&
+              
+              // 條件一：必須在合法開放時間內
+              (
+                (now >= root.child('seats').child($courseId).child('_settings').child('start1').val() && now < root.child('seats').child($courseId).child('_settings').child('end1').val()) ||
+                (now >= root.child('seats').child($courseId).child('_settings').child('start2').val() && now < root.child('seats').child($courseId).child('_settings').child('end2').val())
+              ) &&
+              
+              // 條件二：嚴格的狀態轉換限制 (防截胡機制)
+              (
+                // 情境 A：空位被點擊上鎖 (只能從 null 或 deleted 變成 locked)
+                ( 
+                  (!data.exists() || data.child('status').val() === 'deleted') && 
+                  newData.child('status').val() === 'locked' 
+                ) 
+                ||
+                // 情境 B：填寫完成送出結帳 (只能從 locked 變成 sold，且必須驗證 user ID)
+                ( 
+                  data.exists() && 
+                  data.child('status').val() === 'locked' && 
+                  newData.child('status').val() === 'sold' && 
+                  data.child('user').val() === newData.child('user').val() 
+                )
+              )
+            )
+          "
+                }
+            }
+        }
+    }
+}

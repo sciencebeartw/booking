@@ -2,6 +2,7 @@
 <!-- 版本：V33.1 (修正：座位表即時熱更新) -->
 <!DOCTYPE html>
 <html lang="zh-TW">
+
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
@@ -10,100 +11,586 @@
     <link rel="apple-touch-icon" href="icon.png">
     <script src="https://www.google.com/recaptcha/api.js?hl=zh-TW" async defer></script>
     <style>
-        body { font-family: "Microsoft JhengHei", sans-serif; background-color: #f4f4f9; text-align: center; margin: 0; padding: 0; }
-        header { background: #2c3e50; padding: 15px 20px; display: flex; justify-content: center; align-items: center; gap: 20px; color: white; box-shadow: 0 2px 5px rgba(0,0,0,0.1); margin-bottom: 20px; }
-        header img { height: 60px; } 
-        header h1 { margin: 0; font-size: 24px; letter-spacing: 1px; text-align: center; }
-        
-        .main-container { background: white; max-width: 1000px; margin: 20px auto; padding: 30px; border-radius: 15px; box-shadow: 0 5px 15px rgba(0,0,0,0.1); position: relative; }
-        
-        .back-btn { position: absolute; top: 20px; left: 20px; text-decoration: none; color: #3498db; font-weight: bold; font-size: 16px; border: 1px solid #3498db; padding: 5px 15px; border-radius: 20px; transition: 0.3s; z-index: 100; }
-        .back-btn:hover { background: #3498db; color: white; }
+        body {
+            font-family: "Microsoft JhengHei", sans-serif;
+            background-color: #f4f4f9;
+            text-align: center;
+            margin: 0;
+            padding: 0;
+        }
 
-        .course-info-header { margin-bottom: 20px; text-align: center; border-bottom: 1px solid #eee; padding-bottom: 20px; }
-        .course-info-header h2 { margin: 0 0 10px 0; color: #2c3e50; font-size: 28px; }
-        .course-info-header p { margin: 5px 0; color: #555; font-size: 16px; display: inline-block; margin: 0 10px; }
-        
-        #deadlineTimer { background: #e74c3c; color: white; padding: 10px; border-radius: 5px; margin-bottom: 20px; font-weight: bold; display: none; }
+        header {
+            background: #2c3e50;
+            padding: 15px 20px;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            gap: 20px;
+            color: white;
+            box-shadow: 0 2px 5px rgba(0, 0, 0, 0.1);
+            margin-bottom: 20px;
+        }
 
-        .classroom-wrapper { overflow-x: auto; padding-bottom: 20px; text-align: center; -webkit-overflow-scrolling: touch; }
-        
-        .classroom-inner { display: inline-block; margin: 0 auto; }
-        #stageArea, #classroom { display: block; width: 100%; }
+        header img {
+            height: 60px;
+        }
 
-        .stage-box { width: 100%; margin: 0 auto 20px auto; padding: 12px; border: 3px solid #333; background-color: #fff; font-weight: bold; font-size: 22px; letter-spacing: 8px; text-align: center; box-sizing: border-box; }
-        .row { display: flex; justify-content: center; gap: 8px; margin-bottom: 15px; }
-        
-        .seat { width: 45px; height: 55px; background-color: #4CAF50; color: white; display: flex; align-items: center; justify-content: center; border-radius: 6px; cursor: pointer; font-weight: bold; font-size: 13px; user-select: none; position: relative; transition: 0.2s; box-sizing: border-box; }
-        .seat:hover { transform: scale(1.1); z-index: 10; }
-        .seat.sold { background-color: #e74c3c; cursor: not-allowed; transform: none; pointer-events: none; }
-        
-        .seat.locked { background-color: #f39c12; transform: scale(1.05); pointer-events: none; }
-        
-        .seat.mylocked { background-color: #3498db; border: 2px solid #2980b9; z-index: 20; cursor: pointer; pointer-events: auto; }
-        
-        .seat.blocked { background-color: #95a5a6; cursor: not-allowed; transform: none; }
-        .seat.aisle { background-color: transparent; color: transparent; pointer-events: none; cursor: default; }
-        .seat.door { background-color: #fff; color: #333; border: 2px solid #333; font-size: 16px; writing-mode: vertical-rl; cursor: default; pointer-events: none; transform: none; }
-        .seat.pillar { background-color: #7f8c8d; color: white; cursor: default; pointer-events: none; transform: none; border-radius: 2px; }
-        .seat.loading { opacity: 0.5; pointer-events: none; }
-        
-        .status-bar { margin: 10px 0; display: flex; justify-content: center; flex-wrap: wrap; gap: 10px; line-height: 2; }
-        .status-group { display: inline-block; white-space: nowrap; }
-        .dot { height: 12px; width: 12px; display: inline-block; border-radius: 50%; margin-right: 5px; }
-        
-        .modal-overlay { position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0, 0, 0, 0.5); display: none; justify-content: center; align-items: center; z-index: 999; }
-        .modal-box { background: white; padding: 25px; border-radius: 15px; width: 90%; max-width: 420px; box-shadow: 0 10px 25px rgba(0,0,0,0.2); text-align: center; border-top: 5px solid #f39c12; max-height: 90vh; overflow-y: auto; }
-        .modal-title { font-size: 20px; font-weight: bold; margin-bottom: 5px; color: #333; }
-        .modal-desc { font-size: 20px; color: #333; margin-bottom: 15px; font-weight: bold; text-align: center; background: #fdf2e9; padding: 10px; border-radius: 5px; }
-        .timer-box { background-color: #fff3cd; color: #856404; padding: 10px; border-radius: 5px; text-align: center; font-weight: bold; margin-bottom: 15px; border: 1px solid #ffeeba; }
-        
-        .form-group { margin-bottom: 15px; text-align: left; }
-        .form-group label { display: block; margin-bottom: 5px; font-weight: bold; }
-        .form-group input { width: 100%; padding: 10px; border: 1px solid #ddd; border-radius: 5px; font-size: 16px; box-sizing: border-box; }
-        .input-hint { font-size: 12px; color: #999; margin-top: 3px; }
-        
-        .recaptcha-wrapper { display: flex; justify-content: center; margin-bottom: 15px; margin-top: 10px; }
-        .btn-group { display: flex; justify-content: space-between; gap: 10px; margin-top: 10px; }
-        .btn { padding: 10px 20px; border: none; border-radius: 5px; cursor: pointer; font-size: 16px; flex: 1; transition: 0.3s; }
-        .btn-confirm { background-color: #4CAF50; color: white; }
-        .btn-confirm:disabled { background-color: #ccc; cursor: not-allowed; } 
-        .btn-cancel { background-color: #e74c3c; color: white; }
-        #loadingMask { position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: white; z-index: 9999; display: flex; justify-content: center; align-items: center; font-size: 24px; color: #555; flex-direction: column; }
-        .waitlist-area { margin-top: 30px; padding: 20px; background: #fff3e0; border-radius: 10px; display: none; }
-        .btn-waitlist { background-color: #e67e22; color: white; padding: 12px 30px; font-size: 18px; border: none; border-radius: 30px; cursor: pointer; box-shadow: 0 4px 6px rgba(230, 126, 34, 0.3); transition: 0.3s; }
-        .btn-waitlist:hover { background-color: #d35400; transform: translateY(-2px); }
-        .btn-waitlist:disabled { background-color: #95a5a6; cursor: not-allowed; transform: none; box-shadow: none; }
-        .modal-course-info { background: #f0f2f5; padding: 12px; border-radius: 8px; margin-bottom: 15px; font-size: 14px; color: #555; line-height: 1.6; text-align: center; }
-        .modal-course-info strong { color: #2c3e50; font-size: 16px; display: block; margin-bottom: 5px; }
-        .warning-text { color: #e74c3c; font-size: 13px; margin-bottom: 15px; line-height: 1.5; font-weight: bold; background: #fff5f5; padding: 10px; border-radius: 5px; border: 1px dashed #e74c3c; text-align: center; }
-        #expirationMessage { display: none; text-align: center; padding: 20px; }
-        #expirationMessage h3 { color: #e74c3c; font-size: 24px; margin-bottom: 10px; }
-        #expirationMessage p { font-size: 16px; color: #555; margin-bottom: 20px; }
-        footer { text-align: center; padding: 40px; color: #999; font-size: 14px; background-color: #2c3e50; color: white; margin-top: 80px; }
+        header h1 {
+            margin: 0;
+            font-size: 24px;
+            letter-spacing: 1px;
+            text-align: center;
+        }
 
-        .float-line-container { position: fixed; bottom: 20px; right: 20px; display: flex; flex-direction: column; gap: 15px; z-index: 9999; align-items: center; }
-        .line-btn { width: 65px; height: 65px; border-radius: 50%; box-shadow: 0 4px 12px rgba(0,0,0,0.3); cursor: pointer; display: flex; flex-direction: column; align-items: center; justify-content: center; text-decoration: none; color: white; font-family: Arial, sans-serif; transition: transform 0.2s; animation: bounce 2s ease-in-out infinite; }
-        .line-btn:active { transform: scale(0.9); animation: none; }
-        .line-btn span.small { font-size: 10px; font-weight: bold; margin-bottom: 2px; letter-spacing: 0px; }
-        .line-btn span.large { font-size: 18px; font-weight: 900; letter-spacing: 1px; }
-        
-        .btn-bear { background-color: #06C755; } /* 山熊科學 - 綠色 */
-        .btn-high { background-color: #0077CC; animation-delay: 1s; } /* 山熊升大 - 深水藍 */
+        .main-container {
+            background: white;
+            max-width: 1000px;
+            margin: 20px auto;
+            padding: 30px;
+            border-radius: 15px;
+            box-shadow: 0 5px 15px rgba(0, 0, 0, 0.1);
+            position: relative;
+        }
 
-        @keyframes bounce { 0%, 20%, 50%, 80%, 100% { transform: translateY(0); } 40% { transform: translateY(-10px); } 60% { transform: translateY(-5px); } }
+        .back-btn {
+            position: absolute;
+            top: 20px;
+            left: 20px;
+            text-decoration: none;
+            color: #3498db;
+            font-weight: bold;
+            font-size: 16px;
+            border: 1px solid #3498db;
+            padding: 5px 15px;
+            border-radius: 20px;
+            transition: 0.3s;
+            z-index: 100;
+        }
+
+        .back-btn:hover {
+            background: #3498db;
+            color: white;
+        }
+
+        .course-info-header {
+            margin-bottom: 20px;
+            text-align: center;
+            border-bottom: 1px solid #eee;
+            padding-bottom: 20px;
+        }
+
+        .course-info-header h2 {
+            margin: 0 0 10px 0;
+            color: #2c3e50;
+            font-size: 28px;
+        }
+
+        .course-info-header p {
+            margin: 5px 0;
+            color: #555;
+            font-size: 16px;
+            display: inline-block;
+            margin: 0 10px;
+        }
+
+        #deadlineTimer {
+            background: #e74c3c;
+            color: white;
+            padding: 10px;
+            border-radius: 5px;
+            margin-bottom: 20px;
+            font-weight: bold;
+            display: none;
+        }
+
+        .classroom-wrapper {
+            overflow-x: auto;
+            padding-bottom: 20px;
+            text-align: center;
+            -webkit-overflow-scrolling: touch;
+        }
+
+        .classroom-inner {
+            display: inline-block;
+            margin: 0 auto;
+        }
+
+        #stageArea,
+        #classroom {
+            display: block;
+            width: 100%;
+        }
+
+        .stage-box {
+            width: 100%;
+            margin: 0 auto 20px auto;
+            padding: 12px;
+            border: 3px solid #333;
+            background-color: #fff;
+            font-weight: bold;
+            font-size: 22px;
+            letter-spacing: 8px;
+            text-align: center;
+            box-sizing: border-box;
+        }
+
+        .row {
+            display: flex;
+            justify-content: center;
+            gap: 8px;
+            margin-bottom: 15px;
+        }
+
+        .seat {
+            width: 45px;
+            height: 55px;
+            background-color: #4CAF50;
+            color: white;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            border-radius: 6px;
+            cursor: pointer;
+            font-weight: bold;
+            font-size: 13px;
+            user-select: none;
+            position: relative;
+            transition: 0.2s;
+            box-sizing: border-box;
+        }
+
+        .seat:hover {
+            transform: scale(1.1);
+            z-index: 10;
+        }
+
+        .seat.sold {
+            background-color: #e74c3c;
+            cursor: not-allowed;
+            transform: none;
+            pointer-events: none;
+        }
+
+        .seat.locked {
+            background-color: #f39c12;
+            transform: scale(1.05);
+            pointer-events: none;
+        }
+
+        .seat.mylocked {
+            background-color: #3498db;
+            border: 2px solid #2980b9;
+            z-index: 20;
+            cursor: pointer;
+            pointer-events: auto;
+        }
+
+        .seat.blocked {
+            background-color: #95a5a6;
+            cursor: not-allowed;
+            transform: none;
+        }
+
+        .seat.aisle {
+            background-color: transparent;
+            color: transparent;
+            pointer-events: none;
+            cursor: default;
+        }
+
+        .seat.door {
+            background-color: #fff;
+            color: #333;
+            border: 2px solid #333;
+            font-size: 16px;
+            writing-mode: vertical-rl;
+            cursor: default;
+            pointer-events: none;
+            transform: none;
+        }
+
+        .seat.pillar {
+            background-color: #7f8c8d;
+            color: white;
+            cursor: default;
+            pointer-events: none;
+            transform: none;
+            border-radius: 2px;
+        }
+
+        .seat.loading {
+            opacity: 0.5;
+            pointer-events: none;
+        }
+
+        .status-bar {
+            margin: 10px 0;
+            display: flex;
+            justify-content: center;
+            flex-wrap: wrap;
+            gap: 10px;
+            line-height: 2;
+        }
+
+        .status-group {
+            display: inline-block;
+            white-space: nowrap;
+        }
+
+        .dot {
+            height: 12px;
+            width: 12px;
+            display: inline-block;
+            border-radius: 50%;
+            margin-right: 5px;
+        }
+
+        .modal-overlay {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background: rgba(0, 0, 0, 0.5);
+            display: none;
+            justify-content: center;
+            align-items: center;
+            z-index: 999;
+        }
+
+        .modal-box {
+            background: white;
+            padding: 25px;
+            border-radius: 15px;
+            width: 90%;
+            max-width: 420px;
+            box-shadow: 0 10px 25px rgba(0, 0, 0, 0.2);
+            text-align: center;
+            border-top: 5px solid #f39c12;
+            max-height: 90vh;
+            overflow-y: auto;
+        }
+
+        .modal-title {
+            font-size: 20px;
+            font-weight: bold;
+            margin-bottom: 5px;
+            color: #333;
+        }
+
+        .modal-desc {
+            font-size: 20px;
+            color: #333;
+            margin-bottom: 15px;
+            font-weight: bold;
+            text-align: center;
+            background: #fdf2e9;
+            padding: 10px;
+            border-radius: 5px;
+        }
+
+        .timer-box {
+            background-color: #fff3cd;
+            color: #856404;
+            padding: 10px;
+            border-radius: 5px;
+            text-align: center;
+            font-weight: bold;
+            margin-bottom: 15px;
+            border: 1px solid #ffeeba;
+        }
+
+        .form-group {
+            margin-bottom: 15px;
+            text-align: left;
+        }
+
+        .form-group label {
+            display: block;
+            margin-bottom: 5px;
+            font-weight: bold;
+        }
+
+        .form-group input {
+            width: 100%;
+            padding: 10px;
+            border: 1px solid #ddd;
+            border-radius: 5px;
+            font-size: 16px;
+            box-sizing: border-box;
+        }
+
+        .input-hint {
+            font-size: 12px;
+            color: #999;
+            margin-top: 3px;
+        }
+
+        .recaptcha-wrapper {
+            display: flex;
+            justify-content: center;
+            margin-bottom: 15px;
+            margin-top: 10px;
+        }
+
+        .btn-group {
+            display: flex;
+            justify-content: space-between;
+            gap: 10px;
+            margin-top: 10px;
+        }
+
+        .btn {
+            padding: 10px 20px;
+            border: none;
+            border-radius: 5px;
+            cursor: pointer;
+            font-size: 16px;
+            flex: 1;
+            transition: 0.3s;
+        }
+
+        .btn-confirm {
+            background-color: #4CAF50;
+            color: white;
+        }
+
+        .btn-confirm:disabled {
+            background-color: #ccc;
+            cursor: not-allowed;
+        }
+
+        .btn-cancel {
+            background-color: #e74c3c;
+            color: white;
+        }
+
+        #loadingMask {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background: white;
+            z-index: 9999;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            font-size: 24px;
+            color: #555;
+            flex-direction: column;
+        }
+
+        .waitlist-area {
+            margin-top: 30px;
+            padding: 20px;
+            background: #fff3e0;
+            border-radius: 10px;
+            display: none;
+        }
+
+        .btn-waitlist {
+            background-color: #e67e22;
+            color: white;
+            padding: 12px 30px;
+            font-size: 18px;
+            border: none;
+            border-radius: 30px;
+            cursor: pointer;
+            box-shadow: 0 4px 6px rgba(230, 126, 34, 0.3);
+            transition: 0.3s;
+        }
+
+        .btn-waitlist:hover {
+            background-color: #d35400;
+            transform: translateY(-2px);
+        }
+
+        .btn-waitlist:disabled {
+            background-color: #95a5a6;
+            cursor: not-allowed;
+            transform: none;
+            box-shadow: none;
+        }
+
+        .modal-course-info {
+            background: #f0f2f5;
+            padding: 12px;
+            border-radius: 8px;
+            margin-bottom: 15px;
+            font-size: 14px;
+            color: #555;
+            line-height: 1.6;
+            text-align: center;
+        }
+
+        .modal-course-info strong {
+            color: #2c3e50;
+            font-size: 16px;
+            display: block;
+            margin-bottom: 5px;
+        }
+
+        .warning-text {
+            color: #e74c3c;
+            font-size: 13px;
+            margin-bottom: 15px;
+            line-height: 1.5;
+            font-weight: bold;
+            background: #fff5f5;
+            padding: 10px;
+            border-radius: 5px;
+            border: 1px dashed #e74c3c;
+            text-align: center;
+        }
+
+        #expirationMessage {
+            display: none;
+            text-align: center;
+            padding: 20px;
+        }
+
+        #expirationMessage h3 {
+            color: #e74c3c;
+            font-size: 24px;
+            margin-bottom: 10px;
+        }
+
+        #expirationMessage p {
+            font-size: 16px;
+            color: #555;
+            margin-bottom: 20px;
+        }
+
+        footer {
+            text-align: center;
+            padding: 40px;
+            color: #999;
+            font-size: 14px;
+            background-color: #2c3e50;
+            color: white;
+            margin-top: 80px;
+        }
+
+        .float-line-container {
+            position: fixed;
+            bottom: 20px;
+            right: 20px;
+            display: flex;
+            flex-direction: column;
+            gap: 15px;
+            z-index: 9999;
+            align-items: center;
+        }
+
+        .line-btn {
+            width: 65px;
+            height: 65px;
+            border-radius: 50%;
+            box-shadow: 0 4px 12px rgba(0, 0, 0, 0.3);
+            cursor: pointer;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            text-decoration: none;
+            color: white;
+            font-family: Arial, sans-serif;
+            transition: transform 0.2s;
+            animation: bounce 2s ease-in-out infinite;
+        }
+
+        .line-btn:active {
+            transform: scale(0.9);
+            animation: none;
+        }
+
+        .line-btn span.small {
+            font-size: 10px;
+            font-weight: bold;
+            margin-bottom: 2px;
+            letter-spacing: 0px;
+        }
+
+        .line-btn span.large {
+            font-size: 18px;
+            font-weight: 900;
+            letter-spacing: 1px;
+        }
+
+        .btn-bear {
+            background-color: #06C755;
+        }
+
+        /* 山熊科學 - 綠色 */
+        .btn-high {
+            background-color: #0077CC;
+            animation-delay: 1s;
+        }
+
+        /* 山熊升大 - 深水藍 */
+
+        @keyframes bounce {
+
+            0%,
+            20%,
+            50%,
+            80%,
+            100% {
+                transform: translateY(0);
+            }
+
+            40% {
+                transform: translateY(-10px);
+            }
+
+            60% {
+                transform: translateY(-5px);
+            }
+        }
 
         @media (max-width: 768px) {
-            .main-container { padding-top: 60px; }
-            .back-btn { top: 15px; left: 15px; padding: 5px 10px; font-size: 14px; }
-            .course-info-header h2 { font-size: 20px; margin-top: 10px; }
-            .status-bar { flex-direction: column; align-items: center; gap: 5px; }
-            
-            .classroom-inner { max-width: 100%; }
-            .stage-box { font-size: 14px; padding: 6px; margin-bottom: 12px; letter-spacing: 5px; }
-            .row { width: 100%; gap: 2px; margin-bottom: 5px; }
-            .seat { 
-                flex: 0 1 40px; 
+            .main-container {
+                padding-top: 60px;
+            }
+
+            .back-btn {
+                top: 15px;
+                left: 15px;
+                padding: 5px 10px;
+                font-size: 14px;
+            }
+
+            .course-info-header h2 {
+                font-size: 20px;
+                margin-top: 10px;
+            }
+
+            .status-bar {
+                flex-direction: column;
+                align-items: center;
+                gap: 5px;
+            }
+
+            .classroom-inner {
+                max-width: 100%;
+            }
+
+            .stage-box {
+                font-size: 14px;
+                padding: 6px;
+                margin-bottom: 12px;
+                letter-spacing: 5px;
+            }
+
+            .row {
+                width: 100%;
+                gap: 2px;
+                margin-bottom: 5px;
+            }
+
+            .seat {
+                flex: 0 1 40px;
                 min-width: 21px;
                 height: auto;
                 aspect-ratio: 45 / 55;
@@ -111,12 +598,17 @@
                 border-radius: 3px;
                 padding: 0;
             }
-            .seat:hover, .seat.locked { transform: scale(1.05); } 
+
+            .seat:hover,
+            .seat.locked {
+                transform: scale(1.05);
+            }
         }
     </style>
 </head>
+
 <body>
-    
+
     <div id="loadingMask">
         <div>⏳ 系統連線中...</div>
         <div style="font-size:16px; margin-top:10px; color:#999;">正在校對伺服器時間</div>
@@ -137,7 +629,7 @@
             <p>⏰ 上課時間：<span id="pageTime">-</span></p>
             <p>📍 上課教室：<span id="pageClassroom">-</span></p>
         </div>
-        
+
         <div id="deadlineTimer"></div>
 
         <div class="status-bar">
@@ -175,7 +667,8 @@
                     ⚠️ 學生姓名送出後無法更改，請確認後再送出。<br>
                     ⚠️ 重覆劃位會被系統隨機取消第二個以上的座位。
                 </div>
-                <div class="modal-desc">您目前選擇的座位是：<span id="modalSeatLabel" style="color:#e74c3c; font-size:24px;"></span></div>
+                <div class="modal-desc">您目前選擇的座位是：<span id="modalSeatLabel"
+                        style="color:#e74c3c; font-size:24px;"></span></div>
                 <div id="timerDisplay" class="timer-box">計算剩餘時間中...</div>
                 <div class="form-group">
                     <label>學生姓名：</label>
@@ -232,7 +725,8 @@
             </div>
             <div class="btn-group">
                 <button class="btn btn-cancel" onclick="closeWaitlistModal()">取消</button>
-                <button class="btn btn-confirm" id="w_confirmBtn" style="background-color:#e67e22;" disabled>送出候補</button>
+                <button class="btn btn-confirm" id="w_confirmBtn" style="background-color:#e67e22;"
+                    disabled>送出候補</button>
             </div>
         </div>
     </div>
@@ -258,31 +752,31 @@
         import { onValue, runTransaction, serverTimestamp } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-database.js";
 
         let widgetId1, widgetId2;
-        let isVerified1 = false; 
-        let isVerified2 = false; 
-        let serverTimeOffset = 0; 
-        let courseSettings = null; 
+        let isVerified1 = false;
+        let isVerified2 = false;
+        let serverTimeOffset = 0;
+        let courseSettings = null;
         let waitlistCount = 0;
         let totalSeats = 0;
         let soldCount = 0;
         let isClassroomRendered = false;
-        
-        let isManualRelease = false; 
-        
+
+        let isManualRelease = false;
+
         // ★★★ 新增：反應時間紀錄變數 ★★★
         let pageLoadTime = 0;
         let reactionMs = 0;
 
-        window.onloadCallback = function() {
+        window.onloadCallback = function () {
             widgetId1 = grecaptcha.render('recaptcha1', {
                 'sitekey': '6LdkWVwsAAAAAKBQSZKiPxOQ7E3ZbL0V-zaclqt5',
-                'callback': function() { isVerified1 = true; document.getElementById('confirmBtn').disabled = false; },
-                'expired-callback': function() { isVerified1 = false; document.getElementById('confirmBtn').disabled = true; }
+                'callback': function () { isVerified1 = true; document.getElementById('confirmBtn').disabled = false; },
+                'expired-callback': function () { isVerified1 = false; document.getElementById('confirmBtn').disabled = true; }
             });
             widgetId2 = grecaptcha.render('recaptcha2', {
                 'sitekey': '6LdkWVwsAAAAAKBQSZKiPxOQ7E3ZbL0V-zaclqt5',
-                'callback': function() { isVerified2 = true; document.getElementById('w_confirmBtn').disabled = false; },
-                'expired-callback': function() { isVerified2 = false; document.getElementById('w_confirmBtn').disabled = true; }
+                'callback': function () { isVerified2 = true; document.getElementById('w_confirmBtn').disabled = false; },
+                'expired-callback': function () { isVerified2 = false; document.getElementById('w_confirmBtn').disabled = true; }
             });
         };
 
@@ -295,7 +789,7 @@
             myUserId = 'user_' + Math.floor(Math.random() * 100000);
             localStorage.setItem('tempUserId', myUserId);
         }
-        
+
         const classroomDiv = document.getElementById('classroom');
         const stageArea = document.getElementById('stageArea');
         const loadingMask = document.getElementById('loadingMask');
@@ -305,18 +799,18 @@
         let currentSeatId = null;
         let timerInterval = null;
         const TIMEOUT_SECONDS = 90;
-        let unsubscribe = null; 
+        let unsubscribe = null;
 
         async function init() {
             // ★★★ 新增：啟動碼表 ★★★
             pageLoadTime = Date.now();
 
             const params = new URLSearchParams(window.location.search);
-            const courseId = params.get('class'); 
+            const courseId = params.get('class');
 
             if (!courseId) {
                 alert("無效的課程連結！");
-                window.location.href = "index.html"; 
+                window.location.href = "index.html";
                 return;
             }
 
@@ -329,16 +823,16 @@
                     return;
                 }
                 currentCourseData = snapshot.val();
-                
+
                 document.getElementById('pageTitle').textContent = ` ${currentCourseData.subject} ${currentCourseData.classType || ''} - 劃位`;
                 document.getElementById('pageTeacher').textContent = currentCourseData.teacher;
                 document.getElementById('pageTime').textContent = currentCourseData.timeDescription;
-                
+
                 const classroomType = currentCourseData.classroom;
                 if (classrooms[classroomType]) {
                     document.getElementById('pageClassroom').textContent = classrooms[classroomType].name;
                 }
-                
+
                 updateWaitlistButton();
 
                 // ★★★ V33.1 修正：即時監聽 Layout 變化 ★★★
@@ -355,11 +849,11 @@
             onValue(ref(db, `seats/${courseId}/_settings`), (snapshot) => {
                 if (!snapshot.exists()) return;
                 courseSettings = snapshot.val();
-                
+
                 onValue(ref(db, ".info/serverTimeOffset"), (snap) => {
                     serverTimeOffset = snap.val() || 0;
                     const serverTime = Date.now() + serverTimeOffset;
-                    
+
                     if (currentCourseData) {
                         checkTimeAndRender(serverTime, courseSettings, currentCourseData.classroom);
                     } else {
@@ -367,7 +861,7 @@
                             if (currentCourseData) checkTimeAndRender(serverTime, courseSettings, currentCourseData.classroom);
                         }, 500);
                     }
-                    
+
                     setInterval(() => checkExpiration(courseSettings), 1000);
                 }, { onlyOnce: true });
             });
@@ -394,7 +888,7 @@
                 if (now < start1) msg = "⛔ 劃位尚未開始！請勿偷跑！";
                 if (now >= end1 && now < start2) msg = "⛔ 系統整理中，暫停開放！";
                 alert(msg);
-                window.location.href = "index.html"; 
+                window.location.href = "index.html";
                 return;
             }
 
@@ -428,7 +922,7 @@
             }
 
             loadingMask.style.display = "none";
-            
+
             if (!isClassroomRendered) {
                 renderClassroom(classroomType);
                 startRealtimeListener();
@@ -439,7 +933,7 @@
         function updateWaitlistButton() {
             if (!currentCourseData) return;
             const limit = currentCourseData.waitlistLimit || 0;
-            
+
             if (limit > 0 && waitlistCount >= limit) {
                 btnWaitlist.textContent = "🔴 候補已額滿";
                 btnWaitlist.disabled = true;
@@ -468,7 +962,7 @@
         function checkExpiration(settings) {
             const now = Date.now() + serverTimeOffset;
             const { start1, end1, start2, end2 } = settings;
-            
+
             if (now >= end1 && now < start2) {
                 alert("⏰ 第一階段劃位時間已結束！\n系統整理中，請稍後再回來。");
                 window.location.href = "index.html";
@@ -483,7 +977,7 @@
             // ★★★ V33.0 核心升級：資料驅動渲染 ★★★
             // 優先檢查該課程是否有「客製化 Layout」(影印存檔)
             // 如果沒有，才回退使用 classrooms[type] 的預設範本
-            
+
             let layoutToRender = null;
             let hasStage = true; // 預設有講台
 
@@ -502,8 +996,8 @@
 
             stageArea.innerHTML = hasStage ? '<div class="stage-box">講　台</div>' : '';
             classroomDiv.innerHTML = "";
-            totalSeats = 0; 
-            
+            totalSeats = 0;
+
             layoutToRender.forEach((row) => {
                 const rowDiv = document.createElement('div');
                 rowDiv.className = 'row';
@@ -524,7 +1018,7 @@
                         if (isBlocked) seat.classList.add('blocked');
                         else {
                             seat.addEventListener('click', () => tryLockSeat(code));
-                            totalSeats++; 
+                            totalSeats++;
                         }
                     }
                     rowDiv.appendChild(seat);
@@ -536,21 +1030,21 @@
         function startRealtimeListener() {
             if (unsubscribe) unsubscribe();
             const classRef = ref(db, `seats/${currentClassId}`);
-            
+
             unsubscribe = onValue(classRef, (snapshot) => {
                 const data = snapshot.val() || {};
-                soldCount = 0; 
+                soldCount = 0;
 
                 if (currentSeatId) {
                     const currentSeatData = data[currentSeatId];
                     if (!currentSeatData || (currentSeatData.user !== myUserId && currentSeatData.status !== 'sold')) {
-                         if (!isManualRelease) {
-                             if (!currentSeatData || currentSeatData.user !== myUserId) {
-                                 alert("⚠️ 您的保留位已被釋出或由管理員移除！請重新劃位。");
-                                 closeModal(); 
-                             }
-                         }
-                         isManualRelease = false; 
+                        if (!isManualRelease) {
+                            if (!currentSeatData || currentSeatData.user !== myUserId) {
+                                alert("⚠️ 您的保留位已被釋出或由管理員移除！請重新劃位。");
+                                closeModal();
+                            }
+                        }
+                        isManualRelease = false;
                     }
                 }
 
@@ -559,25 +1053,25 @@
                     if (!seatId || seatEl.classList.contains('blocked')) return;
 
                     const seatInfo = data[seatId];
-                    seatEl.classList.remove('sold', 'locked', 'mylocked'); 
-                    seatEl.style.backgroundColor = ""; 
-                    
+                    seatEl.classList.remove('sold', 'locked', 'mylocked');
+                    seatEl.style.backgroundColor = "";
+
                     if (seatInfo) {
                         if (seatInfo.status === 'sold') {
                             if (seatInfo.user === myUserId) {
-                                seatEl.classList.add('mylocked'); 
+                                seatEl.classList.add('mylocked');
                             } else {
-                                seatEl.classList.add('sold'); 
+                                seatEl.classList.add('sold');
                             }
-                            soldCount++; 
+                            soldCount++;
                         } else if (seatInfo.status === 'locked') {
                             if (seatInfo.user === myUserId) {
-                                seatEl.classList.add('mylocked'); 
+                                seatEl.classList.add('mylocked');
                                 checkAndRestoreSession(seatId, seatInfo.timestamp);
                             } else if (seatInfo.user === 'admin_reserved') {
-                                seatEl.classList.add('locked'); 
+                                seatEl.classList.add('locked');
                             } else {
-                                seatEl.classList.add('locked'); 
+                                seatEl.classList.add('locked');
                             }
                         }
                     }
@@ -605,16 +1099,16 @@
 
         function openWaitlistModal() {
             document.getElementById('waitlistModal').style.display = 'flex';
-            
+
             if (currentCourseData) {
-                document.getElementById('waitlistCourseInfo').innerHTML = 
+                document.getElementById('waitlistCourseInfo').innerHTML =
                     `<strong>${currentCourseData.subject} ${currentCourseData.classType || ''}</strong><br>
                      👨‍🏫 ${currentCourseData.teacher}<br>
                      ⏰ ${currentCourseData.timeDescription || ''}<br>
                      📅 開課：${currentCourseData.startDate || ''}`;
             }
 
-            try { if(grecaptcha && grecaptcha.reset && widgetId2 !== undefined) grecaptcha.reset(widgetId2); } catch(e) { console.log("ReCAPTCHA reset skipped"); }
+            try { if (grecaptcha && grecaptcha.reset && widgetId2 !== undefined) grecaptcha.reset(widgetId2); } catch (e) { console.log("ReCAPTCHA reset skipped"); }
         }
 
         function closeWaitlistModal() {
@@ -622,7 +1116,7 @@
         }
 
         document.getElementById('w_confirmBtn').addEventListener('click', () => {
-            if (!isVerified2) { alert("🤖 請勾選「我不是機器人」！"); return; } 
+            if (!isVerified2) { alert("🤖 請勾選「我不是機器人」！"); return; }
 
             const name = document.getElementById('w_studentName').value.trim();
             const phone = document.getElementById('w_parentPhone').value.trim();
@@ -652,9 +1146,9 @@
 
             if (currentSeatId && currentSeatId !== seatId) { alert("您已經有一個座位正在保留中！"); return; }
             const seatEl = document.getElementById(`seat-${seatId}`);
-            
+
             if (seatEl.classList.contains('sold') || seatEl.classList.contains('locked') || seatEl.classList.contains('blocked')) {
-                return; 
+                return;
             }
             if (seatEl.classList.contains('mylocked')) {
                 return;
@@ -662,18 +1156,18 @@
 
             seatEl.classList.add('loading');
             const seatRef = ref(db, `seats/${currentClassId}/${seatId}`);
-            
+
             const nowTimestamp = Date.now() + serverTimeOffset;
-            
+
             runTransaction(seatRef, (currentData) => {
-                if (currentData === null || (currentData && currentData.status === 'deleted')) { 
-                    return { status: 'locked', user: myUserId, timestamp: nowTimestamp }; 
-                } else { 
-                    return; 
+                if (currentData === null || (currentData && currentData.status === 'deleted')) {
+                    return { status: 'locked', user: myUserId, timestamp: nowTimestamp };
+                } else {
+                    return;
                 }
             }).then((result) => {
                 seatEl.classList.remove('loading');
-                if (result.committed) { openBookingModal(seatId, nowTimestamp); } 
+                if (result.committed) { openBookingModal(seatId, nowTimestamp); }
                 else { alert("慢了一步！"); }
             }).catch(err => {
                 console.error(err);
@@ -693,20 +1187,20 @@
         function checkAndRestoreSession(seatId, lockTimestamp) {
             const modal = document.getElementById('bookingModal');
             if (currentSeatId === seatId && modal.style.display === "flex") return;
-            
+
             const now = Date.now() + serverTimeOffset;
             const elapsedSeconds = Math.floor((now - lockTimestamp) / 1000);
             const remaining = TIMEOUT_SECONDS - elapsedSeconds;
-            if (remaining > 0) { openBookingModal(seatId, lockTimestamp); } 
+            if (remaining > 0) { openBookingModal(seatId, lockTimestamp); }
             else { if (currentSeatId !== seatId) { currentSeatId = seatId; releaseSeat(true); } }
         }
 
         function openBookingModal(seatId, lockTimestamp) {
             currentSeatId = seatId;
             modalSeatLabel.textContent = seatId;
-            
+
             if (currentCourseData) {
-                document.getElementById('modalCourseInfo').innerHTML = 
+                document.getElementById('modalCourseInfo').innerHTML =
                     `<strong>${currentCourseData.subject} ${currentCourseData.classType || ''}</strong><br>
                      👨‍🏫 ${currentCourseData.teacher}<br>
                      ⏰ ${currentCourseData.timeDescription || ''}<br>
@@ -717,10 +1211,10 @@
             document.getElementById('expirationMessage').style.display = 'none';
 
             modal.style.display = "flex";
-            isVerified1 = false; 
-            confirmBtn.disabled = true; 
-            honeyPotInput.value = ""; 
-            try { if(grecaptcha && grecaptcha.reset && widgetId1 !== undefined) grecaptcha.reset(widgetId1); } catch(e) { console.log("ReCAPTCHA reset skipped"); }
+            isVerified1 = false;
+            confirmBtn.disabled = true;
+            honeyPotInput.value = "";
+            try { if (grecaptcha && grecaptcha.reset && widgetId1 !== undefined) grecaptcha.reset(widgetId1); } catch (e) { console.log("ReCAPTCHA reset skipped"); }
             startPrecisionTimer(lockTimestamp);
         }
 
@@ -734,12 +1228,12 @@
             const now = Date.now() + serverTimeOffset;
             const elapsed = Math.floor((now - startTimestamp) / 1000);
             const remaining = TIMEOUT_SECONDS - elapsed;
-            
+
             if (remaining <= 0) {
                 clearInterval(timerInterval);
-                handleTimeout(); 
-            } else { 
-                updateTimerDisplay(remaining); 
+                handleTimeout();
+            } else {
+                updateTimerDisplay(remaining);
             }
         }
 
@@ -753,29 +1247,29 @@
             const minutes = Math.floor(seconds / 60);
             const remainingSeconds = seconds % 60;
             timerDisplay.textContent = `剩餘時間：0${minutes}:${remainingSeconds < 10 ? '0' : ''}${remainingSeconds}`;
-            if (seconds < 10) { timerDisplay.style.backgroundColor = "#ffcccc"; timerDisplay.style.color = "red"; } 
+            if (seconds < 10) { timerDisplay.style.backgroundColor = "#ffcccc"; timerDisplay.style.color = "red"; }
             else { timerDisplay.style.backgroundColor = "#fff3cd"; timerDisplay.style.color = "#856404"; }
         }
 
         function releaseSeat(isAuto = false) {
             if (!currentSeatId) return;
             const seatToRelease = currentSeatId;
-            
+
             if (!isAuto) {
                 isManualRelease = true;
             }
 
             if (isAuto) {
                 currentSeatId = null;
-                set(ref(db, `seats/${currentClassId}/${seatToRelease}`), null);
+                set(ref(db, `seats/${currentClassId}/${seatToRelease}`), { status: 'deleted', user: myUserId });
             } else {
-                set(ref(db, `seats/${currentClassId}/${seatToRelease}`), null).then(() => {
-                    closeModal(); 
+                set(ref(db, `seats/${currentClassId}/${seatToRelease}`), { status: 'deleted', user: myUserId }).then(() => {
+                    closeModal();
                     if (!isAuto) { alert("已取消保留。"); }
                 }).catch(err => { console.error("釋出失敗", err); closeModal(); });
             }
         }
-        
+
         function closeModal() {
             modal.style.display = "none";
             currentSeatId = null;
@@ -787,25 +1281,25 @@
 
         confirmBtn.addEventListener('click', () => {
             if (honeyPotInput.value !== "") { alert("系統偵測到異常操作。"); return; }
-            if (!currentSeatId) { alert("⚠️ 座位保留時間已到，請重新選位！"); closeModal(); return; } 
-            
+            if (!currentSeatId) { alert("⚠️ 座位保留時間已到，請重新選位！"); closeModal(); return; }
+
             const name = nameInput.value.trim();
             const phone = phoneInput.value.trim();
-            if (!isVerified1) { alert("🤖 請勾選「我不是機器人」！"); return; } 
+            if (!isVerified1) { alert("🤖 請勾選「我不是機器人」！"); return; }
             if (!name || !phone) { alert("請填寫完整資料！"); return; }
             const phoneRegex = /^09\d{8}$/;
             if (!phoneRegex.test(phone)) { alert("❌ 手機號碼格式錯誤！"); return; }
-            
+
             const orderId = Date.now().toString().slice(-6) + Math.floor(Math.random() * 100);
             const timestamp = new Date().toLocaleString();
 
             const seatData = {
-                status: 'sold', 
-                studentName: name, 
-                parentPhone: phone, 
+                status: 'sold',
+                studentName: name,
+                parentPhone: phone,
                 soldTime: timestamp,
                 orderId: orderId,
-                user: myUserId 
+                user: myUserId
             };
 
             const orderData = {
@@ -814,14 +1308,14 @@
                 seatId: currentSeatId,
                 studentName: name,
                 parentPhone: phone,
-                timestamp: serverTimestamp(), 
+                timestamp: serverTimestamp(),
                 displayTime: timestamp,
                 reactionTime: reactionMs // ★★★ 新增：寫入反應時間 ★★★
             };
 
             const updates = {};
             updates[`seats/${currentClassId}/${currentSeatId}`] = seatData;
-            updates[`orders/${phone}/${orderId}`] = orderData; 
+            updates[`orders/${phone}/${orderId}`] = orderData;
 
             update(ref(db), updates).then(() => {
                 alert(`✅ 劃位成功！\n座位：${currentSeatId}\n訂單編號：${orderId}\n請截圖留存！`);
@@ -842,6 +1336,8 @@
 
         init();
     </script>
-    <script src="https://www.google.com/recaptcha/api.js?onload=onloadCallback&render=explicit&hl=zh-TW" async defer></script>
+    <script src="https://www.google.com/recaptcha/api.js?onload=onloadCallback&render=explicit&hl=zh-TW" async
+        defer></script>
 </body>
+
 </html>

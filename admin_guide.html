@@ -553,19 +553,11 @@
                 const user = result.user;
 
                 // 檢查是否在白名單內
-                const snapshot = await get(child(dbRef(db), `admins`));
-                let isAdmin = false;
-                if (snapshot.exists()) {
-                    const admins = snapshot.val();
-                    for (let key in admins) {
-                        if (admins[key] === user.email) {
-                            isAdmin = true;
-                            break;
-                        }
-                    }
-                }
+                // 修正：配合新版 Rules，直接讀取個人信箱對應的節點
+                const safeEmail = user.email.replace(/\./g, ',');
+                const snapshot = await get(child(dbRef(db), `admins/${safeEmail}`));
 
-                if (isAdmin) {
+                if (snapshot.exists()) {
                     alert("登入成功！歡迎進入指揮中心。");
                     window.location.href = "admin_bear2026.html";
                 } else {

@@ -6,21 +6,19 @@ import { onAuthStateChanged } from "https://www.gstatic.com/firebasejs/10.7.1/fi
 onAuthStateChanged(auth, async (user) => {
     if (user) {
         // 檢查是否在白名單內
-        const snapshot = await get(ref(db, `admins`));
-        let isAdmin = false;
-        if (snapshot.exists()) {
-            const admins = snapshot.val();
-            for (let key in admins) {
-                if (admins[key] === user.email) {
-                    isAdmin = true;
-                    break;
-                }
+        // 修正：因為新版 Rules 已經限制只有白名單內的人可以讀取 admins
+        // 我們不能再 get 整個 admins 節點 (會遇到 Permission Denied)
+        // 改為精準查詢自己的信箱節點 (信箱中的 . 需替換為 , 作為 key)
+        const safeEmail = user.email.replace(/\./g, ',');
+        try {
+            const snapshot = await get(ref(db, `admins/${safeEmail}`));
+            if (snapshot.exists()) {
+                document.body.style.display = 'block'; // 驗證通過才顯示內容
+            } else {
+                throw new Error("不在白名單中");
             }
-        }
-
-        if (isAdmin) {
-            document.body.style.display = 'block'; // 驗證通過才顯示內容
-        } else {
+        } catch (error) {
+            console.error("驗證失敗:", error);
             alert("權限不足：您的帳號不在管理員白名單中！");
             await signOut(auth);
             window.location.href = "index.html";
