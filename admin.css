@@ -1135,7 +1135,7 @@ tr.duplicate-row {
 
 .print-seat.blocked {
     background-color: #eee;
-    background-image: url("data:image/svg+xml;base64,PHN2ZyB3aWR0aD0nMjAnIGhlaWdodD0nMjAnIHhtbG5zPSdodHRwOi8vd3d3LnczLm9yZy8yMDAwL3N2Zyc+PHJlY3Qgd2lkdGg9JzIwJyBoZWlnaHQ9JzIwJyBmaWxsPScjZWVlJy8+PHBhdGggZD0nTTAgMjBMMjAgME0tMTAgMTBMMTAtMTBNMTAgMzBMMzAgMTAnIHN0cm9rZT0nI2NjYycgc3Ryb2tlLXdpZHRoPScxMCcvPjwvc3ZnPg==");
+    background-image: url("data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAABQAAAAUCAYAAACNiR0NAAAAcklEQVR4nK3O2w2AIBBE0cFStv9SqIESaEGzfBijAvuYW8DJLbXWEwBEBNlaaziYmFZ67+OQgWnjkIWJSA58Y9rBxMLgDAuBK8wN7jAXaMHMoBUzgR5sC3qxJRjBpmAU+wUz2AfMYniCDOwGWdgAmZiKFymFQu3g5IplAAAAAElFTkSuQmCC");
     color: transparent;
     cursor: default;
 }
