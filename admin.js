@@ -600,6 +600,9 @@ window.loadVisualMap = function () {
 
     const currentSeats = seatsData[courseId] || {};
 
+    // 取得是否有開啟姓名顯示的狀態
+    const isShowingNames = window.isSeatNameVisible || false;
+
     if (layoutToRender && layoutToRender.length > 0) {
         layoutToRender.forEach(row => {
             const rowDiv = document.createElement('div');
@@ -615,24 +618,48 @@ window.loadVisualMap = function () {
                 else if (code === "DOOR") { seat.textContent = "門"; seat.classList.add('aisle'); }
                 else if (code === "PILLAR") { seat.textContent = "柱"; seat.classList.add('aisle'); }
                 else {
-                    seat.textContent = code;
+                    seat.textContent = ""; // 清空原本的純文字號碼，改用結構化渲染
+
+                    const numSpan = document.createElement('span');
+                    numSpan.className = 'seat-num';
+                    numSpan.textContent = code;
+                    seat.appendChild(numSpan);
+
+                    const nameSpan = document.createElement('span');
+                    nameSpan.className = 'seat-name';
+
                     const info = currentSeats[code];
 
                     if (info) {
                         if (info.status === 'sold') {
                             seat.classList.add('sold');
+                            let displayName = info.studentName || '未知名稱';
+                            if (displayName.includes('現場保留') || displayName.includes('保留')) {
+                                displayName = '保留';
+                            }
+                            nameSpan.textContent = displayName;
                             seat.innerHTML += `<div class="seat-tooltip">${info.studentName}<br>${info.parentPhone}</div>`;
                         } else if (info.status === 'locked') {
                             seat.classList.add('locked');
                             if (info.user === 'admin_reserved') {
                                 seat.classList.add('reserved');
-                                seat.innerHTML += `<div class="seat-tooltip">保留位</div>`;
+                                nameSpan.textContent = '暫留';
+                                seat.innerHTML += `<div class="seat-tooltip">暫留位</div>`;
                             } else {
+                                nameSpan.textContent = '填寫中';
                                 seat.innerHTML += `<div class="seat-tooltip">填寫中...</div>`;
                             }
                         }
                     }
 
+                    seat.appendChild(nameSpan);
+
+                    // 如果開啟了姓名顯示，只有已被佔用(sold/locked)的位子才需要變成雙排
+                    if (isShowingNames && info && (info.status === 'sold' || info.status === 'locked')) {
+                        seat.classList.add('show-names');
+                    }
+
+                    // 因為我們重新覆寫了 innerHTML (tooltip)，需要重新綁定點擊事件
                     seat.onclick = () => toggleReserve(courseId, code, info);
                 }
                 rowDiv.appendChild(seat);
@@ -640,6 +667,26 @@ window.loadVisualMap = function () {
             mapContent.appendChild(rowDiv);
         });
     }
+};
+
+// ★★★ V36.2 新增：切換座位表顯示姓名的功能 ★★★
+window.isSeatNameVisible = false;
+window.toggleSeatNames = function () {
+    window.isSeatNameVisible = !window.isSeatNameVisible;
+    const btn = document.getElementById('toggleNamesBtn');
+
+    if (window.isSeatNameVisible) {
+        btn.textContent = "🙈 隱藏姓名版圖";
+        btn.classList.remove('success');
+        btn.classList.add('warning');
+    } else {
+        btn.textContent = "👁️ 顯示姓名版圖";
+        btn.classList.remove('warning');
+        btn.classList.add('success');
+    }
+
+    // 開關切換後立刻重新渲染畫面
+    loadVisualMap();
 };
 
 window.toggleReserve = async function (courseId, seatId, info) {
@@ -691,8 +738,11 @@ window.confirmOpRelease = function () {
 
 window.confirmOpSell = function () {
     if (!opCourseId || !opSeatId) return;
-    const name = prompt("請輸入學生姓名 (留空則為'現場保留')", "現場保留");
+    const name = prompt("請輸入學生姓名 (留空則為'保留')", "保留");
+    if (name === null) return; // 如果按下取消，直接中斷流程
+
     const phone = prompt("請輸入家長電話 (留空則為'0000000000')", "0000000000");
+    if (phone === null) return; // 如果按下取消，直接中斷流程
 
     const orderId = "ADMIN_" + Date.now();
     const seatData = {

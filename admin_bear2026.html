@@ -66,7 +66,12 @@
                 <option value="all">全部課程總覽</option>
             </select>
             <div id="visualMap" class="visual-map-container">
-                <h3>座位表監控 (點擊座位可操作)</h3>
+                <div
+                    style="display: flex; justify-content: center; align-items: center; gap: 15px; margin-bottom: 15px;">
+                    <h3 style="margin: 0;">座位表監控 (點擊操作)</h3>
+                    <button id="toggleNamesBtn" onclick="toggleSeatNames()" class="success"
+                        style="font-size: 13px; padding: 6px 12px;">顯示姓名版圖</button>
+                </div>
                 <div id="mapContent"></div>
             </div>
             <div style="margin-top:20px;">
