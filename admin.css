@@ -422,6 +422,7 @@ tr.duplicate-row {
     font-size: 12px;
     cursor: pointer;
     position: relative;
+    flex-shrink: 0;
 }
 
 .seat.sold {
