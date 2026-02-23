@@ -1,62 +1,245 @@
 <!-- 檔案：sop.html -->
-<!-- 版本：V33.2 (90秒升級 + Google驗證免責聲明) -->
+<!-- 版本：V36.2 (堅如磐石防護版) -->
 <!DOCTYPE html>
 <html lang="zh-TW">
+
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>劃位須知 - 山熊科學</title>
-    
+
     <link rel="icon" href="icon.png" type="image/png">
     <link rel="apple-touch-icon" href="icon.png">
 
     <style>
-        body { font-family: "Microsoft JhengHei", sans-serif; background-color: #f8f9fa; margin: 0; padding: 0; line-height: 1.6; }
-        
-        header { background: #2c3e50; box-shadow: 0 2px 5px rgba(0,0,0,0.1); position: sticky; top: 0; z-index: 1000; }
-        .header-container { max-width: 1200px; margin: 0 auto; padding: 10px 20px; display: flex; justify-content: center; align-items: center; gap: 20px; }
-        .header-container img { height: 60px; }
-        .header-container h1 { margin: 0; font-size: 24px; letter-spacing: 1px; color: white; }
+        body {
+            font-family: "Microsoft JhengHei", sans-serif;
+            background-color: #f8f9fa;
+            margin: 0;
+            padding: 0;
+            line-height: 1.6;
+        }
 
-        .container { max-width: 800px; margin: 40px auto; background: white; padding: 40px; border-radius: 15px; box-shadow: 0 5px 20px rgba(0,0,0,0.1); position: relative; }
-        
-        h1.page-title { color: #2c3e50; text-align: center; border-bottom: 2px solid #e74c3c; padding-bottom: 15px; margin-top: 0; }
-        
-        h3 { color: #2c3e50; margin-top: 30px; border-left: 5px solid #e74c3c; padding-left: 10px; }
-        
-        ul { padding-left: 20px; }
-        li { margin-bottom: 10px; color: #555; }
-        
-        .highlight { color: #d35400; font-weight: bold; }
-        .important-box { background-color: #fff3cd; border: 1px solid #ffeeba; color: #856404; padding: 15px; border-radius: 8px; margin-bottom: 20px; }
-        .info-box { background-color: #e8f6f3; border: 1px solid #d1f2eb; color: #0e6655; padding: 15px; border-radius: 8px; margin-bottom: 20px; }
-        .warning-box { background-color: #f8d7da; border: 1px solid #f5c6cb; color: #721c24; padding: 15px; border-radius: 8px; margin-bottom: 20px; }
-        
+        header {
+            background: #2c3e50;
+            box-shadow: 0 2px 5px rgba(0, 0, 0, 0.1);
+            position: sticky;
+            top: 0;
+            z-index: 1000;
+        }
+
+        .header-container {
+            max-width: 1200px;
+            margin: 0 auto;
+            padding: 10px 20px;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            gap: 20px;
+        }
+
+        .header-container img {
+            height: 60px;
+        }
+
+        .header-container h1 {
+            margin: 0;
+            font-size: 24px;
+            letter-spacing: 1px;
+            color: white;
+        }
+
+        .container {
+            max-width: 800px;
+            margin: 40px auto;
+            background: white;
+            padding: 40px;
+            border-radius: 15px;
+            box-shadow: 0 5px 20px rgba(0, 0, 0, 0.1);
+            position: relative;
+        }
+
+        h1.page-title {
+            color: #2c3e50;
+            text-align: center;
+            border-bottom: 2px solid #e74c3c;
+            padding-bottom: 15px;
+            margin-top: 0;
+        }
+
+        h3 {
+            color: #2c3e50;
+            margin-top: 30px;
+            border-left: 5px solid #e74c3c;
+            padding-left: 10px;
+        }
+
+        ul {
+            padding-left: 20px;
+        }
+
+        li {
+            margin-bottom: 10px;
+            color: #555;
+        }
+
+        .highlight {
+            color: #d35400;
+            font-weight: bold;
+        }
+
+        .important-box {
+            background-color: #fff3cd;
+            border: 1px solid #ffeeba;
+            color: #856404;
+            padding: 15px;
+            border-radius: 8px;
+            margin-bottom: 20px;
+        }
+
+        .info-box {
+            background-color: #e8f6f3;
+            border: 1px solid #d1f2eb;
+            color: #0e6655;
+            padding: 15px;
+            border-radius: 8px;
+            margin-bottom: 20px;
+        }
+
+        .warning-box {
+            background-color: #f8d7da;
+            border: 1px solid #f5c6cb;
+            color: #721c24;
+            padding: 15px;
+            border-radius: 8px;
+            margin-bottom: 20px;
+        }
+
         /* 資安嚇阻專用樣式 */
-        .deterrence-box { background-color: #f4f6f7; border: 2px solid #2c3e50; color: #2c3e50; padding: 20px; border-radius: 10px; margin-bottom: 30px; }
+        .deterrence-box {
+            background-color: #f4f6f7;
+            border: 2px solid #2c3e50;
+            color: #2c3e50;
+            padding: 20px;
+            border-radius: 10px;
+            margin-bottom: 30px;
+        }
 
-        .back-btn { display: inline-block; margin-bottom: 20px; color: #3498db; text-decoration: none; font-size: 16px; font-weight: bold; border: 1px solid #3498db; padding: 8px 20px; border-radius: 20px; transition: 0.3s; }
-        .back-btn:hover { background: #3498db; color: white; }
+        .back-btn {
+            display: inline-block;
+            margin-bottom: 20px;
+            color: #3498db;
+            text-decoration: none;
+            font-size: 16px;
+            font-weight: bold;
+            border: 1px solid #3498db;
+            padding: 8px 20px;
+            border-radius: 20px;
+            transition: 0.3s;
+        }
 
-        footer { text-align: center; padding: 40px; color: #999; font-size: 14px; background-color: #2c3e50; color: white; margin-top: 80px; }
+        .back-btn:hover {
+            background: #3498db;
+            color: white;
+        }
 
-        .float-line-container { position: fixed; bottom: 20px; right: 20px; display: flex; flex-direction: column; gap: 15px; z-index: 9999; align-items: center; }
-        .line-btn { width: 65px; height: 65px; border-radius: 50%; box-shadow: 0 4px 12px rgba(0,0,0,0.3); cursor: pointer; display: flex; flex-direction: column; align-items: center; justify-content: center; text-decoration: none; color: white; font-family: Arial, sans-serif; transition: transform 0.2s; animation: bounce 2s ease-in-out infinite; }
-        .line-btn:active { transform: scale(0.9); animation: none; }
-        .line-btn span.small { font-size: 10px; font-weight: bold; margin-bottom: 2px; letter-spacing: 0px; }
-        .line-btn span.large { font-size: 18px; font-weight: 900; letter-spacing: 1px; }
-        
-        .btn-bear { background-color: #06C755; }
-        .btn-high { background-color: #0077CC; animation-delay: 1s; }
+        footer {
+            text-align: center;
+            padding: 40px;
+            color: #999;
+            font-size: 14px;
+            background-color: #2c3e50;
+            color: white;
+            margin-top: 80px;
+        }
 
-        @keyframes bounce { 0%, 20%, 50%, 80%, 100% { transform: translateY(0); } 40% { transform: translateY(-10px); } 60% { transform: translateY(-5px); } }
+        .float-line-container {
+            position: fixed;
+            bottom: 20px;
+            right: 20px;
+            display: flex;
+            flex-direction: column;
+            gap: 15px;
+            z-index: 9999;
+            align-items: center;
+        }
+
+        .line-btn {
+            width: 65px;
+            height: 65px;
+            border-radius: 50%;
+            box-shadow: 0 4px 12px rgba(0, 0, 0, 0.3);
+            cursor: pointer;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            text-decoration: none;
+            color: white;
+            font-family: Arial, sans-serif;
+            transition: transform 0.2s;
+            animation: bounce 2s ease-in-out infinite;
+        }
+
+        .line-btn:active {
+            transform: scale(0.9);
+            animation: none;
+        }
+
+        .line-btn span.small {
+            font-size: 10px;
+            font-weight: bold;
+            margin-bottom: 2px;
+            letter-spacing: 0px;
+        }
+
+        .line-btn span.large {
+            font-size: 18px;
+            font-weight: 900;
+            letter-spacing: 1px;
+        }
+
+        .btn-bear {
+            background-color: #06C755;
+        }
+
+        .btn-high {
+            background-color: #0077CC;
+            animation-delay: 1s;
+        }
+
+        @keyframes bounce {
+
+            0%,
+            20%,
+            50%,
+            80%,
+            100% {
+                transform: translateY(0);
+            }
+
+            40% {
+                transform: translateY(-10px);
+            }
+
+            60% {
+                transform: translateY(-5px);
+            }
+        }
 
         @media (max-width: 768px) {
-            .container { padding: 20px; margin: 20px auto; }
-            h1.page-title { font-size: 22px; }
+            .container {
+                padding: 20px;
+                margin: 20px auto;
+            }
+
+            h1.page-title {
+                font-size: 22px;
+            }
         }
     </style>
 </head>
+
 <body>
 
     <header>
@@ -70,9 +253,10 @@
     <div class="container">
         <a href="index.html" class="back-btn">⬅ 回首頁</a>
         <h1 class="page-title">📜 劃位報名攻略與須知</h1>
-        
+
         <div class="deterrence-box">
-            <div style="font-size: 18px; font-weight: bold; margin-bottom: 10px; display: flex; align-items: center; gap: 8px;">
+            <div
+                style="font-size: 18px; font-weight: bold; margin-bottom: 10px; display: flex; align-items: center; gap: 8px;">
                 🛡️ 公平劃位環境維護聲明
             </div>
             <div style="font-size: 14px; line-height: 1.8;">
@@ -93,8 +277,10 @@
         <p>為防堵黃牛與機器人作弊，系統強制啟用 Google 安全防護機制。在劃位尖峰時刻，若您遇到頻繁的圖片驗證（選消防栓、公車），通常是因為觸發了以下四種 Google AI 防護判定：</p>
         <ul>
             <li><strong>短時間流量激增 (流量洪峰)：</strong> 劃位當下數百人同時湧入，Google 為了保護伺服器，會自動切換為「全民皆兵模式」，對所有人進行較嚴格的審查。</li>
-            <li><strong>共用 IP 連坐處分：</strong> 若您在公司大樓、醫院或使用社區寬頻，同一個區域網路發出大量請求，容易被誤判為惡意攻擊。<strong style="color:#27ae60;">建議：關閉 WiFi，改用個人 4G/5G 行動網路。</strong></li>
-            <li><strong>瀏覽器擴充功能干擾：</strong> 強力的廣告攔截器 (AdBlock) 會阻斷 Google 讀取您的瀏覽信任分數，導致它只能用最原始的選圖片來考驗您。<strong style="color:#27ae60;">建議：劃位前暫時關閉擋廣告套件。</strong></li>
+            <li><strong>共用 IP 連坐處分：</strong> 若您在公司大樓、醫院或使用社區寬頻，同一個區域網路發出大量請求，容易被誤判為惡意攻擊。<strong
+                    style="color:#27ae60;">建議：關閉 WiFi，改用個人 4G/5G 行動網路。</strong></li>
+            <li><strong>瀏覽器擴充功能干擾：</strong> 強力的廣告攔截器 (AdBlock) 會阻斷 Google 讀取您的瀏覽信任分數，導致它只能用最原始的選圖片來考驗您。<strong
+                    style="color:#27ae60;">建議：劃位前暫時關閉擋廣告套件。</strong></li>
             <li><strong>動作過於「果斷」：</strong> 若您一進網頁，眼睛都沒看就瞬間神速點擊驗證碼，AI 會判斷您的軌跡缺乏人類的「猶豫感」，進而判定為腳本。</li>
         </ul>
         <div class="info-box" style="background:#fff5f5; border-color:#e74c3c; color:#c0392b;">
@@ -109,7 +295,7 @@
             <li><strong>家長手機：</strong>請務必填寫正確的 <span class="highlight">10 碼手機號碼</span> (如 0912345678)。</li>
             <li><em>注意：系統將以「家長手機」作為後續訂單查詢與身分驗證的唯一依據。</em></li>
         </ul>
-        
+
         <div class="info-box">
             👩‍👧‍👦 <strong>【家有多寶作戰指南】</strong><br>
             若您需同時為<strong>兩位以上</strong>的孩子劃不同課程，<strong style="color:#d35400;">強烈建議您「分散火力」！</strong><br>
@@ -120,7 +306,8 @@
         <h3>3. 系統規則與注意事項</h3>
         <ul>
             <li><strong>限時填寫：</strong>點選座位後，系統會為您專屬鎖定保留 <span class="highlight">90 秒</span>。若超時未送出，座位將自動釋出給下一位使用者。</li>
-            <li><strong>🚫 禁止雙重劃位：</strong>同一位學生在同一門課程中，僅能佔用一個座位。系統會定期偵測，若發現重複佔位，將保留第一筆並 <span class="highlight">直接取消後續座位</span>，請勿嘗試多佔位。</li>
+            <li><strong>🚫 禁止雙重劃位：</strong>同一位學生在同一門課程中，僅能佔用一個座位。系統會定期偵測，若發現重複佔位，將保留第一筆並 <span
+                    class="highlight">直接取消後續座位</span>，請勿嘗試多佔位。</li>
             <li><strong>資料修改：</strong>劃位送出後，學生姓名無法自行修改。若需更正，請直接聯繫官方 LINE。</li>
         </ul>
 
@@ -143,7 +330,7 @@
     </div>
 
     <footer>
-        &copy; 2025 山熊科學實驗教室 | 系統開發：Sciencebear Tech Team
+        &copy; 2026 山熊科學實驗教室 | 系統開發：Sciencebear Tech Team
     </footer>
 
     <div class="float-line-container">
@@ -158,4 +345,5 @@
     </div>
 
 </body>
+
 </html>
