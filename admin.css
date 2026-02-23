@@ -436,8 +436,6 @@ tr.duplicate-row {
 
 /* ★★★ 新增：顯示姓名的雙排融合模式樣式 ★★★ */
 .seat.show-names {
-    height: 50px;
-    width: 45px;
     flex-direction: column;
     justify-content: center;
     align-items: center;
@@ -454,7 +452,7 @@ tr.duplicate-row {
 }
 
 .seat .seat-name {
-    font-size: 11px;
+    font-size: 10px;
     font-weight: bold;
     line-height: 1.1;
     text-align: center;
