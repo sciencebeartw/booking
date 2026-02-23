@@ -412,8 +412,8 @@ tr.duplicate-row {
 }
 
 .seat {
-    width: 40px;
-    height: 40px;
+    width: 45px;
+    height: 45px;
     background: #eee;
     border-radius: 4px;
     display: flex;
@@ -452,7 +452,7 @@ tr.duplicate-row {
 }
 
 .seat .seat-name {
-    font-size: 10px;
+    font-size: 11px;
     font-weight: bold;
     line-height: 1.1;
     text-align: center;
