@@ -106,6 +106,22 @@
           "
                 }
             }
+        },
+        "archived_seats": {
+            ".read": "auth != null && auth.token.email != null && root.child('admins').child(auth.token.email.replace('.', ',')).exists()",
+            ".write": "auth != null && auth.token.email != null && root.child('admins').child(auth.token.email.replace('.', ',')).exists()"
+        },
+        "trial_events": {
+            ".read": "auth != null && auth.token.email != null && root.child('admins').child(auth.token.email.replace('.', ',')).exists()",
+            "current_token": {
+                ".read": true,
+                ".write": "auth != null && auth.token.email != null && root.child('admins').child(auth.token.email.replace('.', ',')).exists()"
+            },
+            "registrations": {
+                "$registration_id": {
+                    ".write": "(auth != null && auth.token.email != null && root.child('admins').child(auth.token.email.replace('.', ',')).exists()) || (!data.exists() && newData.exists() && root.child('trial_events/current_token').exists() && newData.child('secureToken').isString() && newData.child('secureToken').val() === root.child('trial_events/current_token').val())"
+                }
+            }
         }
     }
 }

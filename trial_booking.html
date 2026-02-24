@@ -1,0 +1,890 @@
+<!-- 檔案：trial_booking.html -->
+<!-- 版本：V1.0 (山熊科學 - 試聽報名系統 終極智能版) -->
+<!DOCTYPE html>
+<html lang="zh-TW">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>山熊科學 - 國一試聽預約系統</title>
+    <link rel="icon" href="icon.png" type="image/png">
+    <link rel="apple-touch-icon" href="icon.png">
+
+    <!-- 確保 onRecaptchaSuccess 優先載入，解決模組非同步載入這段空窗期 -->
+    <script>
+        window.onRecaptchaSuccess = function (token) {
+            document.getElementById('gateway-section').style.display = 'none';
+            document.getElementById('form-section').style.display = 'block';
+
+            // 嘗試啟動倒數計時，若模組未載入完畢則等待
+            if (window.startCountdown) {
+                window.startCountdown();
+            } else {
+                let wait = setInterval(() => {
+                    if (window.startCountdown) {
+                        window.startCountdown();
+                        clearInterval(wait);
+                    }
+                }, 100);
+            }
+        }
+    </script>
+
+    <!-- Google reCAPTCHA -->
+    <script src="https://www.google.com/recaptcha/api.js?hl=zh-TW" async defer></script>
+    <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
+    <style>
+        body {
+            font-family: "Microsoft JhengHei", sans-serif;
+            background-color: #f4f4f9;
+            text-align: center;
+            margin: 0;
+            padding: 0;
+            color: #333;
+        }
+
+        header {
+            background: #2c3e50;
+            padding: 15px 20px;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            gap: 20px;
+            color: white;
+            box-shadow: 0 2px 5px rgba(0, 0, 0, 0.1);
+            margin-bottom: 20px;
+        }
+
+        header img {
+            height: 60px;
+        }
+
+        header h1 {
+            margin: 0;
+            font-size: 24px;
+            letter-spacing: 1px;
+        }
+
+        .main-container {
+            background: white;
+            max-width: 800px;
+            margin: 20px auto;
+            padding: 40px;
+            border-radius: 15px;
+            box-shadow: 0 5px 15px rgba(0, 0, 0, 0.08);
+            text-align: left;
+        }
+
+        /* 階段一：防洪閘門 */
+        #gateway-section {
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            min-height: 40vh;
+        }
+
+        #gateway-section h2 {
+            color: #e67e22;
+            margin-bottom: 10px;
+        }
+
+        #gateway-section p {
+            color: #666;
+            margin-bottom: 20px;
+        }
+
+        /* 階段二：正式表單區 */
+        #form-section {
+            display: none;
+            /* 驗證過關後顯示 */
+            animation: fadeIn 0.5s ease-in-out;
+        }
+
+        @keyframes fadeIn {
+            from {
+                opacity: 0;
+                transform: translateY(10px);
+            }
+
+            to {
+                opacity: 1;
+                transform: translateY(0);
+            }
+        }
+
+        .form-group {
+            margin-bottom: 25px;
+        }
+
+        .form-group label {
+            display: block;
+            font-weight: bold;
+            margin-bottom: 8px;
+            color: #2c3e50;
+        }
+
+        .form-group input[type="text"],
+        .form-group input[type="tel"],
+        .form-group select {
+            width: 100%;
+            padding: 12px;
+            border: 1px solid #ddd;
+            border-radius: 8px;
+            font-size: 16px;
+            box-sizing: border-box;
+            background-color: #f9f9f9;
+            transition: all 0.3s;
+        }
+
+        .form-group input:focus,
+        .form-group select:focus {
+            outline: none;
+            border-color: #3498db;
+            box-shadow: 0 0 5px rgba(52, 152, 219, 0.3);
+            background-color: #fff;
+        }
+
+        /* ====== 志願序大一統統一樣式 ====== */
+        .unified-preferences {
+            margin-top: 15px;
+        }
+
+        .preference-item {
+            display: none;
+            /* 預設隱藏，由 JS 控制顯示 */
+            background: #fdfefe;
+            border: 1px solid #e0e0e0;
+            padding: 15px 20px;
+            border-radius: 10px;
+            margin-bottom: 15px;
+            box-shadow: 0 2px 5px rgba(0, 0, 0, 0.02);
+            animation: fadeIn 0.3s ease-in-out;
+        }
+
+        .preference-item.active {
+            display: block;
+        }
+
+        /* 第一個志願常駐顯示，強調邊框 */
+        #pref-block-1 {
+            display: block;
+            border-left: 5px solid #3498db;
+        }
+
+        .preference-item label {
+            color: #2980b9;
+            font-size: 16px;
+        }
+
+        .intent-select {
+            width: 100%;
+            padding: 12px;
+            border: 1px solid #ccc;
+            border-radius: 8px;
+            font-size: 16px;
+            background-color: #fff;
+            margin-top: 8px;
+            cursor: pointer;
+        }
+
+        .intent-select optgroup {
+            font-weight: bold;
+            color: #2c3e50;
+        }
+
+        .intent-select option {
+            font-weight: normal;
+            color: #333;
+        }
+
+        /* 規則聲明區 */
+        .rules-container {
+            background-color: #fff3e0;
+            border-left: 5px solid #e67e22;
+            padding: 20px;
+            margin: 30px 0;
+            border-radius: 4px;
+        }
+
+        .rules-container h3 {
+            color: #d35400;
+            margin-top: 0;
+            font-size: 18px;
+            display: flex;
+            align-items: center;
+            gap: 10px;
+        }
+
+        .rules-container ul {
+            padding-left: 20px;
+            color: #555;
+            line-height: 1.6;
+            font-size: 14px;
+        }
+
+        .rules-container li {
+            margin-bottom: 8px;
+        }
+
+        .rules-checkbox {
+            margin-top: 15px;
+            display: flex;
+            align-items: center;
+            font-weight: bold;
+            color: #c0392b;
+            background: #fdedec;
+            padding: 10px 15px;
+            border-radius: 5px;
+            border: 1px solid #fadbd8;
+        }
+
+        .rules-checkbox input {
+            transform: scale(1.5);
+            margin-right: 10px;
+        }
+
+        /* 送出按鈕區 */
+        .submit-area {
+            text-align: center;
+            margin-top: 30px;
+            padding-top: 20px;
+            border-top: 1px solid #eee;
+            position: relative;
+        }
+
+        .btn-submit {
+            width: 100%;
+            max-width: 400px;
+            padding: 16px;
+            font-size: 20px;
+            font-weight: bold;
+            border: none;
+            border-radius: 30px;
+            cursor: pointer;
+            transition: all 0.3s;
+            display: inline-flex;
+            justify-content: center;
+            align-items: center;
+            gap: 10px;
+        }
+
+        .btn-locked {
+            background-color: #bdc3c7;
+            color: #7f8c8d;
+            cursor: not-allowed;
+            box-shadow: inset 0 2px 4px rgba(0, 0, 0, 0.1);
+        }
+
+        .btn-unlocked {
+            background-color: #2ecc71;
+            color: white;
+            box-shadow: 0 4px 15px rgba(46, 204, 113, 0.4);
+        }
+
+        .btn-unlocked:hover {
+            background-color: #27ae60;
+            transform: translateY(-2px);
+        }
+
+        .timer-text {
+            font-family: monospace;
+            font-size: 22px;
+            letter-spacing: 2px;
+        }
+
+        /* 終極防禦：認知挑戰區塊 */
+        #anti-cyborg-challenge {
+            display: none;
+            /* 倒數結束後才瞬間出現 */
+            background: rgba(44, 62, 80, 0.95);
+            position: fixed;
+            top: 0;
+            left: 0;
+            right: 0;
+            bottom: 0;
+            z-index: 9999;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            padding: 20px;
+            animation: fadeInFast 0.2s ease-out;
+        }
+
+        @keyframes fadeInFast {
+            from {
+                opacity: 0;
+            }
+
+            to {
+                opacity: 1;
+            }
+        }
+
+        .challenge-box {
+            background: white;
+            padding: 25px;
+            /* 縮小內距 */
+            border-radius: 12px;
+            text-align: center;
+            box-shadow: 0 10px 40px rgba(0, 0, 0, 0.3);
+            max-width: 320px;
+            /* 縮小最大寬度 */
+            width: 85%;
+            position: relative;
+            /* 為了隨機位置抖動 */
+        }
+
+        .challenge-instruction {
+            font-size: 22px;
+            font-weight: bold;
+            color: #c0392b;
+            margin-bottom: 30px;
+            line-height: 1.5;
+        }
+
+        .challenge-target-word {
+            display: inline-block;
+            background: #f1c40f;
+            padding: 4px 12px;
+            border-radius: 6px;
+            color: #000;
+            border: 2px solid #f39c12;
+        }
+
+        .challenge-buttons {
+            display: flex;
+            flex-wrap: wrap;
+            justify-content: center;
+            gap: 15px;
+        }
+
+        .btn-challenge {
+            padding: 15px 25px;
+            font-size: 18px;
+            font-weight: bold;
+            border: 2px solid #34495e;
+            background: #fff;
+            color: #34495e;
+            border-radius: 10px;
+            cursor: pointer;
+            transition: all 0.2s;
+            user-select: none;
+            /* 防止腳本選取文字 */
+        }
+
+        .btn-challenge:hover {
+            background: #ecf0f1;
+            transform: scale(1.05);
+        }
+
+        .btn-challenge:active {
+            transform: scale(0.95);
+        }
+
+        /* 手機版適配 */
+        @media (max-width: 600px) {
+            .preference-row {
+                flex-direction: column;
+            }
+
+            .main-container {
+                padding: 20px;
+                margin: 10px;
+            }
+
+            .challenge-instruction {
+                font-size: 18px;
+            }
+
+            .btn-challenge {
+                padding: 12px 20px;
+                font-size: 16px;
+                width: auto;
+            }
+        }
+    </style>
+</head>
+
+<body>
+    <header>
+        <img src="logo1.png" alt="山熊科學">
+        <h1>國一新生試聽預約系統</h1>
+    </header>
+
+    <div class="main-container">
+
+        <!-- 階段一：防洪閘門 -->
+        <div id="gateway-section">
+            <h2>🛡️ 系統安檢驗證</h2>
+            <p>為了確保報名公平性，阻擋外掛腳本。<br>請先完成下方驗證，即可進入候位區預填志願。</p>
+            <div id="recaptcha-wrapper" class="g-recaptcha" data-sitekey="6LdkWVwsAAAAAKBQSZKiPxOQ7E3ZbL0V-zaclqt5"
+                data-callback="onRecaptchaSuccess"></div>
+        </div>
+
+        <!-- 階段二：正式表單區 -->
+        <div id="form-section">
+            <h2 style="color: #2c3e50; border-bottom: 2px solid #eee; padding-bottom: 10px; margin-bottom: 20px;">📋
+                試聽對象與聯繫方式</h2>
+
+            <div class="preference-row">
+                <div class="preference-col">
+                    <div class="form-group">
+                        <label for="studentName">學生姓名 <span style="color:red">*</span></label>
+                        <input type="text" id="studentName" placeholder="請輸入學生真實姓名" required>
+                    </div>
+                </div>
+                <div class="preference-col">
+                    <div class="form-group">
+                        <label for="parentName">家長姓名 <span style="color:red">*</span></label>
+                        <input type="text" id="parentName" placeholder="請輸入家長姓名" required>
+                    </div>
+                </div>
+            </div>
+
+            <div class="form-group">
+                <label for="parentPhone">家長手機 <span style="color:red">*</span></label>
+                <input type="tel" id="parentPhone" placeholder="09XX-XXX-XXX (這是後續發送名額通知的重要依據)" required>
+            </div>
+
+            <h2
+                style="color: #2c3e50; border-bottom: 2px solid #eee; padding-bottom: 10px; margin-top: 40px; margin-bottom: 20px;">
+                🎓 試聽志願序選擇</h2>
+            <p style="color: #666; font-size: 14px; margin-bottom: 15px;">請依序填寫您的志願。第一志願為必填，選完第一志願後將解鎖第二志願，最多可填寫六個志願。
+            </p>
+
+            <div class="unified-preferences" id="preferenceContainer">
+                <!-- 由 JS 動態生成 6 個志願框框 -->
+            </div>
+
+            <!-- 霸氣聲明區 -->
+            <div class="rules-container">
+                <h3>🚨 報名排位霸王規則聲明</h3>
+                <ul>
+                    <li><strong>時間絕對優先：</strong> 全國統一由您最後送出瞬間的「毫秒紀錄」做為排榜順序，且系統已設有智慧挪位機制，絕對公平。</li>
+                    <li><strong>防佔位條款：</strong> 凡獲派【同天雙科連排】者，若日後因故取消其中一科，為保他人權益，另一科之試聽資格將連動一併取消。</li>
+                    <li><strong>最終確認：</strong> 送出表單為志願與時間登錄。最終正取或候補結果，一律以山熊專人後續 LINE 發送之「正式確認憑證」為準。</li>
+                </ul>
+                <label class="rules-checkbox">
+                    <input type="checkbox" id="rulesAgreed">
+                    我已詳閱並同意上述試聽排位規則，了解違反連動條款將喪失資格。
+                </label>
+            </div>
+
+            <!-- 倒數與送出區 -->
+            <div class="submit-area">
+                <button type="button" id="mainSubmitBtn" class="btn-submit btn-locked"
+                    onclick="triggerAntiCyborgChallenge()" disabled>
+                    <span id="btnIcon">⏳</span>
+                    <span id="btnText">距離開放還剩 <span id="countdownDisplay" class="timer-text">--:--:--</span></span>
+                </button>
+                <div id="conflictWarning" style="color: #e74c3c; font-weight: bold; margin-top: 15px; display: none;">
+                    ⚠️ 衝堂警告：您的數學與自然選擇了同一時段，請修正！
+                </div>
+            </div>
+
+        </div>
+    </div>
+
+    <!-- 終極防禦：認知挑戰區塊 (全螢幕蓋板) -->
+    <div id="anti-cyborg-challenge">
+        <div class="challenge-box" id="challengeBox">
+            <div class="challenge-instruction" id="challengeInstruction">
+                🤖 為了證明您是人類，請點擊 <span class="challenge-target-word" id="targetWord"></span> 送出表單。
+            </div>
+            <div class="challenge-buttons" id="challengeButtonsArea">
+                <!-- 動態注入按鈕 -->
+            </div>
+
+            <p style="color: #7f8c8d; font-size: 14px; margin-top: 20px;">
+                💡 點錯將啟動防護鎖定 5 秒，請看清楚再點擊。
+            </p>
+        </div>
+    </div>
+
+    <script type="module">
+        import { db, ref, set, push, get, child } from './firebase-config.js';
+        import { serverTimestamp } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-database.js";
+
+        // 設定報名開放時間 (假設為今天 20:00:00)
+        // 開發測試期間，先設定為未來 1 分鐘後
+        const OPEN_DATE = new Date();
+        OPEN_DATE.setMinutes(OPEN_DATE.getMinutes() + 1);
+        OPEN_DATE.setSeconds(0);
+
+        let countdownTimer = null;
+        let isSystemOpen = false;
+
+        // 1. reCAPTCHA 成功回呼
+        window.onRecaptchaSuccess = function (token) {
+            // 驗證過關，隱藏閘門，顯示表單
+            document.getElementById('gateway-section').style.display = 'none';
+            document.getElementById('form-section').style.display = 'block';
+
+            // 啟動倒數計時
+            startCountdown();
+        }
+
+        // ==========================================
+        // 🌟 志願序動態生成與連動邏輯
+        // ==========================================
+        const MAX_PREFERENCES = 6;
+        const preferenceContainer = document.getElementById('preferenceContainer');
+
+        // 定義大一統下拉選單的 HTML 內容 (含分類與結構化 value)
+        const PREFERENCE_OPTIONS_HTML = `
+            <option value="">請選擇 🔽</option>
+            <optgroup label="🌟 雙科連排系列">
+                <option value="both_any">🥇 兩科都上，所有時段皆可 (💡優先同日，滿則拆天，再滿保底單科)</option>
+                <option value="both_0501">限 5/01 (五) 雙科連排 (💡若客滿則進入該日候補)</option>
+                <option value="both_0509">限 5/09 (六) 雙科連排 (💡若客滿則進入該日候補)</option>
+            </optgroup>
+            
+            <optgroup label="📘 單科數學系列">
+                <option value="math_any">單補數學，所有時段皆可 (💡有空位即安排)</option>
+                <option value="math_0501_1300">限 5/01 (五) 下午 1:00 - 2:30 數學</option>
+                <option value="math_0501_1445">限 5/01 (五) 下午 2:45 - 4:15 數學</option>
+                <option value="math_0509_1315">限 5/09 (六) 下午 1:15 - 2:45 數學</option>
+                <option value="math_0509_1500">限 5/09 (六) 下午 3:00 - 4:30 數學</option>
+            </optgroup>
+            
+            <optgroup label="📗 單科自然系列">
+                <option value="sci_any">單補自然，所有時段皆可 (💡有空位即安排)</option>
+                <option value="sci_0501_1300">限 5/01 (五) 下午 1:00 - 2:30 自然</option>
+                <option value="sci_0501_1445">限 5/01 (五) 下午 2:45 - 4:15 自然</option>
+                <option value="sci_0509_1315">限 5/09 (六) 下午 1:15 - 2:45 自然</option>
+                <option value="sci_0509_1500">限 5/09 (六) 下午 3:00 - 4:30 自然</option>
+            </optgroup>
+        `;
+
+        // 初始化 6 個志願框
+        for (let i = 1; i <= MAX_PREFERENCES; i++) {
+            const isRequired = i === 1 ? '<span style="color:red">* 必填</span>' : ' <span style="color:#999; font-size:14px;">(選填)</span>';
+            const prefDiv = document.createElement('div');
+            prefDiv.className = 'preference-item' + (i === 1 ? ' active' : '');
+            prefDiv.id = `pref-block-${i}`;
+
+            prefDiv.innerHTML = `
+                <label for="pref-${i}">第 ${i} 志願 ${isRequired}</label>
+                <select id="pref-${i}" class="intent-select preference-dropdown" data-level="${i}">
+                    ${PREFERENCE_OPTIONS_HTML}
+                </select>
+            `;
+            preferenceContainer.appendChild(prefDiv);
+        }
+
+        window.updatePreferenceOptions = function () {
+            const allSelects = document.querySelectorAll('.preference-dropdown');
+            const selectedValues = Array.from(allSelects).map(s => s.value).filter(v => v !== "");
+
+            allSelects.forEach(select => {
+                const currentVal = select.value;
+                Array.from(select.options).forEach(option => {
+                    if (option.value === "") return;
+
+                    if (selectedValues.includes(option.value) && currentVal !== option.value) {
+                        option.disabled = true;
+                        option.style.backgroundColor = '#f4f6f7';
+                        option.style.color = '#bdc3c7';
+                    } else {
+                        option.disabled = false;
+                        option.style.backgroundColor = '';
+                        option.style.color = '';
+                    }
+                });
+            });
+        };
+
+        // 綁定連動事件：填完第 N 個，顯示第 N+1 個
+        document.querySelectorAll('.preference-dropdown').forEach(select => {
+            select.addEventListener('change', function () {
+                const level = parseInt(this.getAttribute('data-level'));
+                const val = this.value;
+
+                if (val && level < MAX_PREFERENCES) {
+                    // 如果有選值，且還沒到最後一個，就打開下一個
+                    const nextBlock = document.getElementById(`pref-block-${level + 1}`);
+                    if (nextBlock) nextBlock.classList.add('active');
+                }
+
+                window.updatePreferenceOptions();
+
+                // 每次下拉改變都重新檢查整個表單是否可送
+                window.checkFormValidity();
+            });
+        });
+
+        // 3. 倒數計時邏輯
+        // 3. 倒數計時邏輯
+        window.startCountdown = function () {
+            const display = document.getElementById('countdownDisplay');
+            const btn = document.getElementById('mainSubmitBtn');
+            const btnIcon = document.getElementById('btnIcon');
+            const btnText = document.getElementById('btnText');
+
+            countdownTimer = setInterval(() => {
+                const now = new Date();
+                const diff = OPEN_DATE.getTime() - now.getTime();
+
+                if (diff <= 0) {
+                    // 時間到！解鎖按鈕
+                    clearInterval(countdownTimer);
+                    isSystemOpen = true;
+
+                    display.innerText = "00:00:00.00";
+                    btn.classList.remove('btn-locked');
+                    btn.classList.add('btn-unlocked');
+                    btn.disabled = false;
+                    btnIcon.innerText = "✅";
+
+                    // 文字變成固定
+                    btnText.innerHTML = "送出報名";
+
+                    window.checkFormValidity();
+                    return;
+                }
+
+                // 計算剩餘時間
+                const hrs = Math.floor((diff % (1000 * 60 * 60 * 24)) / (1000 * 60 * 60));
+                const mins = Math.floor((diff % (1000 * 60 * 60)) / (1000 * 60));
+                const secs = Math.floor((diff % (1000 * 60)) / 1000);
+                const ms = Math.floor((diff % 1000) / 10);
+
+                display.innerText =
+                    String(hrs).padStart(2, '0') + ":" +
+                    String(mins).padStart(2, '0') + ":" +
+                    String(secs).padStart(2, '0') + "." +
+                    String(ms).padStart(2, '0');
+            }, 50);
+        };
+
+        // 4. 表單防呆與驗證
+        window.checkFormValidity = function () {
+            if (!isSystemOpen) return false;
+
+            const rulesAgreed = document.getElementById('rulesAgreed').checked;
+            const btn = document.getElementById('mainSubmitBtn');
+            const pref1 = document.getElementById('pref-1').value;
+
+            let isValid = true;
+
+            // 基本資料必填檢查
+            if (!document.getElementById('studentName').value || !document.getElementById('parentPhone').value) {
+                isValid = false;
+            }
+
+            // 第一志願必填
+            if (!pref1) {
+                isValid = false;
+            }
+
+            if (!rulesAgreed) isValid = false;
+
+            // 切換按鈕樣式
+            if (isValid && isSystemOpen) {
+                btn.classList.remove('btn-locked');
+                btn.classList.add('btn-unlocked');
+            } else {
+                btn.classList.remove('btn-unlocked');
+                btn.classList.add('btn-locked');
+            }
+
+            return isValid;
+        }
+
+        // 綁定輸入檢查
+        document.querySelectorAll('input').forEach(el => {
+            el.addEventListener('change', window.checkFormValidity);
+            el.addEventListener('keyup', window.checkFormValidity);
+        });
+
+        // ==========================================
+        // 🚀 終極防禦：隨機座標確認框與盲點懲罰 (Anti-Clicker)
+        // ==========================================
+
+        let penaltyTimeout = null;
+        let incorrectAttempts = 0;
+
+        window.triggerAntiCyborgChallenge = function () {
+            // 再次檢查表單與規約
+            if (!document.getElementById('rulesAgreed').checked) {
+                Swal.fire({ icon: 'warning', title: '請先同意規則', text: '您必須同意排位規則聲明才能送出！' });
+                return;
+            }
+            if (!document.getElementById('studentName').value || !document.getElementById('parentPhone').value) {
+                Swal.fire({ icon: 'warning', title: '資料未填齊', text: '請輸入學生姓名與家長手機。' });
+                return;
+            }
+            if (!window.checkFormValidity()) {
+                Swal.fire({ icon: 'error', title: '無法送出', text: '選項有誤或時間發生衝突。' });
+                return;
+            }
+
+            // 打開全螢幕蓋板
+            const challengeUI = document.getElementById('anti-cyborg-challenge');
+            challengeUI.style.display = 'flex';
+
+            // 重置並生成隨機位置確認框
+            generateRandomConfirmBox();
+        }
+
+        window.generateRandomConfirmBox = function () {
+            if (penaltyTimeout) return; // 正在處罰中不重新生成
+
+            const box = document.getElementById('challengeBox');
+
+            // 隨機大幅度偏移整個框框位置 (防止腳本定點連點)
+            // 假設螢幕寬高，我們讓它在 -150px 到 150px 之間隨機平移
+            const offsetX = (Math.random() - 0.5) * 300;
+            const offsetY = (Math.random() - 0.5) * 300;
+            box.style.transform = `translate(${offsetX}px, ${offsetY}px)`;
+
+            box.innerHTML = `
+                <div class="challenge-instruction" style="font-size: 20px;">
+                    ⚠️ 請確認您已詳閱排位規則並送出？
+                </div>
+                <div class="challenge-buttons">
+                    <button type="button" class="btn-challenge" id="cancelConfirmBtn" style="background:#95a5a6; color:white; border:none; padding:10px 25px; font-size:18px;">返回修改</button>
+                    <button type="button" class="btn-challenge" id="finalConfirmBtn" style="background:#2ecc71; color:white; border:none; padding:10px 25px; font-size:18px;">確定送出</button>
+                </div>
+                <p style="color: #7f8c8d; font-size: 13px; margin-top: 15px;">💡 警告：若未點擊確認按鈕達 3 次，<br>將啟動防護鎖定 5 秒。</p>
+            `;
+
+            document.getElementById('cancelConfirmBtn').onclick = function (e) {
+                e.stopPropagation();
+                document.getElementById('anti-cyborg-challenge').style.display = 'none';
+            };
+
+            document.getElementById('finalConfirmBtn').onclick = function (e) {
+                e.stopPropagation(); // 阻止事件冒泡到背景的盲點偵測
+                if (penaltyTimeout) return;
+
+                // 成功！抓取絕對毫秒時間並發送資料
+                const finalTimestampMs = Date.now();
+                window.submitFinalData(finalTimestampMs);
+            };
+        }
+
+        // 防盲點：點擊到容器背景也算錯誤
+        document.getElementById('anti-cyborg-challenge').addEventListener('click', function (e) {
+            // 只有點在黑灰背景 (而非白框內部) 算異常連點
+            if (e.target.id === 'anti-cyborg-challenge') {
+                incorrectAttempts++;
+                if (incorrectAttempts >= 3) {
+                    triggerPenalty("偵測到異常盲點行為！<br>防護機制啟動，鎖定表單 5 秒。");
+                }
+            }
+        });
+
+        window.triggerPenalty = function (msg) {
+            incorrectAttempts = 0;
+            const box = document.getElementById('challengeBox');
+
+            // 鎖定狀態 UI 置中重置
+            box.style.transform = 'translate(0px, 0px)';
+            box.innerHTML = `<h2 style="color:#e74c3c;">🚨 驗證失敗</h2><p style="font-size:18px;">${msg}</p><div class="timer-text" id="penaltyTimer" style="font-size:30px; margin-top:20px; color:#c0392b;">05</div>`;
+
+            let secondsLeft = 5;
+            penaltyTimeout = setInterval(() => {
+                secondsLeft--;
+                document.getElementById('penaltyTimer').innerText = String(secondsLeft).padStart(2, '0');
+                if (secondsLeft <= 0) {
+                    clearInterval(penaltyTimeout);
+                    penaltyTimeout = null;
+                    // 處罰結束，重新生成隨機確認框
+                    window.generateRandomConfirmBox();
+                }
+            }, 1000);
+        }
+
+        window.submitFinalData = async function (msTimestamp) {
+            // 隱藏驗證區，換上 Loading Spinner
+            const box = document.getElementById('challengeBox');
+            // 固定住高度防止突然被壓縮變成「小視窗」
+            box.style.minHeight = box.offsetHeight + 'px';
+            box.style.display = 'flex';
+            box.style.flexDirection = 'column';
+            box.style.justifyContent = 'center';
+            box.style.transform = 'translate(0px, 0px)';
+            box.innerHTML = '<h2>🚀 正在安全傳送中...</h2><p style="color:#7f8c8d;">此過程將採用嚴格時間戳記認證</p>';
+
+            // 🔐 緊急抓取資料庫目前的通行 Token (防 API 繞過)
+            let currentToken = "";
+            try {
+                const tokenSnapshot = await get(child(ref(db), 'trial_events/current_token'));
+                if (tokenSnapshot.exists()) {
+                    currentToken = tokenSnapshot.val();
+                }
+            } catch (err) {
+                console.warn("無法取得安全憑證 (如非管理員，仍可能被規則阻擋)", err);
+            }
+
+            // 收集所有 6 個志願的資料
+            let preferences = {};
+            for (let i = 1; i <= MAX_PREFERENCES; i++) {
+                const element = document.getElementById(`pref-${i}`);
+                if (element) {
+                    preferences[`choice${i}`] = element.value || "none";
+                }
+            }
+
+            const formData = {
+                studentName: document.getElementById('studentName').value,
+                parentName: document.getElementById('parentName').value,
+                parentPhone: document.getElementById('parentPhone').value,
+                preferences: preferences,
+                clientTimestampMs: msTimestamp, // 精準到毫秒
+                status: 'pending', // 狀態：待分發
+                secureToken: currentToken // 🔐 關鍵！夾帶這把鑰匙才能通過 Firebase 的伺服器寫入規則
+            };
+
+            // 使用 Firebase Database 的 PUSH 寫入資料
+            const eventsRef = ref(db, 'trial_events/registrations');
+            const newRegistrationRef = push(eventsRef);
+
+            // 加入 Firebase serverTimestamp 保障
+            formData.serverTimestamp = serverTimestamp();
+
+            // 紀錄寫入時間與送出時間
+            set(newRegistrationRef, formData).then(() => {
+                // 轉換毫秒格式呈現給使用者看
+                const dateObj = new Date(msTimestamp);
+                const timeString = `${dateObj.getFullYear()} /${String(dateObj.getMonth() + 1).padStart(2, '0')}/${String(dateObj.getDate()).padStart(2, '0')} ` +
+                    `${String(dateObj.getHours()).padStart(2, '0')}:${String(dateObj.getMinutes()).padStart(2, '0')}:${String(dateObj.getSeconds()).padStart(2, '0')}.${String(msTimestamp % 1000).padStart(3, '0')}`;
+
+                document.getElementById('anti-cyborg-challenge').style.display = 'none';
+
+                Swal.fire({
+                    icon: 'success',
+                    title: '🎉 志願登記成功！',
+                    html: '<div style="text-align:left; background:#f4f6f7; padding:15px; border-radius:10px; margin-top:15px;">' +
+                        '<p>您的排位時間為：<br><strong><span style="font-size:20px; color:#c0392b;">' + timeString + '</span></strong></p>' +
+                        '<p style="font-size:14px; color:#555;">系統已成功記錄您的志願與毫秒成績。我們將以此成績進行 AI 自動分發。您無須再做任何動作。</p>' +
+                        '<hr>' +
+                        '<p style="font-size:14px; color:#555; margin-bottom:0;">📌 最終分發結果，專人將透過 Line 官方帳號發送「正式確認憑證」通知您，請留意訊息！</p>' +
+                        '</div>',
+                    confirmButtonText: '✅ 關閉返回',
+                    confirmButtonColor: '#2ecc71',
+                    allowOutsideClick: false
+                }).then(() => {
+                    // 送出後重新整理頁面
+                    window.location.reload();
+                });
+            }).catch(error => {
+                // 防護：若 Firebase 寫入失敗 (可能是 Token 沒帶對或被阻擋)
+                document.getElementById('anti-cyborg-challenge').style.display = 'none';
+                console.error("寫入被阻擋：", error);
+                Swal.fire({
+                    icon: 'error',
+                    title: '🚨 表單送出被拒絕',
+                    html: '<p>可能是您的頁面停留太久導致<b>安全密鑰失效</b>，或是系統偵測到異常的送出行為。</p><p>錯誤訊息: ' + error.message + '</p><p>請您重新整理網頁後再次填寫送出。</p>',
+                    confirmButtonText: '重新整理'
+                }).then(() => {
+                    location.reload();
+                });
+            });
+        }
+    </script>
+</body>
+
+</html>
