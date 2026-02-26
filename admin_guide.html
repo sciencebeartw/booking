@@ -774,44 +774,61 @@
         import { auth, signInWithRedirect, getRedirectResult, GoogleAuthProvider, db, ref as dbRef, get, child } from './firebase-config.js';
         import { onAuthStateChanged } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-auth.js";
 
-        // ★★★ 智慧登入狀態偵測 ★★★
-        onAuthStateChanged(auth, async (user) => {
-            const btn = document.getElementById('navLoginBtn');
-            if (user && btn) {
-                // 如果已經登入過了，按鈕直接變成綠色的前往後台
-                btn.innerHTML = "🚀 前往後台指揮中心";
-                btn.style.background = "#2ecc71";
-            }
-        });
-
-        // ★★★ 處理 Redirect 登入結果 ★★★
-        getRedirectResult(auth).then(async (result) => {
-            if (result) {
-                const user = result.user;
+        // ★★★ 處理 Redirect 登入結果與登入狀態檢查 (雙重驗證) ★★★
+        const checkAdminRedirect = async (user) => {
+            try {
                 const safeEmail = user.email.replace(/\./g, ',');
                 const snapshot = await get(child(dbRef(db), `admins/${safeEmail}`));
-
                 if (snapshot.exists()) {
                     window.location.href = "admin_bear2026.html";
                 } else {
                     alert("權限不足！此帳號非系統管理員。");
                     import('./firebase-config.js').then(module => module.signOut(module.auth));
                 }
+            } catch (error) {
+                console.error("驗證管理員身分失敗:", error);
+            }
+        };
+
+        // ★★★ 智慧登入狀態偵測 ★★★
+        onAuthStateChanged(auth, async (user) => {
+            const btn = document.getElementById('navLoginBtn');
+            if (user) {
+                if (btn) {
+                    // 如果已經登入過了，按鈕直接變成綠色的前往後台
+                    btn.innerHTML = "🚀 前往後台指揮中心";
+                    btn.style.background = "#2ecc71";
+                }
+
+                // 如果因為某些瀏覽器 Bug，getRedirectResult 回傳 null，利用此處補救跳轉
+                if (sessionStorage.getItem('pendingRedirect') === 'true') {
+                    sessionStorage.removeItem('pendingRedirect');
+                    checkAdminRedirect(user);
+                }
+            }
+        });
+
+        // ★★★ 處理 Redirect 登入結果 ★★★
+        getRedirectResult(auth).then((result) => {
+            if (result && result.user) {
+                sessionStorage.removeItem('pendingRedirect');
+                checkAdminRedirect(result.user);
             }
         }).catch((error) => {
+            sessionStorage.removeItem('pendingRedirect');
             console.error("登入跳轉結果處理失敗:", error);
             alert("登入發生錯誤：" + error.message);
         });
 
-        window.loginAdminWithGoogle = function () {
-            // 如果已經有登入紀錄，不用再走認證，直接進去
+        window.loginAdminWithGoogle = async function () {
+            // 如果已經有登入紀錄，直接進去
             if (auth.currentUser) {
-                window.location.href = "admin_bear2026.html";
+                await checkAdminRedirect(auth.currentUser);
                 return;
             }
 
+            sessionStorage.setItem('pendingRedirect', 'true');
             const provider = new GoogleAuthProvider();
-            // 改為 signInWithRedirect 防止 popup 阻擋
             signInWithRedirect(auth, provider);
         };
 
