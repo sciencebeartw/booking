@@ -293,7 +293,7 @@
         <h1>行政團隊系統操作白皮書</h1>
         <span class="version-badge">V36.5 智能分發版 (Phase 7)</span>
         <span class="author-badge">總架構設計：阿喵老師</span>
-        <button onclick="loginAdminWithGoogle()"
+        <button id="navLoginBtn" onclick="loginAdminWithGoogle()"
             style="margin-left: auto; background: #3498db; color: white; border: none; padding: 10px 20px; border-radius: 20px; font-size: 14px; font-weight: bold; cursor: pointer; transition: 0.2s; box-shadow: 0 2px 5px rgba(0,0,0,0.2);">
             🔑 使用 Google 登入後台
         </button>
@@ -754,40 +754,47 @@
     </div>
 
     <script type="module">
-        // 已移除舊版 bear888 / bear2026 本機密碼防護，現在一律使用 Google 登入後台
         window.onload = function () {
             document.body.style.display = "block";
         };
 
-        import { auth, signInWithPopup, signInWithRedirect, getRedirectResult, GoogleAuthProvider, db, ref as dbRef, get, child } from './firebase-config.js';
+        import { auth, signInWithPopup, GoogleAuthProvider, db, ref as dbRef, get, child } from './firebase-config.js';
+        import { onAuthStateChanged } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-auth.js";
 
-        // ★★★ 處理從 Google OAuth 重定向返回的結果 ★★★
-        getRedirectResult(auth).then(async (result) => {
-            if (!result) return;
-            const user = result.user;
-            const safeEmail = user.email.replace(/\./g, ',');
+        // ★★★ 智慧登入狀態偵測 ★★★
+        onAuthStateChanged(auth, async (user) => {
+            const btn = document.getElementById('navLoginBtn');
+            if (user && btn) {
+                // 如果已經登入過了，按鈕直接變成綠色的前往後台
+                btn.innerHTML = "🚀 前往後台指揮中心";
+                btn.style.background = "#2ecc71";
+            }
+        });
+
+        window.loginAdminWithGoogle = async function () {
+            // 如果已經有登入紀錄，不用再跳 Google 視窗，直接進去
+            if (auth.currentUser) {
+                window.location.href = "admin_bear2026.html";
+                return;
+            }
+
+            const provider = new GoogleAuthProvider();
             try {
+                // 改用 Popup 體驗更好，不會有轉址迷路的問題
+                const result = await signInWithPopup(auth, provider);
+                const user = result.user;
+                const safeEmail = user.email.replace(/\./g, ',');
                 const snapshot = await get(child(dbRef(db), `admins/${safeEmail}`));
+
                 if (snapshot.exists()) {
                     window.location.href = "admin_bear2026.html";
                 } else {
                     alert("權限不足！此帳號非系統管理員。");
                     import('./firebase-config.js').then(module => module.signOut(module.auth));
                 }
-            } catch (e) {
-                console.error("驗證失敗:", e);
-            }
-        }).catch(err => {
-            console.error("Redirect result error:", err);
-        });
-
-        window.loginAdminWithGoogle = async function () {
-            const provider = new GoogleAuthProvider();
-            try {
-                await signInWithRedirect(auth, provider);
             } catch (error) {
                 console.error("登入失敗:", error);
-                alert("登入發生錯誤：" + error.message);
+                // 通常是使用者自己關閉 Popup，不需特別 alert 報錯
             }
         };
 
