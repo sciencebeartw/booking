@@ -291,7 +291,9 @@ button:disabled {
 table {
     width: 100%;
     border-collapse: collapse;
-    min-width: 800px;
+    min-width: 600px;
+    /* Reduced to allow better fit in modals */
+    table-layout: auto;
 }
 
 th,
@@ -299,7 +301,16 @@ td {
     padding: 12px 15px;
     text-align: left;
     border-bottom: 1px solid #ddd;
-    white-space: nowrap;
+    /* Removed white-space: nowrap to allow content wrapping */
+    vertical-align: middle;
+}
+
+/* Specific styling for trial sessions table inputs to prevent overflow */
+#e_sessionsContainer input,
+#e_sessionsContainer select {
+    max-width: 100%;
+    min-width: 0;
+    /* Prevents flex items from overflowing container */
 }
 
 th {

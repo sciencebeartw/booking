@@ -2516,21 +2516,23 @@ window.addEventSessionRow = function (key = "", name = "", date = "", time = "",
         : `<button onclick="this.closest('tr').remove()" style="background:#e74c3c; color:white; border:none; border-radius:4px; padding:6px 10px; cursor:pointer;">✖</button>`;
 
     tr.innerHTML = `
-        <td style="padding:4px;">${keyInputHtml}</td>
-        <td style="padding:4px;"><input type="text" class="sess-name" placeholder="前台名稱" value="${name}" style="width:100%; padding:8px; box-sizing:border-box;"></td>
+        <td style="padding:4px;"><div style="display:flex; height:100%; align-items:center;">${keyInputHtml}</div></td>
+        <td style="padding:4px;"><div style="display:flex; height:100%; align-items:center;"><input type="text" class="sess-name" placeholder="前台名稱" value="${name}" style="width:100%; padding:8px; box-sizing:border-box;"></div></td>
         <td style="padding:4px;" class="col-normal" style="${isWaitlist ? 'display:none;' : ''}">
-            <input type="text" class="sess-date" placeholder="日期" value="${date}" style="width:100%; padding:8px; box-sizing:border-box; margin-bottom:4px;">
-            <input type="text" class="sess-time" placeholder="時間" value="${time}" style="width:100%; padding:8px; box-sizing:border-box; margin-bottom:4px;">
-            <select class="sess-classroom" style="width:100%; padding:8px; box-sizing:border-box; margin-bottom:4px;">${clsOptions}</select>
-            <select class="sess-subject" style="width:100%; padding:8px; box-sizing:border-box;">
-                <option value="math" ${subject === 'math' ? 'selected' : ''}>數學</option>
-                <option value="sci" ${subject === 'sci' ? 'selected' : ''}>自然</option>
-                <option value="other" ${subject === 'other' ? 'selected' : ''}>其他/綜合</option>
-            </select>
+            <div style="display:flex; flex-direction:column; gap:4px;">
+                <input type="text" class="sess-date" placeholder="日期" value="${date}" style="width:100%; padding:8px; box-sizing:border-box;">
+                <input type="text" class="sess-time" placeholder="時間" value="${time}" style="width:100%; padding:8px; box-sizing:border-box;">
+                <select class="sess-classroom" style="width:100%; padding:8px; box-sizing:border-box;">${clsOptions}</select>
+                <select class="sess-subject" style="width:100%; padding:8px; box-sizing:border-box;">
+                    <option value="math" ${subject === 'math' ? 'selected' : ''}>數學</option>
+                    <option value="sci" ${subject === 'sci' ? 'selected' : ''}>自然</option>
+                    <option value="other" ${subject === 'other' ? 'selected' : ''}>其他/綜合</option>
+                </select>
+            </div>
         </td>
-        <td style="padding:4px; ${isWaitlist ? '' : 'display:none;'}" class="col-waitlist"><input type="number" class="sess-seq" value="${startSeq}" style="width:100%; padding:8px; box-sizing:border-box;"></td>
-        <td style="padding:4px;"><input type="number" class="sess-cap" value="${capacity}" style="width:100%; padding:8px; box-sizing:border-box;"></td>
-        <td style="padding:4px; text-align:center;">${deleteBtnHtml}</td>
+        <td style="padding:4px; ${isWaitlist ? '' : 'display:none;'}" class="col-waitlist"><div style="display:flex; height:100%; align-items:center;"><input type="number" class="sess-seq" value="${startSeq}" style="width:100%; padding:8px; box-sizing:border-box;"></div></td>
+        <td style="padding:4px;"><div style="display:flex; height:100%; align-items:center;"><input type="number" class="sess-cap" value="${capacity}" style="width:100%; padding:8px; box-sizing:border-box;"></div></td>
+        <td style="padding:4px; text-align:center;"><div style="display:flex; height:100%; align-items:center; justify-content:center;">${deleteBtnHtml}</div></td>
     `;
     container.appendChild(tr);
 };
