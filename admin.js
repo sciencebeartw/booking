@@ -775,8 +775,11 @@ window.loadVisualMap = function () {
                 if (code === "_") seat.classList.add('aisle');
                 else if (code === "DOOR") { seat.textContent = "門"; seat.classList.add('aisle'); }
                 else if (code === "PILLAR") { seat.textContent = "柱"; seat.classList.add('aisle'); }
+                else if (isBlocked) {
+                    seat.classList.add('blocked');
+                }
                 else {
-                    seat.textContent = ""; // 清空原本的純文字號碼，改用結構化渲染
+                    seat.textContent = "";
 
                     const numSpan = document.createElement('span');
                     numSpan.className = 'seat-num';
@@ -812,12 +815,10 @@ window.loadVisualMap = function () {
 
                     seat.appendChild(nameSpan);
 
-                    // 如果開啟了姓名顯示，只有已被佔用(sold/locked)的位子才需要變成雙排
                     if (isShowingNames && info && (info.status === 'sold' || info.status === 'locked')) {
                         seat.classList.add('show-names');
                     }
 
-                    // 因為我們重新覆寫了 innerHTML (tooltip)，需要重新綁定點擊事件
                     seat.onclick = () => toggleReserve(courseId, code, info);
                 }
                 rowDiv.appendChild(seat);
