@@ -28,20 +28,28 @@ body {
     white-space: nowrap;
 }
 
-.nav-right {
+.nav-actions {
     display: flex;
     flex-wrap: wrap;
     align-items: center;
-    justify-content: flex-end;
-    gap: 15px;
-    flex-grow: 1;
+    gap: 8px;
+    white-space: nowrap;
 }
 
 .nav-tabs {
     display: flex;
+    flex-direction: column;
+    gap: 4px;
+    align-items: center;
+    flex: 1;
+    justify-content: center;
+}
+
+.nav-tab-row {
+    display: flex;
     flex-wrap: wrap;
-    gap: 8px;
-    justify-content: flex-start;
+    gap: 4px;
+    align-items: center;
 }
 
 .nav-tabs button {
@@ -82,16 +90,18 @@ body {
         text-align: center;
     }
 
-    .nav-right {
+    .nav-actions {
         justify-content: center;
-        flex-direction: column;
         width: 100%;
-        gap: 20px;
     }
 
     .nav-tabs {
-        justify-content: center;
+        align-items: center;
         width: 100%;
+    }
+
+    .nav-tab-row {
+        justify-content: center;
     }
 }
 

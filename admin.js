@@ -51,6 +51,28 @@ let currentCourseListStr = "";
 let currentClassSelectorStr = "";
 let currentWaitlistSelectorStr = "";
 
+// ★★★ Phase 6 全域變數與模板 ★★★
+let lastAllocatedResult = {};    // 最後一次 AI 分發的正取結果
+let lastWaitlistByClass = {};    // 最後一次 AI 分發的各班候補
+
+const DEFAULT_TEMPLATES = {
+    regular_seat: `🐻 山熊科學 - 劃位成功通知 🐻\n\n{{姓名}} 家長您好：\n恭喜您已順利完成課程劃位！您的專屬座位如下：\n\n{{劃位名單}}\n\n📌 後續我們即將為您開立專屬學費單，請留意訊息並於期限內完成繳費，期待相見！`,
+    regular_wait: `🐻 山熊科學 - 候補進度通知 🐻\n\n{{姓名}} 家長您好，為您統整目前的候補進度：\n\n{{候補名單}}\n\n📌 若有家長退費或座位釋出，我們將第一時間依序通知您，請耐心等候，謝謝！`,
+    regular_mix: `🐻 山熊科學 - 劃位與候補統整 🐻\n\n{{姓名}} 家長您好，為您統整目前的狀態：\n\n✅ 【已成功劃位】\n{{劃位名單}}\n\n⏳ 【目前候補進度】\n{{候補名單}}\n\n📌 成功劃位之科目我們將開立專屬學費單；候補科目若有座位釋出，將依序第一時間通知您！`,
+    trial_seat: `✨ 山熊科學 - 試聽錄取通知 ✨\n\n{{姓名}} 家長您好：\n恭喜您錄取本次試聽活動！您的分發班級如下：\n\n{{劃位名單}}\n\n📌 請保留此訊息作為入場凳證，如有任何問題請隨時聯繫我們！`,
+    trial_wait: `✨ 山熊科學 - 試聽候補通知 ✨\n\n{{姓名}} 家長您好：\n本次試聽活動報名熱烈，您目前的候補狀態為：\n\n{{候補名單}}\n\n📌 若有座位釋出，我們將第一時間通知您！`,
+    trial_mix: `✨ 山熊科學 - 試聽分發與候補統整 ✨\n\n{{姓名}} 家長您好，為您統整本次試聽分發結果：\n\n✅ 【已錄取班級】\n{{劃位名單}}\n\n⏳ 【目前候補進度】\n{{候補名單}}\n\n📌 錄取班級請保留此訊息作為凳證；候補班級若有釋出將依序通知您！`
+};
+let currentTemplates = { ...DEFAULT_TEMPLATES };
+
+onValue(ref(db, 'settings/templates'), (snap) => {
+    const saved = snap.val() || {};
+    currentTemplates = { ...DEFAULT_TEMPLATES, ...saved };
+    if (document.getElementById('templateEditorArea') && document.getElementById('tab-notify').classList.contains('active')) {
+        renderTemplateEditor();
+    }
+});
+
 tinymce.init({
     selector: '#c_desc, #e_desc',
     plugins: 'image link lists media table code',
@@ -102,6 +124,11 @@ window.switchTab = function (tabName) {
     if (tabName === 'bills') initBillPage();
     if (tabName === 'print') initPrintPage();
     if (tabName === 'trial_events') renderTrialEventsList();
+    if (tabName === 'notify') {
+        renderTemplateEditor();
+        renderRegularCourseCheckboxes();
+        populateTrialNotifySelector();
+    }
 };
 window.showCourseForm = function () {
     document.getElementById('courseListView').style.display = 'none';
@@ -284,8 +311,9 @@ window.saveCourse = async function () {
     btn.disabled = true;
     btn.textContent = "處理中...";
 
+    const id = document.getElementById('c_id').value;
+
     try {
-        const id = document.getElementById('c_id').value;
         const descContent = tinymce.get('c_desc').getContent();
         const grade = document.getElementById('c_grade').value;
         const subject = document.getElementById('c_subject').value;
@@ -499,9 +527,22 @@ function renderCourseList() {
     });
 }
 
-window.deleteCourse = function (courseId, event) {
+window.deleteCourse = async function (courseId, event) {
     if (event) event.stopPropagation();
-    if (confirm("⚠️ 確定要刪除？")) remove(ref(db, `courses/${courseId}`));
+    if (confirm("⚠️ 確定要刪除此課程？\n\n注意：這將會連帶徹底清除該課程的所有「劃位紀錄」、「候補名單」與「歷史釋出紀錄」，且無法復原！")) {
+        const updates = {};
+        updates[`courses/${courseId}`] = null;
+        updates[`seats/${courseId}`] = null;
+        updates[`waitlist/${courseId}`] = null;
+        updates[`archived_seats/${courseId}`] = null;
+
+        try {
+            await update(ref(db), updates);
+            alert("✅ 課程設定及其所有相關報名資料已徹底清除乾淨！");
+        } catch (e) {
+            alert("❌ 刪除失敗：" + e.message);
+        }
+    }
 };
 
 let archivedSeatsData = {};
@@ -757,8 +798,13 @@ window.toggleReserve = async function (courseId, seatId, info) {
         openOpModal(courseId, seatId);
     } else if (!info || (info && info.status === 'deleted')) {
         const snap = await get(ref(db, `seats/${courseId}/${seatId}`));
-        if (snap.exists() && snap.val().status === 'sold') {
-            if (!confirm("⚠️ 警告：這個位子剛剛被學生搶走了！確定要強制覆蓋嗎？")) return;
+        if (snap.exists()) {
+            const currentSeat = snap.val();
+            if (currentSeat.status === 'sold') {
+                if (!confirm(`⚠️ 警告：這個位子剛剛被學生 [${currentSeat.studentName}] 搶走了！確定要強制踢除並覆蓋為保留位嗎？`)) return;
+            } else if (currentSeat.status === 'locked' && currentSeat.user !== 'admin_reserved') {
+                if (!confirm("⚠️ 警告：目前正有【前台家長】在填寫此座位！確定要無情地踢除他並設為保留位嗎？")) return;
+            }
         }
 
         if (confirm(`要將 ${seatId} 設為保留位嗎？(前台顯示為填寫中)`)) {
@@ -869,11 +915,18 @@ window.recoverSeat = async function (courseId, seatId, studentName, archiveKey) 
     }
 
     try {
-        // 先檢查原座位是否還空著
+        // 🛡️ 先檢查原座位是否還空著 (防呵升級：連同 locked 一起擋)
         const snap = await get(ref(db, `seats/${courseId}/${seatId}`));
-        if (snap.exists() && snap.val().status === 'sold') {
-            alert(`⚠️ 復原失敗！\n原本的座位 [${seatId}] 已經被其他人 (${snap.val().studentName || '新學生'}) 劃走了。\n請引導 ${studentName} 重新劃位，或先將目前的人釋出。`);
-            return;
+        if (snap.exists()) {
+            const currentSeat = snap.val();
+            if (currentSeat.status === 'sold') {
+                alert(`⚠️ 復原失敗！\n原本的座位 [${seatId}] 已經被其他人 (${currentSeat.studentName || '新學生'}) 劃走了。\n請引導 ${studentName} 重新劃位，或先將目前的人強制釋出。`);
+                return;
+            } else if (currentSeat.status === 'locked') {
+                const lockUser = currentSeat.user === 'admin_reserved' ? '管理員' : '前台家長';
+                alert(`⚠️ 復原失敗！\n原本的座位 [${seatId}] 目前正被【${lockUser}】鎖定 / 填寫中！\n請稍候再試，或先強制將該座位釋出。`);
+                return;
+            }
         }
 
         if (confirm(`💡 確定要恢復 ${studentName} 在 ${seatId} 的劃位嗎？`)) {
@@ -1478,7 +1531,8 @@ window.processBills = function () {
                 let noteVal = noteInput ? noteInput.value : (c.billNote || "");
 
                 studentMap[name].items.push({
-                    name: c.subject + (c.classType ? ` (${c.classType})` : ''),
+                    name: c.subject,
+                    seatInfo: (c.classType ? `${c.classType} · ` : '') + `座位 ${seatId}`,
                     dateHtml: formatBillDate(dateVal, countVal),
                     price: price,
                     note: noteVal
@@ -1555,8 +1609,11 @@ window.loadBill = function (index) {
 
     let notes = [];
     s.items.forEach(item => {
-        if (item.note) {
-            notes.push(`【${item.name}】\n${item.note}`);
+        let parts = [];
+        if (item.seatInfo) parts.push(item.seatInfo);
+        if (item.note) parts.push(item.note);
+        if (parts.length > 0) {
+            notes.push(`【${item.name}】\n${parts.join('\n')}`);
         }
     });
     document.getElementById('billNote').innerText = notes.join("\n\n");
@@ -3292,6 +3349,10 @@ window.renderTrialResults = function (allocated, waitlist, sessionsMap) {
         div.appendChild(listContainer);
         wlGrid.appendChild(div);
     }
+
+    // 儲存到 module-level 供鎖死寫入時使用
+    lastAllocatedResult = allocated;
+    lastWaitlistByClass = waitlistByClass;
 }
 
 window.updateClassCounts = function () {
@@ -3305,14 +3366,27 @@ window.updateClassCounts = function () {
 }
 
 window.openGodModeInjection = function () {
+    if (!currentTrialEventId) return alert("⚠️ 請先選擇上方的試聽活動。");
+
+    // 計算目前第一名時間
+    let firstMs = Date.now();
+    if (trialRegistrations.length > 0) {
+        const sorted = [...trialRegistrations].filter(t => t.status !== 'deleted').sort((a, b) => a.clientTimestampMs - b.clientTimestampMs);
+        if (sorted.length > 0) firstMs = sorted[0].clientTimestampMs;
+    }
+    const targetMs = firstMs - 1;
+
     const html = `
         <div style="text-align:left;">
             <label style="display:block; margin-bottom:5px;">學生姓名：</label>
             <input type="text" id="godName" style="padding:10px; width:100%; box-sizing:border-box; margin-bottom:15px; border:2px solid #ccc; border-radius:5px;" placeholder="例：特權生">
             <label style="display:block; margin-bottom:5px;">家長電話：</label>
             <input type="text" id="godPhone" style="padding:10px; width:100%; box-sizing:border-box; margin-bottom:15px; border:2px solid #ccc; border-radius:5px;" placeholder="例：0911222333">
-            <label style="display:block; margin-bottom:5px;">指定毫秒時間 (必勝密碼)：</label>
-            <input type="number" id="godMs" style="padding:10px; width:100%; box-sizing:border-box; margin-bottom:15px; border:2px solid #ccc; border-radius:5px;" value="1704067200000" title="越小越排前面">
+            <label style="display:block; margin-bottom:5px;">指定毫秒時間 <span style="color:#e74c3c; font-size:12px;">💡 目前第一名時間為: ${firstMs}，若要插隊請輸入: ${targetMs}</span>：</label>
+            <div style="display:flex; gap:10px; margin-bottom:15px;">
+                <input type="number" id="godMs" style="padding:10px; flex:1; box-sizing:border-box; border:2px solid #ccc; border-radius:5px;" value="${Date.now()}">
+                <button type="button" onclick="document.getElementById('godMs').value = '${targetMs}'" style="padding:10px; background:#f1c40f; border:none; border-radius:5px; cursor:pointer; white-space:nowrap;">👑 快速填入榜首時間</button>
+            </div>
         </div>
     `;
 
@@ -3424,10 +3498,54 @@ window.exportTrialAllocationCSV = function () {
     document.body.removeChild(link);
 };
 
-window.saveFinalTrialAllocation = function () {
-    if (confirm('⚠️ 確定鎖死所有分發結果？\n\n這個操作通常是在確定名單無誤後進行，將準備發布綠色確認通知給家長。')) {
-        alert('✅ 分發結果已經順利儲存鎖定！(開發測試版：僅前端模擬)');
-        // 實際系統會將每個 div[id^="stu_"] 的所屬班級更新回資料庫
+window.saveFinalTrialAllocation = async function () {
+    if (!currentTrialEventId) { alert('❌ 請先選擇活動'); return; }
+    const grid = document.getElementById('trialClassesGrid');
+    if (!grid || grid.innerHTML === '') { alert('❌ 請先執行 AI 分發'); return; }
+
+    if (!confirm('⚠️ 確定鎖死所有分發結果？\n\n鎖死後，通知中心才可讀取「最終定案名單」產生通知，且重新整理頁面也不會遺失！')) return;
+
+    // 1. 從 DOM 讀取（包含手動拖曳微調後的正取名單）
+    const finalAllocated = {};
+    document.querySelectorAll('#trialClassesGrid .class-list-container').forEach(container => {
+        const cls = container.getAttribute('data-cls');
+        finalAllocated[cls] = [];
+        container.querySelectorAll('div[id^="stu_"]').forEach(el => {
+            finalAllocated[cls].push({
+                id: el.getAttribute('data-original-id'),
+                studentName: el.querySelector('strong')?.innerText || '',
+                parentPhone: (el.innerHTML.match(/\((09\d{8})\)/) || [])[1] || '',
+                assignDesc: el.querySelector('div')?.innerText || ''
+            });
+        });
+    });
+
+    // 2. 候補從 DOM 讀取（確保順位正確，含拖曳後調整）
+    const finalWaitlist = {};
+    document.querySelectorAll('#trialWaitlistByClassGrid .class-list-container').forEach(container => {
+        const cls = container.getAttribute('data-cls');
+        finalWaitlist[cls] = [];
+        container.querySelectorAll('div[id^="stu_"]').forEach((el, idx) => {
+            finalWaitlist[cls].push({
+                id: el.getAttribute('data-original-id'),
+                studentName: el.querySelector('strong')?.innerText || '',
+                parentPhone: (el.innerHTML.match(/\((09\d{8})\)/) || [])[1] || '',
+                rank: idx + 1
+            });
+        });
+    });
+
+    // 3. 寫入 Firebase
+    const payload = {
+        lockedAt: Date.now(),
+        allocated: finalAllocated,
+        waitlistByClass: finalWaitlist
+    };
+    try {
+        await set(ref(db, `trial_events_config/${currentTrialEventId}/lockedAllocation`), payload);
+        alert('✅ 分發結果已完美鎖死並儲存！\n\n您現在可以前往【📢 通知發送中心】產生通知名單了！');
+    } catch (e) {
+        alert('❌ 鎖死失敗：' + e.message);
     }
 }
 
@@ -3446,7 +3564,377 @@ window.clearTrialAllocationBoard = function () {
     statusEl.style.color = "#f39c12";
 }
 
-// === 測試輔助：產生與刪除假資料 ===
+// ==========================================
+// Phase 6: 通知發送中心與手動候補黑箱
+// ==========================================
+
+window.saveTemplates = async function () {
+    await set(ref(db, 'settings/templates'), currentTemplates);
+    alert('✅ 模板已成功儲存至 Firebase！');
+};
+
+window.renderTemplateEditor = function () {
+    const area = document.getElementById('templateEditorArea');
+    if (!area) return;
+    area.innerHTML = '';
+
+    const fields = [
+        { key: 'regular_seat', name: '🐻 正式課程 - 純劃位' },
+        { key: 'regular_wait', name: '🐻 正式課程 - 純候補' },
+        { key: 'regular_mix', name: '🐻 正式課程 - 綜合型' },
+        { key: 'trial_seat', name: '✨ 試聽活動 - 純錄取' },
+        { key: 'trial_wait', name: '✨ 試聽活動 - 純候補' },
+        { key: 'trial_mix', name: '✨ 試聽活動 - 綜合型' }
+    ];
+
+    fields.forEach(f => {
+        const div = document.createElement('div');
+        div.innerHTML = `
+            <label style="font-weight:bold; color:#2c3e50; display:block; margin-bottom:5px;">${f.name}</label>
+            <textarea id="tpl_${f.key}" style="width:100%; height:140px; padding:10px; box-sizing:border-box; border-radius:5px; border:1px solid #bdc3c7;" oninput="currentTemplates['${f.key}'] = this.value">${currentTemplates[f.key]}</textarea>
+        `;
+        area.appendChild(div);
+    });
+};
+
+window.renderRegularCourseCheckboxes = function () {
+    const container = document.getElementById('regularCourseCheckboxes');
+    if (!container) return;
+    container.innerHTML = '<label style="font-weight:bold; margin-right:15px; cursor:pointer;"><input type="checkbox" onchange="document.querySelectorAll(\'.regular-notify-cb\').forEach(cb => cb.checked = this.checked)"> 全選/全不選</label>';
+
+    Object.keys(coursesData).forEach(key => {
+        const c = coursesData[key];
+        const name = `[${c.grade}] ${c.subject} ${c.classType || ''}`;
+        container.innerHTML += `<label style="cursor:pointer; background:#fff; padding:5px 10px; border-radius:5px; border:1px solid #ccc; display:inline-block;"><input type="checkbox" class="regular-notify-cb" value="${key}"> ${name}</label>`;
+    });
+};
+
+window.generateRegularNotifyList = function () {
+    const selectedIds = Array.from(document.querySelectorAll('.regular-notify-cb:checked')).map(cb => cb.value);
+    if (selectedIds.length === 0) return alert('請至少勾選一個正式課程！');
+
+    const personMap = {};
+
+    selectedIds.forEach(courseId => {
+        const c = coursesData[courseId];
+        if (!c) return;
+        const courseName = `[${c.grade}] ${c.subject} ${c.classType || ''}`;
+
+        // 抓正取
+        const seats = seatsData[courseId] || {};
+        Object.keys(seats).forEach(seatId => {
+            if (seatId === '_settings') return;
+            const info = seats[seatId];
+            if (info.status === 'sold') {
+                const key = `${info.studentName}_${info.parentPhone}`;
+                if (!personMap[key]) personMap[key] = { name: info.studentName, phone: info.parentPhone, seats: [], waits: [] };
+                personMap[key].seats.push(`✅ ${courseName} (座位: ${seatId})`);
+            }
+        });
+
+        // 抓候補（計算序號）
+        const wList = waitlistData[courseId] || {};
+        let activeWaits = Object.values(wList).filter(w => w.status !== 'deleted');
+        activeWaits.sort((a, b) => a.timestamp - b.timestamp);
+        activeWaits.forEach((w, idx) => {
+            const key = `${w.studentName}_${w.parentPhone}`;
+            if (!personMap[key]) personMap[key] = { name: w.studentName, phone: w.parentPhone, seats: [], waits: [] };
+            personMap[key].waits.push(`⏳ ${courseName} (候補第 ${idx + 1} 順位)`);
+        });
+    });
+
+    renderNotifyCards('regularNotifyList', personMap, 'regular');
+};
+
+window.populateTrialNotifySelector = function () {
+    const selector = document.getElementById('trialNotifySelector');
+    if (!selector) return;
+    const oldVal = selector.value;
+    selector.innerHTML = '<option value="">-- 請選擇已鎖死的試聽活動 --</option>';
+
+    Object.keys(trialEventsConfig).forEach(id => {
+        const ev = trialEventsConfig[id];
+        if (ev.lockedAllocation) {
+            const lockedAt = new Date(ev.lockedAllocation.lockedAt).toLocaleString();
+            selector.innerHTML += `<option value="${id}">🔒 ${ev.title || id} (鎖死於 ${lockedAt})</option>`;
+        }
+    });
+    selector.value = oldVal;
+};
+
+window.generateTrialNotifyList = function () {
+    const eventId = document.getElementById('trialNotifySelector').value;
+    if (!eventId) return alert('請選擇試聽活動！');
+
+    const ev = trialEventsConfig[eventId];
+    if (!ev || !ev.lockedAllocation) return alert('找不到鎖死資料。請先至「試聽分發引擎」點擊【💾 確定鎖死並發布通知】！');
+
+    const personMap = {};
+    const locked = ev.lockedAllocation;
+    const sessions = ev.sessions || {};
+
+    if (locked.allocated) {
+        Object.keys(locked.allocated).forEach(classKey => {
+            const className = sessions[classKey] ? sessions[classKey].name : classKey;
+            (locked.allocated[classKey] || []).forEach(stu => {
+                const key = `${stu.studentName}_${stu.parentPhone}`;
+                if (!personMap[key]) personMap[key] = { name: stu.studentName, phone: stu.parentPhone, seats: [], waits: [] };
+                personMap[key].seats.push(`✅ ${className}`);
+            });
+        });
+    }
+
+    if (locked.waitlistByClass) {
+        Object.keys(locked.waitlistByClass).forEach(classKey => {
+            const className = sessions[classKey] ? sessions[classKey].name : classKey;
+            (locked.waitlistByClass[classKey] || []).forEach(stu => {
+                const key = `${stu.studentName}_${stu.parentPhone}`;
+                if (!personMap[key]) personMap[key] = { name: stu.studentName, phone: stu.parentPhone, seats: [], waits: [] };
+                personMap[key].waits.push(`⏳ ${className} (候補第 ${stu.rank} 順位)`);
+            });
+        });
+    }
+
+    renderNotifyCards('trialNotifyList', personMap, 'trial');
+};
+
+// 通用名單渲染函數（修正 \n 換行 Bug）
+function renderNotifyCards(containerId, personMap, typePrefix) {
+    const container = document.getElementById(containerId);
+    container.innerHTML = '';
+
+    const keys = Object.keys(personMap);
+    if (keys.length === 0) {
+        container.innerHTML = '<p style="text-align:center; color:#7f8c8d; padding:20px;">查無資料。</p>';
+        return;
+    }
+
+    keys.forEach(key => {
+        const p = personMap[key];
+        const aCount = p.seats.length;
+        const bCount = p.waits.length;
+
+        let tplKey = '';
+        if (aCount > 0 && bCount === 0) tplKey = `${typePrefix}_seat`;
+        else if (aCount === 0 && bCount > 0) tplKey = `${typePrefix}_wait`;
+        else tplKey = `${typePrefix}_mix`;
+
+        // 使用真正的換行符 \n（注意：不是 \\n）
+        let msg = currentTemplates[tplKey] || '';
+        msg = msg.replace(/\{\{姓名\}\}/g, p.name);
+        msg = msg.replace(/\{\{劃位名單\}\}/g, p.seats.join('\n'));
+        msg = msg.replace(/\{\{候補名單\}\}/g, p.waits.join('\n'));
+
+        const div = document.createElement('div');
+        div.style.cssText = 'background:#fff; padding:15px; border-radius:8px; box-shadow:0 2px 5px rgba(0,0,0,0.1); display:flex; justify-content:space-between; align-items:flex-start; gap:15px;';
+
+        // HTML 預覽要把 \n 轉 <br>
+        const textPreview = msg.replace(/\n/g, '<br>');
+
+        div.innerHTML = `
+            <div style="flex:1;">
+                <h4 style="margin:0 0 10px 0; color:#2c3e50;">👤 ${p.name} (${p.phone})</h4>
+                <div style="font-size:13px; color:#555; background:#f4f6f7; padding:10px; border-radius:5px; max-height:150px; overflow-y:auto; line-height:1.6;">${textPreview}</div>
+            </div>
+        `;
+
+        const btn = document.createElement('button');
+        btn.className = 'success';
+        btn.style.cssText = 'white-space:nowrap; height:fit-content; align-self:center;';
+        btn.innerHTML = '📋 複製通知';
+        btn.onclick = () => {
+            navigator.clipboard.writeText(msg).then(() => {
+                const old = btn.innerHTML;
+                btn.innerHTML = '✔️ 已複製！';
+                btn.classList.replace('success', 'warning');
+                setTimeout(() => { btn.innerHTML = old; btn.classList.replace('warning', 'success'); }, 2000);
+            }).catch(() => {
+                // Fallback for http://
+                const ta = document.createElement('textarea');
+                ta.value = msg;
+                document.body.appendChild(ta);
+                ta.select();
+                document.execCommand('copy');
+                document.body.removeChild(ta);
+                btn.innerHTML = '✔️ 已複製！';
+                setTimeout(() => { btn.innerHTML = '📋 複製通知'; }, 2000);
+            });
+        };
+
+        div.appendChild(btn);
+        container.appendChild(div);
+    });
+}
+
+// 🧰 任務四：正式候補黑箱 - 手動安插候補
+window.openManualWaitlistInjection = function () {
+    const courseId = document.getElementById('waitlistSelector').value;
+    if (courseId === 'all') return alert('請先在上方下拉選單選擇要安插候補的「特定課程」！');
+
+    const sel = document.getElementById('waitlistSelector');
+    const courseName = sel.options[sel.selectedIndex].text;
+
+    // 計算目前第一名時間
+    let firstMs = Date.now();
+    const wList = waitlistData[courseId] || {};
+    const activeWaits = Object.values(wList).filter(w => w.status !== 'deleted');
+    if (activeWaits.length > 0) {
+        activeWaits.sort((a, b) => a.timestamp - b.timestamp);
+        firstMs = activeWaits[0].timestamp;
+    }
+    const targetMs = firstMs - 1;
+
+    const modal = document.createElement('div');
+    modal.id = 'manualWaitlistModal';
+    modal.style.cssText = "position:fixed; top:0; left:0; right:0; bottom:0; background:rgba(0,0,0,0.7); z-index:99999; display:flex; justify-content:center; align-items:center;";
+    modal.innerHTML = `
+        <div style="background:white; padding:30px; border-radius:15px; max-width:440px; width:100%;">
+            <h3 style="margin-top:0; color:#e67e22;">➕ 手動安插候補 (黑箱作業)</h3>
+            <p style="color:#7f8c8d; font-size:14px; margin-top:-5px;">目標課程：<strong>${courseName}</strong></p>
+            <div style="text-align:left;">
+                <label style="display:block; margin-bottom:5px;">學生姓名：</label>
+                <input type="text" id="wGodName" style="padding:10px; width:100%; box-sizing:border-box; margin-bottom:15px; border:1px solid #ccc; border-radius:5px;" placeholder="例：王小明">
+                <label style="display:block; margin-bottom:5px;">家長電話：</label>
+                <input type="text" id="wGodPhone" style="padding:10px; width:100%; box-sizing:border-box; margin-bottom:15px; border:1px solid #ccc; border-radius:5px;" placeholder="例：0912345678">
+                <label style="display:block; margin-bottom:5px;">備註：</label>
+                <input type="text" id="wGodNote" style="padding:10px; width:100%; box-sizing:border-box; margin-bottom:15px; border:1px solid #ccc; border-radius:5px;" placeholder="例：主任交辦">
+                <label style="display:block; margin-bottom:5px;">指定時間戳記 <span style="color:#e74c3c; font-size:12px;">💡 目前第一名: ${firstMs}，插隊榜首請輸入: ${targetMs}</span>：</label>
+                <div style="display:flex; gap:10px; margin-bottom:15px;">
+                    <input type="number" id="wGodMs" style="padding:10px; flex:1; box-sizing:border-box; border:1px solid #ccc; border-radius:5px;" value="${Date.now()}">
+                    <button type="button" onclick="document.getElementById('wGodMs').value = '${targetMs}'" style="padding:10px; background:#f1c40f; border:none; border-radius:5px; cursor:pointer; white-space:nowrap;">👑 快速填入榜首時間</button>
+                </div>
+            </div>
+            <div style="display:flex; justify-content:flex-end; gap:10px; margin-top:10px;">
+                <button id="wGodCancelBtn" style="padding:10px 20px; border:none; border-radius:5px; cursor:pointer; background:#ecf0f1;">取消</button>
+                <button id="wGodSaveBtn" style="padding:10px 20px; border:none; border-radius:5px; background:#e67e22; color:white; cursor:pointer;">✅ 登錄候補名單</button>
+            </div>
+        </div>
+    `;
+    document.body.appendChild(modal);
+
+    // 綁定按鈕（不用脆弱的 CSS 選擇器）
+    document.getElementById('wGodCancelBtn').onclick = () => modal.remove();
+    document.getElementById('wGodSaveBtn').onclick = async () => {
+        const name = document.getElementById('wGodName').value.trim();
+        const phone = document.getElementById('wGodPhone').value.trim();
+        const note = document.getElementById('wGodNote').value.trim();
+        const ms = parseInt(document.getElementById('wGodMs').value);
+        if (!name || !phone) return alert('❌ 姓名與電話不可空白');
+
+        const payload = {
+            studentName: name,
+            parentPhone: phone,
+            note: note,
+            status: 'waiting',
+            timestamp: ms
+        };
+        try {
+            await push(ref(db, `waitlist/${courseId}`), payload);
+            alert('✅ 候補安插成功！');
+            modal.remove();
+        } catch (e) {
+            alert('❌ 錯誤：' + e.message);
+        }
+    };
+};
+
+// === 正式課程測試輔助：產生與刪除假資料 ===
+window.generateCourseTestData = async function () {
+    const courseId = document.getElementById('classSelector').value;
+    if (courseId === 'all') return alert("請先從上方下拉選單選擇「單一特定課程」！");
+
+    const countStr = prompt("請問要產生幾筆假資料？\n(系統會優先填滿空位，滿了自動轉入候補)", "30");
+    const generateCount = parseInt(countStr);
+    if (isNaN(generateCount) || generateCount <= 0) return;
+
+    const firstNames = ["家豪", "志明", "俊傑", "建宏", "俊宏", "志偉", "柏翰", "冠宇", "宥廷", "柏睿", "雅婷", "怡君", "佳穎", "詩涵", "雅雯", "瑜婷", "宛婷", "佩穎", "婉婷", "靜雯"];
+    const lastNames = ["陳", "林", "黃", "張", "李", "王", "吳", "劉", "蔡", "楊", "許", "鄭", "謝", "洪", "郭", "邱", "曾", "廖", "賴", "徐"];
+
+    // 抓取空位（先用自訂 layout，找不到才用教室預設）
+    const layout = coursesData[courseId].layout || classrooms[coursesData[courseId].classroom]?.layout;
+    if (!layout) return alert("❌ 找不到課程座位圖資料！請確認該課程已設定教室。");
+
+    let emptySeats = [];
+    layout.forEach(row => row.forEach(code => {
+        if (code !== "_" && code !== "DOOR" && code !== "PILLAR" && !code.includes(':X')) {
+            if (!seatsData[courseId] || !seatsData[courseId][code] || seatsData[courseId][code].status !== 'sold') {
+                emptySeats.push(code);
+            }
+        }
+    }));
+
+    let tasks = [];
+    let baseTime = Date.now() - 100000;
+
+    for (let i = 0; i < generateCount; i++) {
+        const name = lastNames[Math.floor(Math.random() * lastNames.length)] + firstNames[Math.floor(Math.random() * firstNames.length)] + "(測試)";
+        const phone = `09${Math.floor(Math.random() * 90000000 + 10000000)}`;
+        const timestamp = baseTime + (i * 1000);
+
+        if (emptySeats.length > 0) {
+            const seatId = emptySeats.shift();
+            tasks.push(update(ref(db, `seats/${courseId}/${seatId}`), {
+                status: 'sold',
+                studentName: name,
+                parentPhone: phone,
+                soldTime: new Date(timestamp).toLocaleString(),
+                timestamp: timestamp,
+                orderId: "TEST_" + timestamp
+            }));
+        } else {
+            tasks.push(push(ref(db, `waitlist/${courseId}`), {
+                studentName: name,
+                parentPhone: phone,
+                note: "自動產生測試",
+                status: 'waiting',
+                timestamp: timestamp
+            }));
+        }
+    }
+
+    try {
+        await Promise.all(tasks);
+        alert(`✅ 成功產生 ${generateCount} 筆假資料！請查看座位表與候補名單。`);
+    } catch (e) {
+        alert("❌ 發生錯誤：" + e.message);
+    }
+};
+
+window.clearCourseTestData = async function () {
+    const courseId = document.getElementById('classSelector').value;
+    if (courseId === 'all') return alert("請先從上方選擇「單一特定課程」！");
+    if (!confirm("⚠️ 確定要清除此課程【所有】帶有「(測試)」字樣的座位與候補資料嗎？")) return;
+
+    let tasks = [];
+
+    // 清座位
+    const seats = seatsData[courseId] || {};
+    Object.keys(seats).forEach(seatId => {
+        if (seatId === '_settings') return;
+        if (seats[seatId].studentName && seats[seatId].studentName.includes("(測試)")) {
+            tasks.push(set(ref(db, `seats/${courseId}/${seatId}`), null));
+        }
+    });
+
+    // 清候補
+    const wList = waitlistData[courseId] || {};
+    Object.keys(wList).forEach(wId => {
+        if (wList[wId].studentName && wList[wId].studentName.includes("(測試)")) {
+            tasks.push(set(ref(db, `waitlist/${courseId}/${wId}`), null));
+        }
+    });
+
+    if (tasks.length === 0) return alert("找不到帶有「(測試)」標記的資料。");
+
+    try {
+        await Promise.all(tasks);
+        alert(`✅ 已清除 ${tasks.length} 筆測試資料！`);
+    } catch (e) {
+        alert("❌ 清除失敗：" + e.message);
+    }
+};
+
+// === 試聽測試輔助：產生與刪除假資料 ===
 window.generateTrialTestData = async function () {
     if (!currentTrialEventId) return alert("⚠️ 請先選擇上方的試聽活動。");
     if (!confirm(`是否確定要在「${currentTrialEventId}」生成 20 筆測試用的假名單？這將會直接寫入資料庫。`)) return;

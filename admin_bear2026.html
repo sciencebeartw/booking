@@ -36,25 +36,27 @@
             <img src="logo1.png" style="height:40px; vertical-align:middle; margin-right:10px;">
             山熊科學後台
         </div>
-        <div class="nav-right">
-            <div class="nav-tabs">
+        <div class="nav-tabs">
+            <div class="nav-tab-row">
                 <button class="active" onclick="switchTab('monitor')">📊 劃位監控</button>
-                <button onclick="switchTab('trial_events')">✨ 試聽活動管理</button>
-                <button onclick="switchTab('trial')">🎯 試聽分發引擎</button>
                 <button onclick="switchTab('waitlist')">📋 候補名單</button>
                 <button onclick="switchTab('courses')">📝 課程管理</button>
-                <button onclick="switchTab('banners')">🖼️ 橫幅管理</button>
                 <button onclick="switchTab('classrooms')">🏫 教室預覽</button>
                 <button onclick="switchTab('bills')">💰 學費單生成</button>
                 <button onclick="switchTab('print')">🖨️ 座位表輸出</button>
             </div>
-            <!-- 右側獨立按鈕群，保持並排 -->
-            <div style="display: flex; gap: 10px;">
-                <a href="admin_guide.html" class="btn-home" style="background:#8e44ad;" target="_blank">系統手冊</a>
-                <a href="index.html" class="btn-home" target="_blank">回首頁</a>
-                <button onclick="logoutAdmin()" class="btn-home"
-                    style="background:#e74c3c; border:none; cursor:pointer;">登出</button>
+            <div class="nav-tab-row">
+                <button onclick="switchTab('trial')">🎯 試聽分發引擎</button>
+                <button onclick="switchTab('trial_events')">✨ 試聽活動管理</button>
+                <button onclick="switchTab('banners')">🖼️ 橫幅管理</button>
+                <button onclick="switchTab('notify')" style="color: #f1c40f; font-weight: bold;">📢 通知發送中心</button>
             </div>
+        </div>
+        <div class="nav-actions">
+            <a href="admin_guide.html" class="btn-home" style="background:#8e44ad;" target="_blank">系統手冊</a>
+            <a href="index.html" class="btn-home" target="_blank">回首頁</a>
+            <button onclick="logoutAdmin()" class="btn-home"
+                style="background:#e74c3c; border:none; cursor:pointer;">登出</button>
         </div>
     </div>
 
@@ -80,6 +82,8 @@
             <div style="margin-top:20px;">
                 <input type="text" id="searchInput" placeholder="搜尋姓名、電話或訂單編號..." style="padding:10px; width:300px;">
                 <button onclick="exportBookingCSV()" class="success">📥 匯出 Excel</button>
+                <button onclick="generateCourseTestData()" class="dark" style="margin-left:10px;">🎲 產生測試資料</button>
+                <button onclick="clearCourseTestData()" class="danger" style="margin-left:5px;">🗑️ 清除測試資料</button>
             </div>
         </div>
         <div class="table-container">
@@ -111,6 +115,8 @@
                 <input type="text" id="waitlistSearchInput" placeholder="搜尋候補姓名或電話..."
                     style="padding:10px; width:300px; margin-right:10px;" onkeyup="renderWaitlistTable()">
                 <button onclick="exportWaitlistCSV()" class="success">📥 匯出候補 Excel</button>
+                <button onclick="openManualWaitlistInjection()" class="warning" style="margin-left:10px;">➕ 手動安插候補
+                    (黑箱)</button>
             </div>
         </div>
         <div class="table-container">
@@ -828,6 +834,38 @@
                 style="display:flex; justify-content:center; flex-direction:column; align-items:center;"></div>
             <button onclick="closePreview()" style="margin-top:20px;">關閉</button>
         </div>
+    </div>
+
+    <!-- ★★★ Phase 6 通知發送中心 ★★★ -->
+    <div id="tab-notify" class="page-section">
+        <div class="center-box">
+            <h2 style="margin-top:0; color:#2c3e50;">⚙️ 通知文案模板設定</h2>
+            <p style="color:#7f8c8d; font-size:14px; margin-top:-10px;">修改後請點擊下方「儲存模板」。可用變數：{{姓名}}, {{劃位名單}}, {{候補名單}}
+            </p>
+            <div id="templateEditorArea"
+                style="display: grid; grid-template-columns: 1fr 1fr; gap: 20px; text-align: left;"></div>
+            <button onclick="saveTemplates()" class="success" style="margin-top: 15px;">💾 儲存所有模板</button>
+        </div>
+
+        <div class="center-box" style="margin-top:30px; background:#e8f8f5; border:1px solid #1abc9c;">
+            <h2 style="margin-top:0; color:#16a085;">📡 正式課程 - 智慧通知名單</h2>
+            <div id="regularCourseCheckboxes"
+                style="display:flex; flex-wrap:wrap; gap:10px; justify-content:center; margin-bottom:15px;"></div>
+            <button onclick="generateRegularNotifyList()" class="success">🔍 產生正式課程發送名單</button>
+        </div>
+        <div id="regularNotifyList"
+            style="max-width:1000px; margin:20px auto; display:flex; flex-direction:column; gap:10px;"></div>
+
+        <div class="center-box" style="margin-top:30px; background:#fdf2e9; border:1px solid #e67e22;">
+            <h2 style="margin-top:0; color:#d35400;">🎯 試聽活動 - 智慧通知名單</h2>
+            <p style="color:#e74c3c; font-size:12px; font-weight:bold;">⚠️ 必須先在「試聽分發引擎」中點擊【💾 確定鎖死並發布通知】，這裡才能抓到資料！</p>
+            <select id="trialNotifySelector" class="big-selector" style="border-color:#e67e22;">
+                <option value="">-- 請選擇已鎖死的試聽活動 --</option>
+            </select>
+            <button onclick="generateTrialNotifyList()" class="warning" style="margin-left:10px;">🔍 產生試聽發送名單</button>
+        </div>
+        <div id="trialNotifyList"
+            style="max-width:1000px; margin:20px auto; display:flex; flex-direction:column; gap:10px;"></div>
     </div>
 
     <div id="opModal" class="preview-modal">
