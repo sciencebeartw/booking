@@ -2,6 +2,7 @@
 <!-- 版本：V33.1 (時間校準防偷跑 + 圖文防閃爍優化版) -->
 <!DOCTYPE html>
 <html lang="zh-TW">
+
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
@@ -9,48 +10,241 @@
     <link rel="icon" href="icon.png" type="image/png">
     <link rel="apple-touch-icon" href="icon.png">
     <style>
-        body { font-family: "Microsoft JhengHei", sans-serif; background-color: #f8f9fa; margin: 0; padding: 0; }
-        header { background: #2c3e50; padding: 15px 20px; display: flex; justify-content: center; align-items: center; gap: 20px; color: white; box-shadow: 0 2px 5px rgba(0,0,0,0.1); }
-        header img { height: 60px; }
-        header h1 { margin: 0; font-size: 24px; letter-spacing: 1px; text-align: center; color: white; }
-        .container { max-width: 900px; margin: 40px auto; background: white; padding: 40px; border-radius: 15px; box-shadow: 0 5px 20px rgba(0,0,0,0.1); }
-        .back-link { display: inline-block; margin-bottom: 20px; color: #3498db; text-decoration: none; font-size: 16px; font-weight: bold; border: 1px solid #3498db; padding: 8px 20px; border-radius: 20px; transition: 0.3s; }
-        .back-link:hover { background: #3498db; color: white; }
-        .course-header { display: flex; gap: 30px; margin-bottom: 40px; flex-wrap: wrap; }
-        .course-img { flex: 1; min-width: 300px; height: 300px; background-size: cover; background-position: center; border-radius: 10px; background-color: #eee; }
-        .course-meta { flex: 1; min-width: 300px; }
-        .badge { display: inline-block; padding: 5px 10px; background: #e74c3c; color: white; border-radius: 5px; font-size: 14px; margin-bottom: 10px; }
-        h1 { margin: 0 0 15px 0; color: #2c3e50; font-size: 32px; }
-        .price { font-size: 28px; color: #27ae60; font-weight: bold; margin-bottom: 20px; }
-        .info-item { margin-bottom: 10px; font-size: 16px; color: #555; }
-        .info-item strong { color: #333; margin-right: 10px; }
-        .countdown-box { background: #fdf2e9; border: 2px solid #f39c12; padding: 20px; border-radius: 10px; text-align: center; margin-top: 30px; box-sizing: border-box; width: 100%; }
-        
-        .timer-label { font-size: 16px; color: #d35400; margin-bottom: 5px; white-space: nowrap; }
-        .timer-text { font-size: 28px; font-weight: bold; color: #d35400; font-family: monospace; white-space: nowrap; }
-        
-        .btn-action { display: inline-block; width: 100%; padding: 15px; text-align: center; border: none; border-radius: 8px; font-size: 20px; font-weight: bold; cursor: pointer; text-decoration: none; transition: 0.3s; margin-top: 10px; box-sizing: border-box; }
-        .btn-disabled { background: #bdc3c7; color: white; cursor: not-allowed; pointer-events: none; }
-        .btn-active { background: #27ae60; color: white; box-shadow: 0 5px 15px rgba(39, 174, 96, 0.4); }
-        .btn-active:hover { background: #219150; transform: translateY(-2px); }
-        .course-desc { border-top: 1px solid #eee; margin-top: 40px; padding-top: 30px; line-height: 1.8; color: #333; }
-        .course-desc img { max-width: 100%; height: auto; border-radius: 5px; }
-        .bottom-action-area { margin-top: 40px; border-top: 1px solid #eee; padding-top: 20px; }
-        footer { text-align: center; padding: 40px; color: #999; font-size: 14px; background-color: #2c3e50; color: white; margin-top: 80px; }
-        
-        /* ★★★ 教室預覽樣式 (移植自 booking.html 並調整為靜態展示) ★★★ */
-        .preview-section { margin-top: 40px; padding: 20px; background: #f9f9f9; border-radius: 10px; border: 1px dashed #ccc; }
-        .preview-title { text-align: center; font-weight: bold; color: #2c3e50; margin-bottom: 5px; font-size: 18px; }
-        .preview-subtitle { text-align: center; color: #7f8c8d; font-size: 13px; margin-bottom: 20px; }
-        
-        .classroom-wrapper { 
-            overflow-x: auto; 
-            padding-bottom: 10px; 
-            text-align: center; 
-            user-select: none; 
-            -webkit-overflow-scrolling: touch; 
+        body {
+            font-family: "Microsoft JhengHei", sans-serif;
+            background-color: #f8f9fa;
+            margin: 0;
+            padding: 0;
         }
-        
+
+        header {
+            background: #2c3e50;
+            padding: 15px 20px;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            gap: 20px;
+            color: white;
+            box-shadow: 0 2px 5px rgba(0, 0, 0, 0.1);
+        }
+
+        header img {
+            height: 60px;
+        }
+
+        header h1 {
+            margin: 0;
+            font-size: 24px;
+            letter-spacing: 1px;
+            text-align: center;
+            color: white;
+        }
+
+        .container {
+            max-width: 900px;
+            margin: 40px auto;
+            background: white;
+            padding: 40px;
+            border-radius: 15px;
+            box-shadow: 0 5px 20px rgba(0, 0, 0, 0.1);
+        }
+
+        .back-link {
+            display: inline-block;
+            margin-bottom: 20px;
+            color: #3498db;
+            text-decoration: none;
+            font-size: 16px;
+            font-weight: bold;
+            border: 1px solid #3498db;
+            padding: 8px 20px;
+            border-radius: 20px;
+            transition: 0.3s;
+        }
+
+        .back-link:hover {
+            background: #3498db;
+            color: white;
+        }
+
+        .course-header {
+            display: flex;
+            gap: 30px;
+            margin-bottom: 40px;
+            flex-wrap: wrap;
+        }
+
+        .course-img {
+            flex: 1;
+            min-width: 300px;
+            height: 300px;
+            background-size: cover;
+            background-position: center;
+            border-radius: 10px;
+            background-color: #eee;
+        }
+
+        .course-meta {
+            flex: 1;
+            min-width: 300px;
+        }
+
+        .badge {
+            display: inline-block;
+            padding: 5px 10px;
+            background: #e74c3c;
+            color: white;
+            border-radius: 5px;
+            font-size: 14px;
+            margin-bottom: 10px;
+        }
+
+        h1 {
+            margin: 0 0 15px 0;
+            color: #2c3e50;
+            font-size: 32px;
+        }
+
+        .price {
+            font-size: 28px;
+            color: #27ae60;
+            font-weight: bold;
+            margin-bottom: 20px;
+        }
+
+        .info-item {
+            margin-bottom: 10px;
+            font-size: 16px;
+            color: #555;
+        }
+
+        .info-item strong {
+            color: #333;
+            margin-right: 10px;
+        }
+
+        .countdown-box {
+            background: #fdf2e9;
+            border: 2px solid #f39c12;
+            padding: 20px;
+            border-radius: 10px;
+            text-align: center;
+            margin-top: 30px;
+            box-sizing: border-box;
+            width: 100%;
+        }
+
+        .timer-label {
+            font-size: 16px;
+            color: #d35400;
+            margin-bottom: 5px;
+            white-space: nowrap;
+        }
+
+        .timer-text {
+            font-size: 28px;
+            font-weight: bold;
+            color: #d35400;
+            font-family: monospace;
+            white-space: nowrap;
+        }
+
+        .btn-action {
+            display: inline-block;
+            width: 100%;
+            padding: 15px;
+            text-align: center;
+            border: none;
+            border-radius: 8px;
+            font-size: 20px;
+            font-weight: bold;
+            cursor: pointer;
+            text-decoration: none;
+            transition: 0.3s;
+            margin-top: 10px;
+            box-sizing: border-box;
+        }
+
+        .btn-disabled {
+            background: #bdc3c7;
+            color: white;
+            cursor: not-allowed;
+            pointer-events: none;
+        }
+
+        .btn-active {
+            background: #27ae60;
+            color: white;
+            box-shadow: 0 5px 15px rgba(39, 174, 96, 0.4);
+        }
+
+        .btn-active:hover {
+            background: #219150;
+            transform: translateY(-2px);
+        }
+
+        .course-desc {
+            border-top: 1px solid #eee;
+            margin-top: 40px;
+            padding-top: 30px;
+            line-height: 1.8;
+            color: #333;
+        }
+
+        .course-desc img {
+            max-width: 100%;
+            height: auto;
+            border-radius: 5px;
+        }
+
+        .bottom-action-area {
+            margin-top: 40px;
+            border-top: 1px solid #eee;
+            padding-top: 20px;
+        }
+
+        footer {
+            text-align: center;
+            padding: 40px;
+            color: #999;
+            font-size: 14px;
+            background-color: #2c3e50;
+            color: white;
+            margin-top: 80px;
+        }
+
+        /* ★★★ 教室預覽樣式 (移植自 booking.html 並調整為靜態展示) ★★★ */
+        .preview-section {
+            margin-top: 40px;
+            padding: 20px;
+            background: #f9f9f9;
+            border-radius: 10px;
+            border: 1px dashed #ccc;
+        }
+
+        .preview-title {
+            text-align: center;
+            font-weight: bold;
+            color: #2c3e50;
+            margin-bottom: 5px;
+            font-size: 18px;
+        }
+
+        .preview-subtitle {
+            text-align: center;
+            color: #7f8c8d;
+            font-size: 13px;
+            margin-bottom: 20px;
+        }
+
+        .classroom-wrapper {
+            overflow-x: auto;
+            padding-bottom: 10px;
+            text-align: center;
+            user-select: none;
+            -webkit-overflow-scrolling: touch;
+        }
+
         /* ★ 終極置中解法：讓它變成區塊，寬度貼合內容，然後左右自動推擠置中！ */
         .classroom-inner {
             display: block;
@@ -59,125 +253,241 @@
         }
 
         /* 確保講台與座位表填滿 inner 的真實寬度 */
-        #stageArea, #classroomGrid {
-            display: block; 
+        #stageArea,
+        #classroomGrid {
+            display: block;
             width: 100%;
         }
 
-        .stage-box { 
-            width: 100%; /* 講台會自動拉伸到跟座位一模一樣寬 */
-            margin: 0 auto 20px auto; 
-            padding: 8px; 
-            border: 2px solid #333; 
-            background-color: #fff; 
-            font-weight: bold; 
-            font-size: 16px; 
-            letter-spacing: 5px; 
-            text-align: center; 
-            color: #333; 
+        .stage-box {
+            width: 100%;
+            /* 講台會自動拉伸到跟座位一模一樣寬 */
+            margin: 0 auto 20px auto;
+            padding: 8px;
+            border: 2px solid #333;
+            background-color: #fff;
+            font-weight: bold;
+            font-size: 16px;
+            letter-spacing: 5px;
+            text-align: center;
+            color: #333;
             box-sizing: border-box;
         }
-        
-        .row { 
-            display: flex; 
-            justify-content: center; 
-            gap: 5px; 
-            margin-bottom: 10px; 
+
+        .row {
+            display: flex;
+            justify-content: center;
+            gap: 5px;
+            margin-bottom: 10px;
         }
-        
+
         /* 預覽時座位稍微縮小一點，且預設為綠色 (代表位置存在) */
         /* ★★★ V33.2 電腦版終極修正：字體隨視窗縮放 + 絕對不換行 ★★★ */
         /* ★★★ V33.3 修正：同步寬度 + 處理瀏覽器最小字體限制 ★★★ */
-        .seat { 
+        .seat {
             /* 1. 統一標準：這裡設 45，下面 flex 也要 45 */
-            width: 45px; 
-            height: auto; 
-            aspect-ratio: 45 / 55; 
-            
+            width: 45px;
+            height: auto;
+            aspect-ratio: 45 / 55;
+
             /* 2. 彈性設定：基準值改為 45px，允許縮小到 28px */
-            flex: 0 1 45px; 
-            min-width: 28px; 
+            flex: 0 1 45px;
+            min-width: 28px;
 
             /* 3. 字體魔法：
                最小設 10px (這是大部分瀏覽器的物理極限)
                中間改 2vw (讓它對視窗寬度更敏感)
                最大 14px 
             */
-            font-size: clamp(10px, 2vw, 14px); 
-            
+            font-size: clamp(10px, 2vw, 14px);
+
             /* 4. 鐵血紀律：絕對不換行，超出範圍就藏起來 (保持版面整齊) */
-            white-space: nowrap; 
-            overflow: hidden; 
-            
-            background-color: #4CAF50; 
-            color: white; 
-            display: flex; 
-            align-items: center; 
-            justify-content: center; 
-            border-radius: 6px; 
-            font-weight: bold; 
-            position: relative; 
-            margin: 0 1px; 
+            white-space: nowrap;
+            overflow: hidden;
+
+            background-color: #4CAF50;
+            color: white;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            border-radius: 6px;
+            font-weight: bold;
+            position: relative;
+            margin: 0 1px;
         }
-        
-        
+
+
         /* 預覽專用狀態：被擋住的變灰，走道透明 */
-        .seat.blocked { background-color: #bdc3c7; color: transparent; }
-        .seat.aisle { background-color: transparent; color: transparent; }
-        .seat.door { background-color: #fff; color: #333; border: 1px solid #333; writing-mode: vertical-rl; }
-        .seat.pillar { background-color: #7f8c8d; color: white; }
+        .seat.blocked {
+            background-color: #bdc3c7;
+            color: transparent;
+        }
+
+        .seat.aisle {
+            background-color: transparent;
+            color: transparent;
+        }
+
+        .seat.door {
+            background-color: #fff;
+            color: #333;
+            border: 1px solid #333;
+            writing-mode: vertical-rl;
+        }
+
+        .seat.pillar {
+            background-color: #7f8c8d;
+            color: white;
+        }
 
         /* ★★★ 雙 LINE 按鈕樣式 ★★★ */
-        .float-line-container { position: fixed; bottom: 20px; right: 20px; display: flex; flex-direction: column; gap: 15px; z-index: 9999; align-items: center; }
-        .line-btn { width: 65px; height: 65px; border-radius: 50%; box-shadow: 0 4px 12px rgba(0,0,0,0.3); cursor: pointer; display: flex; flex-direction: column; align-items: center; justify-content: center; text-decoration: none; color: white; font-family: Arial, sans-serif; transition: transform 0.2s; animation: bounce 2s ease-in-out infinite; }
-        .line-btn:active { transform: scale(0.9); animation: none; }
-        .line-btn span.small { font-size: 10px; font-weight: bold; margin-bottom: 2px; letter-spacing: 0px; }
-        .line-btn span.large { font-size: 18px; font-weight: 900; letter-spacing: 1px; }
-        
-        .btn-bear { background-color: #06C755; } /* 山熊科學 - 綠色 */
-        .btn-high { background-color: #0077CC; animation-delay: 1s; } /* 山熊升大 - 深水藍 */
+        .float-line-container {
+            position: fixed;
+            bottom: 20px;
+            right: 20px;
+            display: flex;
+            flex-direction: column;
+            gap: 15px;
+            z-index: 9999;
+            align-items: center;
+        }
 
-        @keyframes bounce { 0%, 20%, 50%, 80%, 100% { transform: translateY(0); } 40% { transform: translateY(-10px); } 60% { transform: translateY(-5px); } }
+        .line-btn {
+            width: 65px;
+            height: 65px;
+            border-radius: 50%;
+            box-shadow: 0 4px 12px rgba(0, 0, 0, 0.3);
+            cursor: pointer;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            text-decoration: none;
+            color: white;
+            font-family: Arial, sans-serif;
+            transition: transform 0.2s;
+            animation: bounce 2s ease-in-out infinite;
+        }
+
+        .line-btn:active {
+            transform: scale(0.9);
+            animation: none;
+        }
+
+        .line-btn span.small {
+            font-size: 10px;
+            font-weight: bold;
+            margin-bottom: 2px;
+            letter-spacing: 0px;
+        }
+
+        .line-btn span.large {
+            font-size: 18px;
+            font-weight: 900;
+            letter-spacing: 1px;
+        }
+
+        .btn-bear {
+            background-color: #06C755;
+        }
+
+        /* 山熊科學 - 綠色 */
+        .btn-high {
+            background-color: #0077CC;
+            animation-delay: 1s;
+        }
+
+        /* 山熊升大 - 深水藍 */
+
+        @keyframes bounce {
+
+            0%,
+            20%,
+            50%,
+            80%,
+            100% {
+                transform: translateY(0);
+            }
+
+            40% {
+                transform: translateY(-10px);
+            }
+
+            60% {
+                transform: translateY(-5px);
+            }
+        }
 
         @media (max-width: 768px) {
-            .main-container { padding-top: 60px; }
-            .back-btn { top: 15px; left: 15px; padding: 5px 10px; font-size: 14px; }
-            .course-info-header h2 { font-size: 20px; margin-top: 10px; }
-            .status-bar { flex-direction: column; align-items: center; gap: 5px; }
-            
+            .main-container {
+                padding-top: 60px;
+            }
+
+            .back-btn {
+                top: 15px;
+                left: 15px;
+                padding: 5px 10px;
+                font-size: 14px;
+            }
+
+            .course-info-header h2 {
+                font-size: 20px;
+                margin-top: 10px;
+            }
+
+            .status-bar {
+                flex-direction: column;
+                align-items: center;
+                gap: 5px;
+            }
+
             /* ★★★ 智慧座位縮放魔法開始 ★★★ */
             .classroom-inner {
-                max-width: 100%; /* 關鍵：確保教室容器最大只到螢幕邊緣，小教室會維持原本寬度 */
+                max-width: 100%;
+                /* 關鍵：確保教室容器最大只到螢幕邊緣，小教室會維持原本寬度 */
             }
-            .stage-box { 
+
+            .stage-box {
                 font-size: 14px;
                 padding: 6px;
                 margin-bottom: 12px;
                 letter-spacing: 5px;
             }
+
             .row {
-                width: 100%; /* 讓排與排之間知道邊界，擠不下的時候才會觸發縮小 */
-                gap: 2px; 
-                margin-bottom: 5px; 
+                width: 100%;
+                /* 讓排與排之間知道邊界，擠不下的時候才會觸發縮小 */
+                gap: 2px;
+                margin-bottom: 5px;
             }
-            .seat { 
+
+            .seat {
                 /* flex 魔法設定： 
                    0 = 不強制放大填滿螢幕 (小教室才不會變超胖)
                    1 = 允許縮小 (大教室遇到螢幕邊緣會自動擠扁)
                    40px = 座位在手機上的理想初始寬度 
                 */
-                flex: 0 1 40px; 
-                min-width: 21px;       /* 就算大教室再怎麼擠，最小也不要低於 21px，保持可讀性 */
-                height: auto;          /* 廢除固定高度！ */
-                aspect-ratio: 45 / 55; /* 神奇屬性：高度永遠自動跟著寬度維持 45:55 的完美比例 */
-                font-size: clamp(8px, 2.5vw, 12px) !important; /* 字體大小也會跟著動態縮放 */
+                flex: 0 1 40px;
+                min-width: 21px;
+                /* 就算大教室再怎麼擠，最小也不要低於 21px，保持可讀性 */
+                height: auto;
+                /* 廢除固定高度！ */
+                aspect-ratio: 45 / 55;
+                /* 神奇屬性：高度永遠自動跟著寬度維持 45:55 的完美比例 */
+                font-size: clamp(8px, 2.5vw, 12px) !important;
+                /* 字體大小也會跟著動態縮放 */
                 border-radius: 3px;
                 padding: 0;
             }
-            .seat:hover, .seat.locked { transform: scale(1.05); } 
+
+            .seat:hover,
+            .seat.locked {
+                transform: scale(1.05);
+            }
         }
     </style>
 </head>
+
 <body>
 
     <header>
@@ -188,7 +498,7 @@
 
     <div class="container">
         <a href="index.html" class="back-link">⬅ 回到課程列表</a>
-        
+
         <div id="loading" style="text-align:center; padding:50px;">載入中...</div>
 
         <div id="content" style="display:none;">
@@ -198,22 +508,29 @@
                     <span class="badge" id="c_grade">年級</span>
                     <h1 id="c_title">課程名稱</h1>
                     <div class="price" id="c_price">$0</div>
-                    
+
                     <div class="info-item"><strong>⏰ 上課時間:</strong> <span id="c_time_desc">-</span></div>
                     <div class="info-item"><strong>👨‍🏫 授課老師:</strong> <span id="c_teacher">-</span></div>
+                    <div class="info-item" id="c_open_time_row" style="display:none;"><strong>🗓️ 報名開放時間:</strong> <span
+                            id="c_open_time">-</span></div>
+                    <div class="info-item" id="c_early_access_row" style="display:none;"><strong>⚡ 提早入場:</strong> <span
+                            id="c_early_access">-</span></div>
                     <div class="info-item"><strong>📍 上課教室:</strong> <span id="c_classroom">-</span></div>
                     <div class="info-item"><strong>📅 開課日期:</strong> <span id="c_start_date">-</span></div>
-                    
+
                     <div id="time_labels"></div>
                 </div>
             </div>
+
+            <!-- ★★ 試聽場次全寬容器（在 course-header 外，可以 Grid 多欄）★★ -->
+            <div id="trial_sessions_container"></div>
 
             <!-- ★★★ 靜態教室預覽 (綠色全開版) ★★★ -->
             <div class="preview-section" id="classroomPreviewSection" style="display:none;">
                 <div class="preview-title">🏫 教室配置示意圖</div>
                 <div class="preview-subtitle">此為座位分佈參考，實際剩餘座位請以劃位頁面為主</div>
                 <div class="classroom-wrapper">
-                    <div class="classroom-inner"> 
+                    <div class="classroom-inner">
                         <div id="stageArea"></div>
                         <div id="classroomGrid"></div>
                     </div>
@@ -235,6 +552,21 @@
         </div>
     </div>
 
+    <!-- ★★★ reCAPTCHA 驗證彈窗（試聽活動用）★★★ -->
+    <div id="recaptchaModal"
+        style="display:none; position:fixed; top:0; left:0; right:0; bottom:0; background:rgba(0,0,0,0.55); z-index:9999; justify-content:center; align-items:center;">
+        <div
+            style="background:#fff; border-radius:15px; padding:35px 30px; max-width:420px; width:90%; box-shadow: 0 10px 40px rgba(0,0,0,0.2); text-align:center;">
+            <h3 style="color:#2c3e50; margin-top:0;">🛡️ 系統安檢驗證</h3>
+            <p style="color:#666; font-size:14px; margin-bottom:20px;">為了確保報名公平性，阻擋外掛腳本。<br>請先完成下方驗證，即可進入候位區填寫志願。</p>
+            <div id="detail-recaptcha" class="g-recaptcha" data-sitekey="6LdkWVwsAAAAAKBQSZKiPxOQ7E3ZbL0V-zaclqt5"
+                data-callback="onDetailRecaptchaSuccess" style="display:inline-block;"></div>
+            <br>
+            <button onclick="document.getElementById('recaptchaModal').style.display='none';"
+                style="margin-top:15px; background:none; border:1px solid #bbb; padding:8px 20px; border-radius:20px; cursor:pointer; color:#777;">取消</button>
+        </div>
+    </div>
+
     <footer>
         &copy; 2025 山熊科學實驗教室 | 系統開發：Sciencebear Tech Team
     </footer>
@@ -251,6 +583,8 @@
         </a>
     </div>
 
+    <script src="https://www.google.com/recaptcha/api.js?hl=zh-TW" async defer></script>
+
     <script type="module">
         import { db, ref, child } from './firebase-config.js';
         import { onValue } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-database.js";
@@ -266,31 +600,47 @@
 
         const params = new URLSearchParams(window.location.search);
         const courseId = params.get('id') ? params.get('id').trim() : null;
+        const eventId = params.get('eventId') ? params.get('eventId').trim() : null;
 
-        if (!courseId) {
-            alert("無效的課程連結！");
-            window.location.href = "index.html"; 
+        if (!courseId && !eventId) {
+            alert("無效的連結！");
+            window.location.href = "index.html";
         }
 
-        const dbRef = ref(db, `courses/${courseId}`);
-        
+        const isTrialEvent = !!eventId;
+        const dbRef = isTrialEvent
+            ? ref(db, `trial_events_config/${eventId}`)
+            : ref(db, `courses/${courseId}`);
+
         onValue(dbRef, (snapshot) => {
             if (snapshot.exists()) {
                 const c = snapshot.val();
-                c.id = courseId; 
+                if (isTrialEvent) {
+                    c.id = eventId;
+                    c.isTrialEvent = true;
+                    c.subject = c.title || '試聽活動';
+                    c.image = c.coverImage || 'https://via.placeholder.com/400x200?text=No+Image';
+                    c.start1 = c.openTime;
+                    c.teacher = c.teacher || '-';
+                    c.timeDescription = c.timeDesc || '-';
+                    c.startDate = c.startDate || '-';
+                    c.grade = "✨ 試聽活動";
+                } else {
+                    c.id = courseId;
+                }
                 renderPage(c);
             } else {
-                console.error("課程不存在:", courseId);
-                alert("找不到此課程！");
-                window.location.href = "index.html"; 
+                console.error("課程/活動不存在:", courseId || eventId);
+                alert("找不到此課程或活動！");
+                window.location.href = "index.html";
             }
         }, (error) => {
             console.error("讀取失敗:", error);
-            alert("讀取課程失敗，請檢查網路或權限。");
+            alert("讀取失敗，請檢查網路或權限。");
         });
 
         let timerInterval = null;
-        
+
         // ★★★ 防閃爍優化：快照變數宣告 ★★★
         let currentImgUrl = "";
         let currentDesc = "";
@@ -300,9 +650,15 @@
             document.getElementById('loading').style.display = 'none';
             document.getElementById('content').style.display = 'block';
 
+            // 設定返回按鈕的參數
+            const backLink = document.querySelector('.back-link');
+            if (backLink) {
+                backLink.href = `index.html?mode=${c.isTrialEvent ? 'trial' : 'regular'}`;
+            }
+
             const title = `${c.subject} ${c.classType || ''}`;
             document.title = `${title} - 課程詳情`;
-            
+
             // 1. 圖片防閃爍：網址不一樣才重載
             if (currentImgUrl !== c.image) {
                 document.getElementById('c_img').style.backgroundImage = `url('${c.image}')`;
@@ -314,37 +670,104 @@
             document.getElementById('c_title').textContent = title;
             document.getElementById('c_price').textContent = c.price;
             document.getElementById('c_teacher').textContent = c.teacher;
-            document.getElementById('c_time_desc').textContent = c.timeDescription || '-';
-            document.getElementById('c_start_date').textContent = c.startDate || '-';
-            
-            // 使用 classrooms 物件取得中文名稱，若無則回退到 c.classroom
-            document.getElementById('c_classroom').textContent = classrooms[c.classroom] ? classrooms[c.classroom].name : c.classroom; 
-            
+            // 試聽活動隱藏不適用的舊欄位，並補充專屬資訊
+            if (c.isTrialEvent) {
+                document.getElementById('c_time_desc').parentElement.style.display = 'none';
+                document.getElementById('c_classroom').parentElement.style.display = 'none';
+                document.getElementById('c_start_date').parentElement.style.display = 'none';
+
+                // ── 報名開放時間 ──
+                const openTimeEl = document.getElementById('c_open_time');
+                document.getElementById('c_open_time_row').style.display = '';
+                if (c.openTime) {
+                    const openDt = new Date(c.openTime);
+                    openTimeEl.textContent = isNaN(openDt.getTime()) ? c.openTime : openDt.toLocaleString('zh-TW', { hour12: false });
+                } else {
+                    openTimeEl.textContent = '尚未設定';
+                }
+
+                // ── 提早進入時間 ──
+                const earlyEl = document.getElementById('c_early_access');
+                const earlyRowEl = document.getElementById('c_early_access_row');
+                const earlySec = parseInt(c.earlyAccessSec) || 0;
+                if (earlySec > 0) {
+                    const earlyMin = Math.floor(earlySec / 60);
+                    const earlySecRem = earlySec % 60;
+                    let earlyText = '';
+                    if (earlyMin > 0) earlyText += `${earlyMin} 分 `;
+                    if (earlySecRem > 0) earlyText += `${earlySecRem} 秒`;
+                    earlyEl.textContent = earlyText.trim() + ' 前可進入選填志願';
+                    earlyRowEl.style.display = '';
+                } else {
+                    earlyRowEl.style.display = 'none';
+                }
+            } else {
+                document.getElementById('c_time_desc').textContent = c.timeDescription || '-';
+                document.getElementById('c_start_date').textContent = c.startDate || '-';
+                document.getElementById('c_classroom').textContent = classrooms[c.classroom] ? classrooms[c.classroom].name : c.classroom;
+            }
+
             // 2. TinyMCE 內容防閃爍
             if (currentDesc !== c.desc) {
                 document.getElementById('c_desc_content').innerHTML = c.desc;
                 currentDesc = c.desc;
             }
 
-            // 3. 靜態座位表防閃爍
-            const newLayoutStr = JSON.stringify(c.layout || (classrooms[c.classroom] ? classrooms[c.classroom].layout : []));
-            if (currentLayoutStr !== newLayoutStr) {
-                renderClassroomPreview(c);
-                currentLayoutStr = newLayoutStr;
+            // 3. 靜態座位表防閃爍 (試聽活動不顯示)
+            if (!c.isTrialEvent) {
+                const newLayoutStr = JSON.stringify(c.layout || (classrooms[c.classroom] ? classrooms[c.classroom].layout : []));
+                if (currentLayoutStr !== newLayoutStr) {
+                    renderClassroomPreview(c);
+                    currentLayoutStr = newLayoutStr;
+                }
+                document.getElementById('classroomPreviewSection').style.display = 'block';
+            } else {
+                document.getElementById('classroomPreviewSection').style.display = 'none';
             }
-            document.getElementById('classroomPreviewSection').style.display = 'block';
 
-            const start1 = new Date(c.start1);
-            const hasStart2 = c.start2 && new Date(c.start2).getFullYear() < 3000;
+            // Safe date parsing helper to prevent NaN and Invalid Date
+            const parseDateToObj = (dateStr) => {
+                if (!dateStr) return null;
+                let d = new Date(dateStr);
+                if (isNaN(d.getTime())) {
+                    d = new Date(dateStr.replace('T', ' ').replace(/-/g, '/'));
+                }
+                if (isNaN(d.getTime())) return null;
+                return d;
+            };
+
+            const start1Obj = parseDateToObj(c.start1);
+            const start2Obj = parseDateToObj(c.start2);
+            const hasStart2 = start2Obj && start2Obj.getFullYear() < 3000;
 
             const timeLabels = document.getElementById('time_labels');
             let html = '';
 
-            if (hasStart2) {
-                html += `<div class="info-item"><strong>🔥 一階開放:</strong> ${start1.toLocaleString()}</div>`;
-                html += `<div class="info-item"><strong>🔥 二階開放:</strong> ${new Date(c.start2).toLocaleString()}</div>`;
+            if (c.isTrialEvent) {
+                if (c.sessions && Object.keys(c.sessions).length > 0) {
+                    const sessContainer = document.getElementById('trial_sessions_container');
+                    let sessHtml = `<div style="margin-bottom:20px; border-top:1px solid #eee; padding-top:15px;">`;
+                    sessHtml += `<h3 style="margin:0 0 12px 0; color:#2c3e50; font-size:16px;">📚 開放梯次/場次</h3>`;
+                    sessHtml += `<div style="display:grid; grid-template-columns: repeat(auto-fill, minmax(260px, 1fr)); gap:10px;">`;
+                    Object.values(c.sessions).forEach(s => {
+                        const roomName = classrooms[s.classroom] ? classrooms[s.classroom].name : (s.classroom || '-');
+                        sessHtml += `<div style="background:#fdf8f0; border:1px solid #f0e0c0; border-radius:8px; padding:10px 14px;">`;
+                        sessHtml += `<div style="font-weight:bold; color:#e67e22; font-size:14px; margin-bottom:4px;">✨ ${s.name || '-'}</div>`;
+                        sessHtml += `<div style="font-size:13px; color:#555;">📅 ${s.date || '-'} &nbsp;⏰ ${s.time || '-'}</div>`;
+                        sessHtml += `<div style="font-size:13px; color:#555;">📍 ${roomName}</div>`;
+                        sessHtml += `</div>`;
+                    });
+                    sessHtml += `</div></div>`;
+                    sessContainer.innerHTML = sessHtml;
+                }
+                timeLabels.innerHTML = ''; // 清空原欄位
             } else {
-                html += `<div class="info-item"><strong>🔥 劃位開放:</strong> ${start1.toLocaleString()}</div>`;
+                if (hasStart2) {
+                    html += `<div class="info-item"><strong>🔥 一階開放:</strong> ${start1Obj ? start1Obj.toLocaleString() : '未設定'}</div>`;
+                    html += `<div class="info-item"><strong>🔥 二階開放:</strong> ${start2Obj ? start2Obj.toLocaleString() : '未設定'}</div>`;
+                } else {
+                    html += `<div class="info-item"><strong>🔥 劃位開放:</strong> ${start1Obj ? start1Obj.toLocaleString() : '未設定'}</div>`;
+                }
             }
             timeLabels.innerHTML = html;
 
@@ -369,7 +792,7 @@
 
             const stageArea = document.getElementById('stageArea');
             const grid = document.getElementById('classroomGrid');
-            
+
             stageArea.innerHTML = hasStage ? '<div class="stage-box">講　台</div>' : '';
             grid.innerHTML = "";
 
@@ -415,30 +838,65 @@
             const timerText = document.getElementById('timerText');
             const btn = document.getElementById('actionBtn');
 
-            const start1 = new Date(c.start1).getTime();
-            const end1 = c.end1 ? new Date(c.end1).getTime() : 9999999999999;
-            const start2 = c.start2 ? new Date(c.start2).getTime() : 9999999999999;
-            const end2 = c.end2 ? new Date(c.end2).getTime() : 9999999999999;
+            // Safe date parsing helper
+            const parseDate = (dateStr) => {
+                if (!dateStr) return 9999999999999;
+                let d = new Date(dateStr);
+                if (isNaN(d.getTime())) {
+                    // Try to parse 'YYYY-MM-DDTHH:mm' which some older browsers might struggle with directly
+                    d = new Date(dateStr.replace('T', ' ').replace(/-/g, '/'));
+                }
+                return d.getTime();
+            };
 
-            const hasStart2 = c.start2 && new Date(c.start2).getFullYear() < 3000;
+            const start1 = parseDate(c.start1);
+            const effectiveStart1 = c.isTrialEvent ? start1 - (parseInt(c.earlyAccessSec) || 0) * 1000 : start1;
+
+            const end1 = (c.isTrialEvent && c.closeTime) ? parseDate(c.closeTime) : (c.end1 ? parseDate(c.end1) : 9999999999999);
+            const start2 = c.start2 ? parseDate(c.start2) : 9999999999999;
+            const end2 = c.end2 ? parseDate(c.end2) : 9999999999999;
+
+            const hasStart2 = c.start2 && parseDate(c.start2) < 253402300799999; // < year 9999
 
             function update() {
                 // ★★★ 導入伺服器時間校準 ★★★
                 const now = Date.now() + serverTimeOffset;
 
-                if (now < start1) {
-                    const diff = start1 - now;
+                // For display, always countdown to true start1
+                const displayDiff = start1 - now;
+
+                if (now < effectiveStart1) {
                     timerLabel.textContent = "距離開放還有";
-                    timerText.textContent = formatTime(diff);
+                    timerText.textContent = formatTime(displayDiff);
                     btn.textContent = "尚未開放";
                     btn.className = "btn-action btn-disabled";
                 }
-                else if (now >= start1 && now < end1) {
+                else if (now >= effectiveStart1 && now < end1) {
                     timerLabel.textContent = "🔥 目前狀態";
-                    timerText.textContent = "開放劃位中";
-                    btn.textContent = "前往劃位 ➜";
-                    btn.className = "btn-action btn-active";
-                    btn.href = `booking.html?class=${c.id}`;
+                    if (now < start1) {
+                        // Still waiting for true start time, but button is ready
+                        timerText.textContent = `即將${c.isTrialEvent ? '開放報名' : '開放'} (${formatTime(displayDiff)})`;
+                    } else {
+                        timerText.textContent = c.isTrialEvent ? "開放報名中" : "開放劃位中";
+                    }
+
+                    if (c.isTrialEvent) {
+                        btn.textContent = "前往報名 ➜";
+                        btn.className = "btn-action btn-active";
+                        // 改為觸發彈窗驗證，不直接跳轉
+                        btn.href = '#';
+                        btn.setAttribute('data-trial-id', c.id);
+                        btn.onclick = function (e) {
+                            e.preventDefault();
+                            window._pendingTrialEventId = c.id;
+                            const modal = document.getElementById('recaptchaModal');
+                            modal.style.display = 'flex';
+                        };
+                    } else {
+                        btn.textContent = "前往劃位 ➜";
+                        btn.className = "btn-action btn-active";
+                        btn.href = `booking.html?class=${c.id}`;
+                    }
                 }
                 else if (now >= end1 && now < start2 && hasStart2) {
                     const diff = start2 - now;
@@ -456,7 +914,7 @@
                 }
                 else {
                     timerLabel.textContent = "⛔ 狀態";
-                    timerText.textContent = "劃位已結束";
+                    timerText.textContent = c.isTrialEvent ? "報名已結束" : "劃位已結束";
                     btn.textContent = "已截止";
                     btn.className = "btn-action btn-disabled";
                 }
@@ -473,6 +931,15 @@
             const s = totalSec % 60;
             return `${h}時 ${m}分 ${s}秒`;
         }
+
+        // reCAPTCHA 彈窗驗證通過後的回呼（必須掛在 window scope 讓 API 找得到）
+        window.onDetailRecaptchaSuccess = function (token) {
+            const eventId = window._pendingTrialEventId;
+            if (eventId) {
+                window.location.href = `trial_booking.html?eventId=${eventId}`;
+            }
+        };
     </script>
 </body>
+
 </html>

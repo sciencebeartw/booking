@@ -4,47 +4,55 @@
         // 課程、橫幅、圖庫 (保留嚴格白名單驗證)
         "courses": {
             ".read": true,
-            ".write": "auth != null && auth.token.email != null && root.child('admins').child(auth.token.email.replace('.', ',')).exists()"
+            ".write": "auth != null && auth.token.email != null && root.child('admins').child(auth.token.email.replace('.', ',').replace('.', ',').replace('.', ',')).exists()"
         },
         "banners": {
             ".read": true,
-            ".write": "auth != null && auth.token.email != null && root.child('admins').child(auth.token.email.replace('.', ',')).exists()"
+            ".write": "auth != null && auth.token.email != null && root.child('admins').child(auth.token.email.replace('.', ',').replace('.', ',').replace('.', ',')).exists()"
+        },
+        "trial_banners": {
+            ".read": true,
+            ".write": "auth != null && auth.token.email != null && root.child('admins').child(auth.token.email.replace('.', ',').replace('.', ',').replace('.', ',')).exists()"
+        },
+        "trial_banner_gallery": {
+            ".read": true,
+            ".write": "auth != null && auth.token.email != null && root.child('admins').child(auth.token.email.replace('.', ',').replace('.', ',').replace('.', ',')).exists()"
         },
         "print_layouts": {
             ".read": true,
-            ".write": "auth != null && auth.token.email != null && root.child('admins').child(auth.token.email.replace('.', ',')).exists()"
+            ".write": "auth != null && auth.token.email != null && root.child('admins').child(auth.token.email.replace('.', ',').replace('.', ',').replace('.', ',')).exists()"
         },
         "banner_gallery": {
             ".read": true,
-            ".write": "auth != null && auth.token.email != null && root.child('admins').child(auth.token.email.replace('.', ',')).exists()"
+            ".write": "auth != null && auth.token.email != null && root.child('admins').child(auth.token.email.replace('.', ',').replace('.', ',').replace('.', ',')).exists()"
         },
         "cover_gallery": {
             ".read": true,
-            ".write": "auth != null && auth.token.email != null && root.child('admins').child(auth.token.email.replace('.', ',')).exists()"
+            ".write": "auth != null && auth.token.email != null && root.child('admins').child(auth.token.email.replace('.', ',').replace('.', ',').replace('.', ',')).exists()"
         },
         "admins": {
-            ".read": "auth != null && auth.token.email != null && root.child('admins').child(auth.token.email.replace('.', ',')).exists()",
+            ".read": "auth != null && auth.token.email != null && root.child('admins').child(auth.token.email.replace('.', ',').replace('.', ',').replace('.', ',')).exists()",
             ".write": false
         },
         // 候補名單
         "waitlist": {
-            ".read": "auth != null && auth.token.email != null && root.child('admins').child(auth.token.email.replace('.', ',')).exists()",
+            ".read": "auth != null && auth.token.email != null && root.child('admins').child(auth.token.email.replace('.', ',').replace('.', ',').replace('.', ',')).exists()",
             "$courseId": {
                 "$waitId": {
-                    ".write": "( !data.exists() && newData.exists() ) || (auth != null && auth.token.email != null && root.child('admins').child(auth.token.email.replace('.', ',')).exists())"
+                    ".write": "( !data.exists() && newData.exists() ) || (auth != null && auth.token.email != null && root.child('admins').child(auth.token.email.replace('.', ',').replace('.', ',').replace('.', ',')).exists())"
                 }
             }
         },
         // 訂單
         "orders": {
-            ".read": "auth != null && auth.token.email != null && root.child('admins').child(auth.token.email.replace('.', ',')).exists()",
+            ".read": "auth != null && auth.token.email != null && root.child('admins').child(auth.token.email.replace('.', ',').replace('.', ',').replace('.', ',')).exists()",
             "$phone": {
                 ".read": true,
                 ".indexOn": [
                     "orderId"
                 ],
                 "$orderId": {
-                    ".write": "( !data.exists() && newData.exists() ) || (auth != null && auth.token.email != null && root.child('admins').child(auth.token.email.replace('.', ',')).exists())"
+                    ".write": "( !data.exists() && newData.exists() ) || (auth != null && auth.token.email != null && root.child('admins').child(auth.token.email.replace('.', ',').replace('.', ',').replace('.', ',')).exists())"
                 }
             }
         },
@@ -60,12 +68,12 @@
                 ],
                 "_settings": {
                     ".read": true,
-                    ".write": "auth != null && auth.token.email != null && root.child('admins').child(auth.token.email.replace('.', ',')).exists()"
+                    ".write": "auth != null && auth.token.email != null && root.child('admins').child(auth.token.email.replace('.', ',').replace('.', ',').replace('.', ',')).exists()"
                 },
                 "$seatId": {
                     ".write": "
                     // 1. 真．管理員擁有無敵權限 (Gemini 貢獻：防堵假管理員)
-            (auth != null && auth.token.email != null && root.child('admins').child(auth.token.email.replace('.', ',')).exists()) ||
+            (auth != null && auth.token.email != null && root.child('admins').child(auth.token.email.replace('.', ',').replace('.', ',').replace('.', ',')).exists()) ||
             
             // 2. 家長放棄座位：軟刪除且驗證本人 (Antigravity 貢獻：防堵亂刪別人座位)
             (
@@ -108,18 +116,27 @@
             }
         },
         "archived_seats": {
-            ".read": "auth != null && auth.token.email != null && root.child('admins').child(auth.token.email.replace('.', ',')).exists()",
-            ".write": "auth != null && auth.token.email != null && root.child('admins').child(auth.token.email.replace('.', ',')).exists()"
+            ".read": "auth != null && auth.token.email != null && root.child('admins').child(auth.token.email.replace('.', ',').replace('.', ',').replace('.', ',')).exists()",
+            ".write": "auth != null && auth.token.email != null && root.child('admins').child(auth.token.email.replace('.', ',').replace('.', ',').replace('.', ',')).exists()"
+        },
+        "trial_events_config": {
+            ".read": true,
+            ".write": "auth != null && auth.token.email != null && root.child('admins').child(auth.token.email.replace('.', ',').replace('.', ',').replace('.', ',')).exists()",
+            "$eventId": {
+                ".write": "auth != null && auth.token.email != null && root.child('admins').child(auth.token.email.replace('.', ',').replace('.', ',').replace('.', ',')).exists()"
+            }
         },
         "trial_events": {
-            ".read": "auth != null && auth.token.email != null && root.child('admins').child(auth.token.email.replace('.', ',')).exists()",
+            ".read": "auth != null && auth.token.email != null && root.child('admins').child(auth.token.email.replace('.', ',').replace('.', ',').replace('.', ',')).exists()",
             "current_token": {
                 ".read": true,
-                ".write": "auth != null && auth.token.email != null && root.child('admins').child(auth.token.email.replace('.', ',')).exists()"
+                ".write": "auth != null && auth.token.email != null && root.child('admins').child(auth.token.email.replace('.', ',').replace('.', ',').replace('.', ',')).exists()"
             },
             "registrations": {
-                "$registration_id": {
-                    ".write": "(auth != null && auth.token.email != null && root.child('admins').child(auth.token.email.replace('.', ',')).exists()) || (!data.exists() && newData.exists() && root.child('trial_events/current_token').exists() && newData.child('secureToken').isString() && newData.child('secureToken').val() === root.child('trial_events/current_token').val())"
+                "$eventId": {
+                    "$registration_id": {
+                        ".write": "(auth != null && auth.token.email != null && root.child('admins').child(auth.token.email.replace('.', ',').replace('.', ',').replace('.', ',')).exists()) || (!data.exists() && newData.exists() && root.child('trial_events/current_token').exists() && newData.child('secureToken').isString() && newData.child('secureToken').val() === root.child('trial_events/current_token').val())"
+                    }
                 }
             }
         }

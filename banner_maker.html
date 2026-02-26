@@ -295,9 +295,42 @@
 
     <!-- ★★★ 引入 Firebase 與模組化腳本 ★★★ -->
     <script type="module">
-        import { db, ref as dbRef, push, set, storage, storageRef, uploadBytes, getDownloadURL } from './firebase-config.js';
+        import { db, ref as dbRef, push, set, storage, storageRef, uploadBytes, getDownloadURL, auth, signInWithPopup, GoogleAuthProvider, get, child } from './firebase-config.js';
+        import { onAuthStateChanged } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-auth.js";
 
-        let adminSessionPwd = ""; // 暫存密碼，不用每次打
+        // ★★★ 系統安全鎖：確保只有白名單管理員可以上傳 ★★★
+        let isAdminVerified = false;
+        let currentUserEmail = "";
+
+        // 監聽登入狀態
+        onAuthStateChanged(auth, async (user) => {
+            if (user) {
+                const safeEmail = user.email.replace(/\./g, ',');
+                try {
+                    const snapshot = await get(child(dbRef(db), `admins/${safeEmail}`));
+                    if (snapshot.exists()) {
+                        isAdminVerified = true;
+                        currentUserEmail = user.email;
+                        console.log("✅ 管理員驗證成功：", currentUserEmail);
+                    } else {
+                        alert("🚨 權限不足：您的帳號不在管理員白名單中！");
+                    }
+                } catch (error) {
+                    console.error("驗證失敗:", error);
+                }
+            }
+        });
+
+        // 彈出 Google 登入視窗的函數
+        window.loginForUpload = async function () {
+            const provider = new GoogleAuthProvider();
+            try {
+                await signInWithPopup(auth, provider);
+            } catch (error) {
+                console.error("登入失敗", error);
+                alert("登入失敗：" + error.message);
+            }
+        };
 
         tinymce.init({
             selector: '.mce-editor-area',
@@ -376,10 +409,12 @@
 
         // ★★★ 核心上傳邏輯：一鍵上傳至 Firebase Storage 與 Database ★★★
         window.uploadBannerToCloud = async function (bannerId, defaultName) {
-            if (!adminSessionPwd) {
-                let pwd = prompt("🔒 系統安全鎖：\n請輸入管理員密碼以上傳至雲端圖庫：");
-                if (!pwd || !pwd.trim()) return;
-                adminSessionPwd = pwd.trim();
+            // ★★★ 攔截檢查：是否登入且在白名單內 ★★★
+            if (!isAdminVerified) {
+                if (confirm("🔒 系統安全鎖：\n您必須以管理員身分登入 Google 才能上傳圖片至雲端。\n\n是否現在登入？")) {
+                    window.loginForUpload();
+                }
+                return;
             }
 
             const btn = event.target;
@@ -417,20 +452,23 @@
                 await uploadBytes(sRef, blob, { contentType: 'image/png' });
                 const url = await getDownloadURL(sRef);
 
-                // 5. 寫入 Database 紀錄
+                // 5. 寫入 Database 紀錄 (不再紀錄密碼，改為紀錄上傳者的 Email)
                 const newDocRef = push(dbRef(db, 'banner_gallery'));
                 await set(newDocRef, {
                     name: saveName,
                     url: url,
                     createdAt: Date.now(),
-                    adminPwd: adminSessionPwd
+                    uploader: currentUserEmail
                 });
 
                 alert(`✅ 成功存入雲端圖庫！\n圖檔名：${saveName}\n您現在可以在後台直接挑選它了。`);
             } catch (error) {
                 console.error(error);
-                alert("❌ 上傳失敗，可能是密碼錯誤或網路問題：" + error.message);
-                adminSessionPwd = ""; // 密碼錯誤就清空重來
+                if (error.message.includes("PERMISSION_DENIED") || error.message.includes("unauthorized")) {
+                    alert("❌ 上傳失敗：權限遭拒。請確認您的儲存空間與資料庫規則已設定正確。");
+                } else {
+                    alert("❌ 上傳失敗，發生錯誤：" + error.message);
+                }
             } finally {
                 btn.textContent = originalText;
                 btn.disabled = false;

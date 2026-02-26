@@ -689,28 +689,32 @@
             document.body.style.display = "block";
         };
 
-        import { auth, signInWithPopup, GoogleAuthProvider, db, ref as dbRef, get, child } from './firebase-config.js';
+        import { auth, signInWithPopup, signInWithRedirect, getRedirectResult, GoogleAuthProvider, db, ref as dbRef, get, child } from './firebase-config.js';
+
+        // ★★★ 處理從 Google OAuth 重定向返回的結果 ★★★
+        getRedirectResult(auth).then(async (result) => {
+            if (!result) return;
+            const user = result.user;
+            const safeEmail = user.email.replace(/\./g, ',');
+            try {
+                const snapshot = await get(child(dbRef(db), `admins/${safeEmail}`));
+                if (snapshot.exists()) {
+                    window.location.href = "admin_bear2026.html";
+                } else {
+                    alert("權限不足！此帳號非系統管理員。");
+                    import('./firebase-config.js').then(module => module.signOut(module.auth));
+                }
+            } catch (e) {
+                console.error("驗證失敗:", e);
+            }
+        }).catch(err => {
+            console.error("Redirect result error:", err);
+        });
 
         window.loginAdminWithGoogle = async function () {
             const provider = new GoogleAuthProvider();
             try {
-                const result = await signInWithPopup(auth, provider);
-                const user = result.user;
-
-                // 檢查是否在白名單內
-                // 修正：配合新版 Rules，直接讀取個人信箱對應的節點
-                const safeEmail = user.email.replace(/\./g, ',');
-                const snapshot = await get(child(dbRef(db), `admins/${safeEmail}`));
-
-                if (snapshot.exists()) {
-                    alert("登入成功！歡迎進入指揮中心。");
-                    window.location.href = "admin_bear2026.html";
-                } else {
-                    alert("權限不足！此帳號非系統管理員。");
-                    // 登出非管理員帳號
-                    import('./firebase-config.js').then(module => module.signOut(module.auth));
-                }
-
+                await signInWithRedirect(auth, provider);
             } catch (error) {
                 console.error("登入失敗:", error);
                 alert("登入發生錯誤：" + error.message);

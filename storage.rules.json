@@ -1,0 +1,17 @@
+rules_version = '2';
+service firebase.storage {
+  match /b/{bucket
+    }/o {
+    match /{allPaths=**
+        } {
+            // 允許所有人讀取圖片 (這樣前台才看得到橫幅)
+      allow read: if true;
+
+      // 嚴格限制寫入：只允許「圖片格式」，且檔案必須小於 5MB (5 * 1024 * 1024 bytes)
+            // 之後我們會再補上 && request.auth != null 來綁定管理員
+      allow write: if request.resource.contentType.matches('image/.*')
+                   && request.resource.size < 5 * 1024 * 1024;
+                   && request.auth != null;
+        }
+    }
+}

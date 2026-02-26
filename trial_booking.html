@@ -407,20 +407,28 @@
 </head>
 
 <body>
-    <header>
-        <img src="logo1.png" alt="山熊科學">
-        <h1>國一新生試聽預約系統</h1>
+    <header
+        style="background: #2c3e50; padding: 15px 20px; display: flex; justify-content: center; align-items: center; gap: 20px; color: white; box-shadow: 0 2px 5px rgba(0,0,0,0.1);">
+        <img src="logo1.png" alt="山熊科學" style="height:60px;">
+        <h1 style="margin: 0; font-size: 24px; letter-spacing: 1px;">山熊科學 / 山熊升大</h1>
+        <img src="logo2.png" alt="山熊升大" style="height:60px;">
     </header>
 
     <div class="main-container">
-
-        <!-- 階段一：防洪閘門 -->
-        <div id="gateway-section">
-            <h2>🛡️ 系統安檢驗證</h2>
-            <p>為了確保報名公平性，阻擋外掛腳本。<br>請先完成下方驗證，即可進入候位區預填志願。</p>
-            <div id="recaptcha-wrapper" class="g-recaptcha" data-sitekey="6LdkWVwsAAAAAKBQSZKiPxOQ7E3ZbL0V-zaclqt5"
-                data-callback="onRecaptchaSuccess"></div>
+        <!-- 返回按鈕 -->
+        <div style="text-align:left; margin-bottom:15px;">
+            <a href="#" id="backBtn"
+                style="color: #3498db; text-decoration: none; font-weight: bold; border: 1px solid #3498db; padding: 5px 15px; border-radius: 20px; transition: 0.3s; display: inline-block;">⬅
+                返回課程詳情</a>
         </div>
+
+        <!-- 課程標題（由 JS 動態善入） -->
+        <h2 id="bookingEventTitle"
+            style="margin: 0 0 20px 0; font-size: 20px; color: #2c3e50; border-bottom: 2px solid #eee; padding-bottom: 12px;">
+        </h2>
+
+        <!-- 階段一：防洪閘門 (gateway 已移至 detail.html 彈窗，預設隐藏) -->
+        <div id="gateway-section" style="display:none;"></div>
 
         <!-- 階段二：正式表單區 -->
         <div id="form-section">
@@ -504,61 +512,108 @@
 
     <script type="module">
         import { db, ref, set, push, get, child } from './firebase-config.js';
-        import { serverTimestamp } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-database.js";
+        // ★★★ 新增：引入 onValue 用來監聽伺服器時間 ★★★
+        import { serverTimestamp, onValue } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-database.js";
 
-        // 設定報名開放時間 (假設為今天 20:00:00)
-        // 開發測試期間，先設定為未來 1 分鐘後
-        const OPEN_DATE = new Date();
-        OPEN_DATE.setMinutes(OPEN_DATE.getMinutes() + 1);
-        OPEN_DATE.setSeconds(0);
+        // ★★★ 核心時間校準監聽 (與正式劃位系統相同) ★★★
+        let serverTimeOffset = 0;
+        onValue(ref(db, ".info/serverTimeOffset"), (snap) => {
+            serverTimeOffset = snap.val() || 0;
+        });
+
+        const urlParams = new URLSearchParams(window.location.search);
+        window.currentEventId = urlParams.get('eventId');
+
+        if (!window.currentEventId) {
+            document.body.innerHTML = "<h2 style='text-align:center;margin-top:50px;'>參數錯誤：URL 缺少 eventId</h2>";
+            throw new Error("Missing eventId");
+        }
+
+        // 設定返回按鈕連結
+        document.getElementById('backBtn').href = `detail.html?eventId=${window.currentEventId}`;
+
+        let currentEvent = null;
+        try {
+            const snap = await get(ref(db, `trial_events_config/${window.currentEventId}`));
+            if (snap.exists() && snap.val().status === 'active') {
+                currentEvent = snap.val();
+                // 顯示課程名稱於表單頂部
+                document.getElementById('bookingEventTitle').textContent = currentEvent.title || '試聽預約';
+                // 驗證已移至 detail.html 彈窗，直接顯示表單
+                document.getElementById('form-section').style.display = 'block';
+            } else {
+                document.body.innerHTML = "<h2 style='text-align:center;margin-top:50px;'>活動不存在或尚未開放/已結束</h2>";
+                throw new Error("Event unavailable");
+            }
+        } catch (e) {
+            console.error(e);
+            throw e;
+        }
+
+        // 設定報名開放時間 (優先抓取設定的確切時間，若無則預設為現在)
+        let OPEN_DATE = new Date();
+        if (currentEvent.openTime) {
+            OPEN_DATE = new Date(currentEvent.openTime);
+        } else {
+            // 向下相容舊的 countdownSeconds
+            OPEN_DATE.setSeconds(OPEN_DATE.getSeconds() + (currentEvent.countdownSeconds || 0));
+        }
 
         let countdownTimer = null;
         let isSystemOpen = false;
 
-        // 1. reCAPTCHA 成功回呼
         window.onRecaptchaSuccess = function (token) {
-            // 驗證過關，隱藏閘門，顯示表單
             document.getElementById('gateway-section').style.display = 'none';
             document.getElementById('form-section').style.display = 'block';
-
-            // 啟動倒數計時
             startCountdown();
         }
 
         // ==========================================
         // 🌟 志願序動態生成與連動邏輯
         // ==========================================
-        const MAX_PREFERENCES = 6;
+        window.MAX_PREFERENCES = 6;
+        if (currentEvent.type === 'single_session') {
+            window.MAX_PREFERENCES = 1;
+            document.querySelector('#form-section p').innerText = "這是一個單場次活動選項，請確認無誤後即可送出。";
+        } else if (currentEvent.type === 'waitlist_only') {
+            window.MAX_PREFERENCES = 2;
+            document.querySelector('#form-section h2:nth-of-type(2)').innerText = "🎓 候補志願序選擇";
+            document.querySelector('#form-section p').innerText = "目前正式名額已滿，我們開放您填寫 2 個候補志願。若有釋出名額將依序通知。";
+        }
+
         const preferenceContainer = document.getElementById('preferenceContainer');
+        let PREFERENCE_OPTIONS_HTML = '<option value="">請選擇 🔽</option>';
 
-        // 定義大一統下拉選單的 HTML 內容 (含分類與結構化 value)
-        const PREFERENCE_OPTIONS_HTML = `
-            <option value="">請選擇 🔽</option>
-            <optgroup label="🌟 雙科連排系列">
-                <option value="both_any">🥇 兩科都上，所有時段皆可 (💡優先同日，滿則拆天，再滿保底單科)</option>
-                <option value="both_0501">限 5/01 (五) 雙科連排 (💡若客滿則進入該日候補)</option>
-                <option value="both_0509">限 5/09 (六) 雙科連排 (💡若客滿則進入該日候補)</option>
-            </optgroup>
-            
-            <optgroup label="📘 單科數學系列">
-                <option value="math_any">單補數學，所有時段皆可 (💡有空位即安排)</option>
-                <option value="math_0501_1300">限 5/01 (五) 下午 1:00 - 2:30 數學</option>
-                <option value="math_0501_1445">限 5/01 (五) 下午 2:45 - 4:15 數學</option>
-                <option value="math_0509_1315">限 5/09 (六) 下午 1:15 - 2:45 數學</option>
-                <option value="math_0509_1500">限 5/09 (六) 下午 3:00 - 4:30 數學</option>
-            </optgroup>
-            
-            <optgroup label="📗 單科自然系列">
-                <option value="sci_any">單補自然，所有時段皆可 (💡有空位即安排)</option>
-                <option value="sci_0501_1300">限 5/01 (五) 下午 1:00 - 2:30 自然</option>
-                <option value="sci_0501_1445">限 5/01 (五) 下午 2:45 - 4:15 自然</option>
-                <option value="sci_0509_1315">限 5/09 (六) 下午 1:15 - 2:45 自然</option>
-                <option value="sci_0509_1500">限 5/09 (六) 下午 3:00 - 4:30 自然</option>
-            </optgroup>
-        `;
+        // 依據活動類型有不同的下拉選單組合策略
+        if (currentEvent.type === 'dual_match') {
+            PREFERENCE_OPTIONS_HTML += `
+                <optgroup label="🌟 雙科連排系列">
+                    <option value="both_any">🥇 兩科都上，所有時段皆可 (優先同日)</option>
+                </optgroup>
+                <optgroup label="📘 單科數學系列">
+                    <option value="math_any">單補數學，所有時段皆可</option>
+            `;
+            let mathOptions = '';
+            let sciOptions = '';
+            let otherOptions = '';
+            for (let key in currentEvent.sessions) {
+                let s = currentEvent.sessions[key];
+                if (s.subject === 'math') mathOptions += `<option value="${key}">${s.name}</option>`;
+                else if (s.subject === 'sci') sciOptions += `<option value="${key}">${s.name}</option>`;
+                else otherOptions += `<option value="${key}">${s.name}</option>`;
+            }
+            PREFERENCE_OPTIONS_HTML += mathOptions + '</optgroup><optgroup label="📗 單科自然系列"><option value="sci_any">單補自然，所有時段皆可</option>' + sciOptions + '</optgroup>';
+            if (otherOptions) {
+                PREFERENCE_OPTIONS_HTML += '<optgroup label="🔧 其他科目">' + otherOptions + '</optgroup>';
+            }
+        } else {
+            for (let key in currentEvent.sessions) {
+                PREFERENCE_OPTIONS_HTML += `<option value="${key}">${currentEvent.sessions[key].name}</option>`;
+            }
+        }
 
-        // 初始化 6 個志願框
-        for (let i = 1; i <= MAX_PREFERENCES; i++) {
+        // 初始化志願框
+        for (let i = 1; i <= window.MAX_PREFERENCES; i++) {
             const isRequired = i === 1 ? '<span style="color:red">* 必填</span>' : ' <span style="color:#999; font-size:14px;">(選填)</span>';
             const prefDiv = document.createElement('div');
             prefDiv.className = 'preference-item' + (i === 1 ? ' active' : '');
@@ -571,6 +626,16 @@
                 </select>
             `;
             preferenceContainer.appendChild(prefDiv);
+        }
+
+        if (currentEvent.type === 'single_session') {
+            const onlyKey = Object.keys(currentEvent.sessions || {})[0];
+            if (onlyKey) {
+                document.getElementById('pref-1').value = onlyKey;
+                // 自動鎖定這個單場次選擇
+                document.getElementById('pref-1').style.pointerEvents = 'none';
+                document.getElementById('pref-1').style.background = '#eee';
+            }
         }
 
         window.updatePreferenceOptions = function () {
@@ -601,7 +666,7 @@
                 const level = parseInt(this.getAttribute('data-level'));
                 const val = this.value;
 
-                if (val && level < MAX_PREFERENCES) {
+                if (val && level < window.MAX_PREFERENCES) {
                     // 如果有選值，且還沒到最後一個，就打開下一個
                     const nextBlock = document.getElementById(`pref-block-${level + 1}`);
                     if (nextBlock) nextBlock.classList.add('active');
@@ -615,7 +680,7 @@
         });
 
         // 3. 倒數計時邏輯
-        // 3. 倒數計時邏輯
+        // 3. 倒數計時邏輯 (已校準伺服器時間)
         window.startCountdown = function () {
             const display = document.getElementById('countdownDisplay');
             const btn = document.getElementById('mainSubmitBtn');
@@ -623,7 +688,8 @@
             const btnText = document.getElementById('btnText');
 
             countdownTimer = setInterval(() => {
-                const now = new Date();
+                // ★★★ 加上 serverTimeOffset，強制抓取 Firebase 伺服器時間 ★★★
+                const now = new Date(Date.now() + serverTimeOffset);
                 const diff = OPEN_DATE.getTime() - now.getTime();
 
                 if (diff <= 0) {
@@ -759,8 +825,9 @@
                 e.stopPropagation(); // 阻止事件冒泡到背景的盲點偵測
                 if (penaltyTimeout) return;
 
-                // 成功！抓取絕對毫秒時間並發送資料
-                const finalTimestampMs = Date.now();
+                // 成功！抓取校準後的絕對毫秒時間並發送資料
+                // ★★★ 加上 serverTimeOffset，確保成績排名絕對公平 ★★★
+                const finalTimestampMs = Date.now() + serverTimeOffset;
                 window.submitFinalData(finalTimestampMs);
             };
         }
@@ -821,7 +888,7 @@
 
             // 收集所有 6 個志願的資料
             let preferences = {};
-            for (let i = 1; i <= MAX_PREFERENCES; i++) {
+            for (let i = 1; i <= window.MAX_PREFERENCES; i++) {
                 const element = document.getElementById(`pref-${i}`);
                 if (element) {
                     preferences[`choice${i}`] = element.value || "none";
@@ -839,7 +906,7 @@
             };
 
             // 使用 Firebase Database 的 PUSH 寫入資料
-            const eventsRef = ref(db, 'trial_events/registrations');
+            const eventsRef = ref(db, `trial_events/registrations/${window.currentEventId}`);
             const newRegistrationRef = push(eventsRef);
 
             // 加入 Firebase serverTimestamp 保障
