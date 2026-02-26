@@ -3501,6 +3501,9 @@ window.renderTrialResults = function (allocated, waitlist, sessionsMap) {
         });
     });
 
+    const wlGrid = document.getElementById('trialWaitlistByClassGrid');
+    wlGrid.innerHTML = "";
+
     for (let cls in waitlistByClass) {
         let div = document.createElement('div');
         div.style.background = "#fff";
@@ -3524,7 +3527,6 @@ window.renderTrialResults = function (allocated, waitlist, sessionsMap) {
 
         waitlistByClass[cls].forEach((stu, wIndex) => {
             let stuItem = document.createElement('div');
-            // 注意：因為同一個人可能出現在多個候補班級中，ID 需要唯一
             stuItem.id = `stu_${stu.id}_wl_${cls}`;
             stuItem.setAttribute('data-class', cls);
             stuItem.setAttribute('data-original-id', stu.id);
@@ -3549,9 +3551,12 @@ window.renderTrialResults = function (allocated, waitlist, sessionsMap) {
         div.appendChild(listContainer);
         wlGrid.appendChild(div);
     }
-    // 儲存到 module-level 供鎖死寫入時使用
-    lastAllocatedResult = allocated;
-    lastWaitlistByClass = waitlistByClass;
+
+}
+
+// 儲存到 module-level 供鎖死寫入時使用
+lastAllocatedResult = allocated;
+lastWaitlistByClass = waitlistByClass;
 }
 
 window.updateClassCounts = function () {

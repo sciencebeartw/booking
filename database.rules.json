@@ -72,10 +72,10 @@
                 },
                 "$seatId": {
                     ".write": "
-                    // 1. 真．管理員擁有無敵權限 (Gemini 貢獻：防堵假管理員)
+                    // 1. 真．管理員擁有無敵權限
             (auth != null && auth.token.email != null && root.child('admins').child(auth.token.email.replace('.', ',').replace('.', ',').replace('.', ',')).exists()) ||
             
-            // 2. 家長放棄座位：軟刪除且驗證本人 (Antigravity 貢獻：防堵亂刪別人座位)
+            // 2. 家長放棄座位：軟刪除且驗證本人
             (
               data.exists() && newData.exists() && 
               data.child('status').val() === 'locked' &&
@@ -119,11 +119,20 @@
             ".read": "auth != null && auth.token.email != null && root.child('admins').child(auth.token.email.replace('.', ',').replace('.', ',').replace('.', ',')).exists()",
             ".write": "auth != null && auth.token.email != null && root.child('admins').child(auth.token.email.replace('.', ',').replace('.', ',').replace('.', ',')).exists()"
         },
+        // ★★★ Phase 8 試聽活動設定與純候補計數器 ★★★
         "trial_events_config": {
             ".read": true,
+            // 根節點：只有管理員能寫入
             ".write": "auth != null && auth.token.email != null && root.child('admins').child(auth.token.email.replace('.', ',').replace('.', ',').replace('.', ',')).exists()",
             "$eventId": {
-                ".write": "auth != null && auth.token.email != null && root.child('admins').child(auth.token.email.replace('.', ',').replace('.', ',').replace('.', ',')).exists()"
+                "sessions": {
+                    "$classKey": {
+                        "currentWaitlistCount": {
+                            // 允許前台家長寫入，但「必須是數字」且「每次只能 +1」，防止竄改與洗單
+                            ".write": "newData.isNumber() && ( (!data.exists() && newData.val() == 1) || (data.exists() && newData.val() == data.val() + 1) )"
+                        }
+                    }
+                }
             }
         },
         "trial_events": {
