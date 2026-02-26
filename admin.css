@@ -301,8 +301,14 @@ td {
     padding: 12px 15px;
     text-align: left;
     border-bottom: 1px solid #ddd;
-    /* Removed white-space: nowrap to allow content wrapping */
+    white-space: nowrap;
     vertical-align: middle;
+}
+
+/* Allow course name wrapping specifically if it gets too long, but keep standard nowrap for most data */
+.wrap-text {
+    white-space: normal !important;
+    min-width: 200px;
 }
 
 /* Specific styling for trial sessions table inputs to prevent overflow */

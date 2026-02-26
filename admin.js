@@ -723,7 +723,7 @@ function renderTable() {
             recoverBtnHtml = `<button class="success" style="padding:5px 10px; font-size:12px; margin-right:5px;" onclick="window.recoverSeat('${b.courseId}', '${b.seatId}', '${b.studentName}', '${b.archiveKey || ""}')">恢復劃位</button>`;
         }
 
-        tr.innerHTML = `<td>${b.orderId}</td><td>${b.courseName}</td><td>${b.time}</td><td>${statusBadge}</td><td>${b.seatId}</td><td>${b.studentName}</td><td>${b.parentPhone}</td>
+        tr.innerHTML = `<td>${b.orderId}</td><td class="wrap-text">${b.courseName}</td><td>${b.time}</td><td>${statusBadge}</td><td>${b.seatId}</td><td>${b.studentName}</td><td>${b.parentPhone}</td>
                 <td>
                     ${recoverBtnHtml}
                     <button class="warning" style="padding:5px 10px; font-size:12px;" onclick="window.editOrder('${b.courseId}', '${b.seatId}', '${b.parentPhone}', '${b.orderId}', '${b.studentName}')">編輯</button>

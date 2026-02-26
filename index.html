@@ -128,19 +128,34 @@
             .header-container {
                 display: flex;
                 flex-direction: column;
-                gap: 10px;
+                gap: 15px;
+                padding: 10px;
             }
 
             .header-left {
-                white-space: normal;
-                flex-wrap: wrap;
+                flex-wrap: nowrap;
                 justify-content: center;
-                text-align: center;
+                align-items: center;
+                padding-left: 0;
+                gap: 10px;
+                width: 100%;
+            }
+
+            .header-left img {
+                height: 40px;
+                /* shrink logo to fit */
+            }
+
+            .header-left h1 {
+                font-size: 18px;
+                /* shrink text to fit */
+                white-space: nowrap;
             }
 
             .header-right {
                 flex-wrap: wrap;
                 justify-content: center;
+                gap: 10px;
             }
 
             .nav-link {
