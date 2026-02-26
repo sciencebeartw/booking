@@ -1102,11 +1102,9 @@
             };
 
 
-            // ★★★ 管理員 Google 登入（彈出視窗模式，最穩定）★★★
-            window.loginAdminWithGoogle = async function () {
-                const provider = new GoogleAuthProvider();
-                try {
-                    const result = await signInWithPopup(auth, provider);
+            // ★★★ 處理 Redirect 登入結果 ★★★
+            getRedirectResult(auth).then(async (result) => {
+                if (result) {
                     const user = result.user;
                     const safeEmail = user.email.replace(/\./g, ',');
                     const snapshot = await get(child(dbRef(db), `admins/${safeEmail}`));
@@ -1117,16 +1115,16 @@
                         const { signOut } = await import('./firebase-config.js');
                         await signOut(auth);
                     }
-                } catch (error) {
-                    if (error.code === 'auth/popup-blocked') {
-                        alert("⚠️ 瀏覽器封鎖了彈出視窗！\n請允許此網站的彈出視窗後再試一次。\n\n（在網址列右側點選「允許彈出式視窗」）");
-                    } else if (error.code === 'auth/popup-closed-by-user') {
-                        // 使用者自行關閉，不需提示
-                    } else {
-                        console.error("登入失敗:", error);
-                        alert("登入發生錯誤：" + error.message);
-                    }
                 }
+            }).catch((error) => {
+                console.error("登入跳轉結果處理失敗:", error);
+                alert("登入發生錯誤：" + error.message);
+            });
+
+            // ★★★ 管理員 Google 登入（跳轉模式，防彈窗阻擋）★★★
+            window.loginAdminWithGoogle = function () {
+                const provider = new GoogleAuthProvider();
+                signInWithRedirect(auth, provider);
             };
 
             // ★★★ Check URL ?mode= Parameter to auto enter mode ★★★

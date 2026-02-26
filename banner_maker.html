@@ -295,8 +295,28 @@
 
     <!-- ★★★ 引入 Firebase 與模組化腳本 ★★★ -->
     <script type="module">
-        import { db, ref as dbRef, push, set, storage, storageRef, uploadBytes, getDownloadURL, auth, signInWithPopup, GoogleAuthProvider, get, child } from './firebase-config.js';
+        import { db, ref as dbRef, push, set, storage, storageRef, uploadBytes, getDownloadURL, auth, signInWithRedirect, getRedirectResult, GoogleAuthProvider, get, child } from './firebase-config.js';
         import { onAuthStateChanged } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-auth.js";
+
+        // ★★★ 處理 Redirect 登入結果 ★★★
+        getRedirectResult(auth).then(async (result) => {
+            if (result) {
+                const user = result.user;
+                const safeEmail = user.email.replace(/\./g, ',');
+                const snapshot = await get(child(dbRef(db), `admins/${safeEmail}`));
+                if (snapshot.exists()) {
+                    isAdminVerified = true;
+                    currentUserEmail = user.email;
+                    console.log("✅ 管理員驗證成功：", currentUserEmail);
+                } else {
+                    alert("🚨 權限不足：您的帳號不在管理員白名單中！");
+                    import('./firebase-config.js').then(module => module.signOut(module.auth));
+                }
+            }
+        }).catch((error) => {
+            console.error("登入跳轉結果處理失敗:", error);
+            alert("登入發生錯誤：" + error.message);
+        });
 
         // ★★★ 系統安全鎖：確保只有白名單管理員可以上傳 ★★★
         let isAdminVerified = false;
@@ -322,14 +342,9 @@
         });
 
         // 彈出 Google 登入視窗的函數
-        window.loginForUpload = async function () {
+        window.loginForUpload = function () {
             const provider = new GoogleAuthProvider();
-            try {
-                await signInWithPopup(auth, provider);
-            } catch (error) {
-                console.error("登入失敗", error);
-                alert("登入失敗：" + error.message);
-            }
+            signInWithRedirect(auth, provider);
         };
 
         tinymce.init({

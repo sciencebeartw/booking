@@ -771,7 +771,7 @@
             document.body.style.display = "block";
         };
 
-        import { auth, signInWithPopup, GoogleAuthProvider, db, ref as dbRef, get, child } from './firebase-config.js';
+        import { auth, signInWithRedirect, getRedirectResult, GoogleAuthProvider, db, ref as dbRef, get, child } from './firebase-config.js';
         import { onAuthStateChanged } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-auth.js";
 
         // ★★★ 智慧登入狀態偵測 ★★★
@@ -784,17 +784,9 @@
             }
         });
 
-        window.loginAdminWithGoogle = async function () {
-            // 如果已經有登入紀錄，不用再跳 Google 視窗，直接進去
-            if (auth.currentUser) {
-                window.location.href = "admin_bear2026.html";
-                return;
-            }
-
-            const provider = new GoogleAuthProvider();
-            try {
-                // 改用 Popup 體驗更好，不會有轉址迷路的問題
-                const result = await signInWithPopup(auth, provider);
+        // ★★★ 處理 Redirect 登入結果 ★★★
+        getRedirectResult(auth).then(async (result) => {
+            if (result) {
                 const user = result.user;
                 const safeEmail = user.email.replace(/\./g, ',');
                 const snapshot = await get(child(dbRef(db), `admins/${safeEmail}`));
@@ -805,10 +797,22 @@
                     alert("權限不足！此帳號非系統管理員。");
                     import('./firebase-config.js').then(module => module.signOut(module.auth));
                 }
-            } catch (error) {
-                console.error("登入失敗:", error);
-                // 通常是使用者自己關閉 Popup，不需特別 alert 報錯
             }
+        }).catch((error) => {
+            console.error("登入跳轉結果處理失敗:", error);
+            alert("登入發生錯誤：" + error.message);
+        });
+
+        window.loginAdminWithGoogle = function () {
+            // 如果已經有登入紀錄，不用再走認證，直接進去
+            if (auth.currentUser) {
+                window.location.href = "admin_bear2026.html";
+                return;
+            }
+
+            const provider = new GoogleAuthProvider();
+            // 改為 signInWithRedirect 防止 popup 阻擋
+            signInWithRedirect(auth, provider);
         };
 
         // 目錄滾動高亮邏輯
