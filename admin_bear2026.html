@@ -79,11 +79,13 @@
                 </div>
                 <div id="mapContent"></div>
             </div>
-            <div style="margin-top:20px;">
-                <input type="text" id="searchInput" placeholder="搜尋姓名、電話或訂單編號..." style="padding:10px; width:300px;">
+            <div
+                style="margin-top:20px; display:flex; flex-wrap:wrap; gap:10px; justify-content:center; align-items:center;">
+                <input type="text" id="searchInput" placeholder="搜尋姓名、電話或訂單編號..."
+                    style="padding:10px; width:100%; max-width:300px;">
                 <button onclick="exportBookingCSV()" class="success">📥 匯出 Excel</button>
-                <button onclick="generateCourseTestData()" class="dark" style="margin-left:10px;">🎲 產生測試資料</button>
-                <button onclick="clearCourseTestData()" class="danger" style="margin-left:5px;">🗑️ 清除測試資料</button>
+                <button onclick="generateCourseTestData()" class="dark">🎲 產生測試資料</button>
+                <button onclick="clearCourseTestData()" class="danger">🗑️ 清除測試資料</button>
             </div>
         </div>
         <div class="table-container">
@@ -111,11 +113,12 @@
             <select id="waitlistSelector" class="big-selector">
                 <option value="all">選擇課程查看候補</option>
             </select>
-            <div style="margin-top:20px;">
+            <div
+                style="margin-top:20px; display:flex; flex-wrap:wrap; gap:10px; justify-content:center; align-items:center;">
                 <input type="text" id="waitlistSearchInput" placeholder="搜尋候補姓名或電話..."
-                    style="padding:10px; width:300px; margin-right:10px;" onkeyup="renderWaitlistTable()">
+                    style="padding:10px; width:100%; max-width:300px;" onkeyup="renderWaitlistTable()">
                 <button onclick="exportWaitlistCSV()" class="success">📥 匯出候補 Excel</button>
-                <button onclick="openManualWaitlistInjection()" class="warning" style="margin-left:10px;">➕ 手動安插候補
+                <button onclick="openManualWaitlistInjection()" class="warning">➕ 手動安插候補
                     (黑箱)</button>
             </div>
         </div>

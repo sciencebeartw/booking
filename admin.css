@@ -613,8 +613,13 @@ tr.duplicate-row {
     border-radius: 10px;
     display: flex;
     flex-direction: column;
-    align-items: center;
+    overflow-x: auto;
     min-height: 600px;
+}
+
+.bill-controls,
+.bill-container {
+    margin: 0 auto;
 }
 
 .bill-controls {
@@ -925,6 +930,7 @@ tr.duplicate-row {
 .config-row {
     display: flex;
     align-items: center;
+    flex-wrap: wrap;
     gap: 10px;
     margin-bottom: 8px;
     padding-bottom: 8px;

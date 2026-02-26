@@ -1463,12 +1463,14 @@ window.renderCourseConfig = function () {
         const div = document.createElement('div');
         div.className = "config-row";
         div.innerHTML = `
-                    <input type="checkbox" id="bill_check_${key}" style="margin-right:10px;" checked onchange="window.processBills()">
-                    <span style="font-weight:bold; display:inline-block; width:200px;">${c.subject}</span>
-                    <input type="text" id="bill_date_${key}" placeholder="日期 (如 3/5)" style="width:80px;" value="${c.billDate || ''}">
-                    <input type="text" id="bill_count_${key}" placeholder="堂數 (如 12)" style="width:60px;" value="${c.billCount || ''}">
-                    <input type="text" id="bill_price_${key}" placeholder="金額" style="width:80px;" value="${c.billPrice || c.price.replace(/[$,]/g, '')}">
-                    <input type="text" id="bill_note_${key}" placeholder="備註 (選填)" style="width:150px;" value="${c.billNote || ''}">
+                    <div style="display:flex; align-items:center; flex: 1 1 100%; min-width:200px; margin-bottom:5px;">
+                        <input type="checkbox" id="bill_check_${key}" style="margin-right:10px;" checked onchange="window.processBills()">
+                        <span style="font-weight:bold; word-break:break-word;">${c.subject}</span>
+                    </div>
+                    <input type="text" id="bill_date_${key}" placeholder="日期 (如 3/5)" style="width:80px; flex: 1 1 80px;" value="${c.billDate || ''}">
+                    <input type="text" id="bill_count_${key}" placeholder="堂數 (如 12)" style="width:60px; flex: 1 1 60px;" value="${c.billCount || ''}">
+                    <input type="text" id="bill_price_${key}" placeholder="金額" style="width:80px; flex: 1 1 80px;" value="${c.billPrice || c.price.replace(/[$,]/g, '')}">
+                    <input type="text" id="bill_note_${key}" placeholder="備註 (選填)" style="width:100px; flex: 2 1 120px;" value="${c.billNote || ''}">
                 `;
         container.appendChild(div);
     });
