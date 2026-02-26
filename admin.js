@@ -2518,7 +2518,7 @@ window.addEventSessionRow = function (key = "", name = "", date = "", time = "",
     tr.innerHTML = `
         <td style="padding:4px;"><div style="display:flex; height:100%; align-items:center;">${keyInputHtml}</div></td>
         <td style="padding:4px;"><div style="display:flex; height:100%; align-items:center;"><input type="text" class="sess-name" placeholder="前台名稱" value="${name}" style="width:100%; padding:8px; box-sizing:border-box;"></div></td>
-        <td style="padding:4px;" class="col-normal" style="${isWaitlist ? 'display:none;' : ''}">
+        <td style="padding:4px; display: ${isWaitlist ? 'none' : 'table-cell'};" class="col-normal">
             <div style="display:flex; flex-direction:column; gap:4px;">
                 <input type="text" class="sess-date" placeholder="日期" value="${date}" style="width:100%; padding:8px; box-sizing:border-box;">
                 <input type="text" class="sess-time" placeholder="時間" value="${time}" style="width:100%; padding:8px; box-sizing:border-box;">
@@ -2530,7 +2530,7 @@ window.addEventSessionRow = function (key = "", name = "", date = "", time = "",
                 </select>
             </div>
         </td>
-        <td style="padding:4px; ${isWaitlist ? '' : 'display:none;'}" class="col-waitlist"><div style="display:flex; height:100%; align-items:center;"><input type="number" class="sess-seq" value="${startSeq}" style="width:100%; padding:8px; box-sizing:border-box;"></div></td>
+        <td style="padding:4px; display: ${isWaitlist ? 'table-cell' : 'none'};" class="col-waitlist"><div style="display:flex; height:100%; align-items:center;"><input type="number" class="sess-seq" value="${startSeq}" style="width:100%; padding:8px; box-sizing:border-box;"></div></td>
         <td style="padding:4px;"><div style="display:flex; height:100%; align-items:center;"><input type="number" class="sess-cap" value="${capacity}" style="width:100%; padding:8px; box-sizing:border-box;"></div></td>
         <td style="padding:4px; text-align:center;"><div style="display:flex; height:100%; align-items:center; justify-content:center;">${deleteBtnHtml}</div></td>
     `;
@@ -2548,12 +2548,12 @@ window.handleEventTypeChange = function (type) {
     const thCapacity = document.getElementById('th_capacity');
 
     if (type === 'waitlist_only') {
-        maxChoicesContainer.style.display = 'block';
+        if (maxChoicesContainer) maxChoicesContainer.style.display = 'block';
         colsNormal.forEach(el => el.style.display = 'none');
         colsWaitlist.forEach(el => el.style.display = 'table-cell');
         if (thCapacity) thCapacity.innerText = '候補上限';
     } else {
-        maxChoicesContainer.style.display = 'none';
+        if (maxChoicesContainer) maxChoicesContainer.style.display = 'none';
         colsNormal.forEach(el => el.style.display = 'table-cell');
         colsWaitlist.forEach(el => el.style.display = 'none');
         if (thCapacity) thCapacity.innerText = '容量';
