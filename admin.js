@@ -59,11 +59,66 @@ const DEFAULT_TEMPLATES = {
     regular_seat: `🐻 山熊科學 - 劃位成功通知 🐻\n\n{{姓名}} 家長您好：\n恭喜您已順利完成課程劃位！您的專屬座位如下：\n\n{{劃位名單}}\n\n📌 後續我們即將為您開立專屬學費單，請留意訊息並於期限內完成繳費，期待相見！`,
     regular_wait: `🐻 山熊科學 - 候補進度通知 🐻\n\n{{姓名}} 家長您好，為您統整目前的候補進度：\n\n{{候補名單}}\n\n📌 若有家長退費或座位釋出，我們將第一時間依序通知您，請耐心等候，謝謝！`,
     regular_mix: `🐻 山熊科學 - 劃位與候補統整 🐻\n\n{{姓名}} 家長您好，為您統整目前的狀態：\n\n✅ 【已成功劃位】\n{{劃位名單}}\n\n⏳ 【目前候補進度】\n{{候補名單}}\n\n📌 成功劃位之科目我們將開立專屬學費單；候補科目若有座位釋出，將依序第一時間通知您！`,
-    trial_seat: `✨ 山熊科學 - 試聽錄取通知 ✨\n\n{{姓名}} 家長您好：\n恭喜您錄取本次試聽活動！您的分發班級如下：\n\n{{劃位名單}}\n\n📌 請保留此訊息作為入場凳證，如有任何問題請隨時聯繫我們！`,
+    trial_seat: `✨ 山熊科學 - 試聽錄取通知 ✨\n\n{{姓名}} 家長您好：\n恭喜您錄取本次試聽活動！您的分發班級如下：\n\n{{劃位名單}}\n\n📌 請保留此訊息作為入場憑證，如有任何問題請隨時聯繫我們！`,
     trial_wait: `✨ 山熊科學 - 試聽候補通知 ✨\n\n{{姓名}} 家長您好：\n本次試聽活動報名熱烈，您目前的候補狀態為：\n\n{{候補名單}}\n\n📌 若有座位釋出，我們將第一時間通知您！`,
-    trial_mix: `✨ 山熊科學 - 試聽分發與候補統整 ✨\n\n{{姓名}} 家長您好，為您統整本次試聽分發結果：\n\n✅ 【已錄取班級】\n{{劃位名單}}\n\n⏳ 【目前候補進度】\n{{候補名單}}\n\n📌 錄取班級請保留此訊息作為凳證；候補班級若有釋出將依序通知您！`
+    trial_mix: `✨ 山熊科學 - 試聽分發與候補統整 ✨\n\n{{姓名}} 家長您好，為您統整本次試聽分發結果：\n\n✅ 【已錄取班級】\n{{劃位名單}}\n\n⏳ 【目前候補進度】\n{{候補名單}}\n\n📌 錄取班級請保留此訊息作為憑證；候補班級若有釋出將依序通知您！`
 };
 let currentTemplates = { ...DEFAULT_TEMPLATES };
+
+// ==========================================
+// 📝 TinyMCE 預設文案模板庫 (Rich Text Templates)
+// ==========================================
+const HTML_TPL_REGULAR = `
+<div style="background-color: #fdf2e9; padding: 20px; border-radius: 10px; border-left: 5px solid #e74c3c; margin-bottom: 20px;">
+<h3 style="color: #c0392b; margin-top: 0; font-size: 20px;">🚨 劃位防護與公平機制 (必讀)</h3>
+<ul style="color: #333; line-height: 1.8; font-size: 16px;">
+<li><strong>90 秒專屬鎖定</strong>：點擊座位後，系統會為您保留 <strong>90 秒</strong>。尖峰時刻極易觸發 Google 圖片驗證，請保持冷靜作答，90 秒絕對充裕！</li>
+<li><strong style="color: #e74c3c;">降低圖片驗證機率之訣竅</strong>：請關閉「無痕模式」與「廣告攔截器 (AdBlock)」。若身處公司或社區大樓，建議暫時關閉 WiFi，<strong>改用個人 4G/5G 行動網路</strong>，可大幅降低被 Google 判定為機器人的機率。</li>
+<li><strong>嚴禁重複劃位</strong>：同一學生僅能佔用一個座位，系統若偵測到異常重複佔位，將<span style="background-color: #ffcccc; color: red; padding: 2px 5px; border-radius: 3px;">直接取消第二個以上的座位</span>。</li>
+<li><strong style="color: #d35400;">家有多寶必看（物理分流）</strong>：同一裝置同時僅能佔用一席。若需搶兩個班級，請務必<strong>使用不同裝置，由家人分頭進行！</strong></li>
+</ul>
+</div>
+<h3 style="color: #2c3e50; border-bottom: 2px dashed #bdc3c7; padding-bottom: 8px;">📝 報名資料填寫規範</h3>
+<ul style="color: #555; line-height: 1.8; font-size: 16px;">
+<li><strong>學生姓名</strong>：請務必填寫學生真實姓名，切勿使用暱稱，且填寫後系統不開放自改。</li>
+<li><strong>家長手機</strong>：請填寫 <span style="color: #27ae60; font-weight: bold;">10 碼正確手機號碼</span>。此號碼將作為日後「查詢訂單」的唯一鑰匙，填錯將無法查詢！</li>
+</ul>
+<div style="background-color: #e8f6f3; padding: 15px; border-radius: 8px; margin-bottom: 20px;">
+<h4 style="color: #16a085; margin-top: 0; font-size: 18px;">💰 繳費與保留座位流程</h4>
+<p style="margin-bottom: 0; color: #333; line-height: 1.6; font-size: 16px;">劃位成功後，若為新生家長，請<strong>務必主動透過 LINE 官方帳號傳送訊息</strong>，告知我們「學生姓名」。我們將在劃位名單整理完後回傳劃位成功確認及學費通知。<br><br>收到通知後，請於 <strong style="color: #d35400;">3 日內</strong> 完成繳費（可現場現金或轉帳）。<br>⚠️ 若逾期未繳且未主動聯繫，系統將自動釋出您的座位給候補同學。</p>
+</div>
+<h3 style="color: #2c3e50; border-bottom: 2px dashed #bdc3c7; padding-bottom: 8px;">📞 聯絡資訊</h3>
+<p style="color: #555; line-height: 1.8; font-size: 16px;"><strong>山熊科學電話：</strong>03-6662248<br><strong>官方 LINE 帳號：</strong><span style="color: #06c755; font-weight: bold; background:#eafaf1; padding:2px 6px; border-radius:4px;">@bearhigh</span> (請記得加 @ 唷！)</p>
+`;
+
+const HTML_TPL_TRIAL_BASE = `
+<div style="background-color: #fdf2e9; padding: 20px; border-radius: 10px; border-left: 5px solid #e74c3c; margin-bottom: 20px;">
+<h3 style="color: #c0392b; margin-top: 0; font-size: 20px;">🚨 系統安檢與防護機制 (必讀)</h3>
+<ul style="color: #333; line-height: 1.8; font-size: 16px;">
+<li><strong style="color: #e74c3c;">降低驗證卡關訣竅</strong>：尖峰時刻極易觸發 Google 圖片驗證。請關閉「無痕模式」與「廣告攔截器 (AdBlock)」。建議暫時關閉 WiFi，<strong>改用個人 4G/5G 行動網路</strong>，可大幅提升送出速度。</li>
+<li><strong>90秒預先入場</strong>：強烈建議在開放前 90 秒先進入網頁填寫基本資料，時間一到直接按下送出。</li>
+</ul>
+</div>
+<!-- MAGIC_BLOCK -->
+<h3 style="color: #2c3e50; border-bottom: 2px dashed #bdc3c7; padding-bottom: 8px;">📝 報名資料填寫規範</h3>
+<ul style="color: #555; line-height: 1.8; font-size: 16px;">
+<li><strong>學生姓名</strong>：請務必填寫學生真實姓名，切勿使用暱稱。</li>
+<li><strong>家長手機</strong>：請填寫 <span style="color: #27ae60; font-weight: bold;">10 碼正確手機號碼</span>。我們將以此號碼發送最終的 <strong>LINE 錄取通知</strong>，填錯將無法收到訊息！</li>
+</ul>
+<div style="background-color: #e8f6f3; padding: 15px; border-radius: 8px; margin-bottom: 20px;">
+<h4 style="color: #16a085; margin-top: 0; font-size: 18px;">📩 後續通知與錄取確認</h4>
+<p style="margin-bottom: 0; color: #333; line-height: 1.6; font-size: 16px;">請注意，網頁送出僅代表完成「意願登記」。<br>分發作業完成後，我們將透過 <strong>山熊官方 LINE 帳號</strong> 單獨發送【正式錄取憑證】或候補進度給您。請留意您的 LINE 訊息！</p>
+</div>
+<h3 style="color: #2c3e50; border-bottom: 2px dashed #bdc3c7; padding-bottom: 8px;">📞 聯絡資訊</h3>
+<p style="color: #555; line-height: 1.8; font-size: 16px;"><strong>山熊科學電話：</strong>03-6662248<br><strong>官方 LINE 帳號：</strong><span style="color: #06c755; font-weight: bold; background:#eafaf1; padding:2px 6px; border-radius:4px;">@bearhigh</span> (請記得加 @ 唷！)</p>
+`;
+
+const TRIAL_LOGIC_BLOCKS = {
+    "single_session": `<div style="background-color: #f4f6f7; padding: 15px; border-radius: 8px; margin-bottom: 20px; border-left: 5px solid #3498db;"><h4 style="color: #2980b9; margin-top: 0; font-size: 18px;">🎯 排序與候補規則 (單場次模式)</h4><ul style="margin-bottom: 0; color: #444; line-height: 1.6; font-size: 15px;"><li>本活動為單一場次，名額有限。</li><li>系統將嚴格依照您最後按下送出瞬間的<strong>「毫秒時間」</strong>進行排序。</li><li>名額額滿後，後續送出之名單將自動轉入<strong>候補池</strong>，依序遞補。</li></ul></div>`,
+    "multi_choice": `<div style="background-color: #f4f6f7; padding: 15px; border-radius: 8px; margin-bottom: 20px; border-left: 5px solid #8e44ad;"><h4 style="color: #8e44ad; margin-top: 0; font-size: 18px;">🎯 志願分發規則 (多梯次模式)</h4><ul style="margin-bottom: 0; color: #444; line-height: 1.6; font-size: 15px;"><li>系統將嚴格依照您按下送出瞬間的<strong>「毫秒時間」</strong>排序，優先滿足早送出者的志願。</li><li><strong>強烈建議多填幾個志願</strong>！若您的第一志願已滿，AI 會瞬間為您安排第二志願，確保您最大的錄取機率。</li></ul></div>`,
+    "dual_match": `<div style="background-color: #f4f6f7; padding: 15px; border-radius: 8px; margin-bottom: 20px; border-left: 5px solid #f39c12;"><h4 style="color: #d35400; margin-top: 0; font-size: 18px;">🎯 雙科分發與保底機制 (配課模式)</h4><ul style="margin-bottom: 0; color: #444; line-height: 1.6; font-size: 15px;"><li>若您選擇<strong>「兩科都上，所有時段皆可」</strong>，AI 會優先為您尋找「同一天連上兩科」的時段，減輕接送負擔。</li><li><strong>降級保底：</strong>若雙科皆爆滿，系統會啟動保底機制，先為您搶下其中一科，並將另一科排入優先候補，絕不讓您兩頭空！</li><li>系統具備「無損挪位」演算法，會盡最大可能優化所有人的排班。</li></ul></div>`,
+    "waitlist_only": `<div style="background-color: #f4f6f7; padding: 15px; border-radius: 8px; margin-bottom: 20px; border-left: 5px solid #95a5a6;"><h4 style="color: #7f8c8d; margin-top: 0; font-size: 18px;">🎯 意願登記規則 (純候補模式)</h4><ul style="margin-bottom: 0; color: #444; line-height: 1.6; font-size: 15px;"><li>本表單目前僅作為「候補意願登記」使用。</li><li>送出表單後即代表您已進入候補名單，<strong>不代表正式錄取</strong>。</li><li>若後續有座位釋出，或是決定加開班級，我們將依據登記順序主動聯繫您。</li></ul></div>`
+};
 
 onValue(ref(db, 'settings/templates'), (snap) => {
     const saved = snap.val() || {};
@@ -473,7 +528,12 @@ window.resetForm = function () {
     document.getElementById('c_price').value = "21600";
     document.getElementById('c_waitlist_enabled').checked = false;
     document.getElementById('c_waitlist_limit').value = "0";
-    tinymce.get('c_desc').setContent('');
+
+    // ★★★ 核心修改：載入正式課程預設完美版文案 ★★★
+    if (tinymce.get('c_desc')) {
+        tinymce.get('c_desc').setContent(HTML_TPL_REGULAR);
+    }
+
     document.getElementById('uploadStatus').textContent = "";
     document.getElementById('imgPreview').style.display = 'none';
 
@@ -2411,11 +2471,13 @@ window.showEventForm = function () {
     document.getElementById('e_openTime').value = '';
     document.getElementById('e_closeTime').value = '';
     document.getElementById('e_earlyAccessSec').value = '0';
+    document.getElementById('e_maxChoices').value = '2';
     document.getElementById('e_status').value = 'active';
 
-    // TinyMCE reset
+    // ★★★ 核心修改：載入試聽預設文案 (預設為 single_session) ★★★
     if (tinymce.get('e_desc')) {
-        tinymce.get('e_desc').setContent('');
+        const defaultHtml = HTML_TPL_TRIAL_BASE.replace('<!-- MAGIC_BLOCK -->', TRIAL_LOGIC_BLOCKS['single_session']);
+        tinymce.get('e_desc').setContent(defaultHtml);
     }
 
     // Image preview reset
@@ -2431,9 +2493,13 @@ window.hideEventForm = function () {
     document.getElementById('eventListView').style.display = 'block';
 };
 
-window.addEventSessionRow = function (key = "", name = "", date = "", time = "", classroomId = "c_normal", subject = "math", capacity = "40", isReadOnly = false) {
+window.addEventSessionRow = function (key = "", name = "", date = "", time = "", classroomId = "c_normal", subject = "math", capacity = "40", isReadOnly = false, startSeq = "1") {
     const container = document.getElementById('e_sessionsContainer');
     const tr = document.createElement('tr');
+
+    // 取得當前的活動類型來決定欄位顯示
+    const currentType = document.getElementById('e_type').value;
+    const isWaitlist = currentType === 'waitlist_only';
 
     let clsOptions = '';
     Object.keys(classrooms).forEach(k => {
@@ -2441,12 +2507,10 @@ window.addEventSessionRow = function (key = "", name = "", date = "", time = "",
         clsOptions += `<option value="${k}" ${sel}>${classrooms[k].name}</option>`;
     });
 
-    // ★★★ 根據 isReadOnly 決定代碼欄位與刪除按鈕是否鎖定 ★★★
     const keyInputHtml = isReadOnly
         ? `<input type="text" class="sess-key" value="${key}" readonly style="width:100%; padding:8px; box-sizing:border-box; background-color:#eee; color:#666; cursor:not-allowed; border: 1px solid #ccc;">`
         : `<input type="text" class="sess-key" placeholder="如 m_01" value="${key}" style="width:100%; padding:8px; box-sizing:border-box;">`;
 
-    // 如果是鎖死狀態，就不顯示刪除按鈕，避免手滑誤刪導致 AI 引擎崩潰
     const deleteBtnHtml = isReadOnly
         ? `<span style="color:#95a5a6; font-size:12px;">🔒 鎖定</span>`
         : `<button onclick="this.closest('tr').remove()" style="background:#e74c3c; color:white; border:none; border-radius:4px; padding:6px 10px; cursor:pointer;">✖</button>`;
@@ -2454,37 +2518,77 @@ window.addEventSessionRow = function (key = "", name = "", date = "", time = "",
     tr.innerHTML = `
         <td style="padding:4px;">${keyInputHtml}</td>
         <td style="padding:4px;"><input type="text" class="sess-name" placeholder="前台名稱" value="${name}" style="width:100%; padding:8px; box-sizing:border-box;"></td>
-        <td style="padding:4px;"><input type="text" class="sess-date" placeholder="如: 2026/08/10" value="${date}" style="width:100%; padding:8px; box-sizing:border-box;"></td>
-        <td style="padding:4px;"><input type="text" class="sess-time" placeholder="如: 18:30-21:30" value="${time}" style="width:100%; padding:8px; box-sizing:border-box;"></td>
-        <td style="padding:4px;"><select class="sess-classroom" style="width:100%; padding:8px; box-sizing:border-box;">${clsOptions}</select></td>
-        <td style="padding:4px;">
+        <td style="padding:4px;" class="col-normal" style="${isWaitlist ? 'display:none;' : ''}">
+            <input type="text" class="sess-date" placeholder="日期" value="${date}" style="width:100%; padding:8px; box-sizing:border-box; margin-bottom:4px;">
+            <input type="text" class="sess-time" placeholder="時間" value="${time}" style="width:100%; padding:8px; box-sizing:border-box; margin-bottom:4px;">
+            <select class="sess-classroom" style="width:100%; padding:8px; box-sizing:border-box; margin-bottom:4px;">${clsOptions}</select>
             <select class="sess-subject" style="width:100%; padding:8px; box-sizing:border-box;">
                 <option value="math" ${subject === 'math' ? 'selected' : ''}>數學</option>
                 <option value="sci" ${subject === 'sci' ? 'selected' : ''}>自然</option>
                 <option value="other" ${subject === 'other' ? 'selected' : ''}>其他/綜合</option>
             </select>
         </td>
+        <td style="padding:4px; ${isWaitlist ? '' : 'display:none;'}" class="col-waitlist"><input type="number" class="sess-seq" value="${startSeq}" style="width:100%; padding:8px; box-sizing:border-box;"></td>
         <td style="padding:4px;"><input type="number" class="sess-cap" value="${capacity}" style="width:100%; padding:8px; box-sizing:border-box;"></td>
         <td style="padding:4px; text-align:center;">${deleteBtnHtml}</td>
     `;
     container.appendChild(tr);
 };
-// ★★★ V36.6 新增：切換活動類型時，決定是否顯示雙科快捷區塊 ★★★
+// ★★★ V36.6 新增：切換活動類型時，決定是否顯示雙科快捷區塊與動態文案 ★★★
 window.handleEventTypeChange = function (type) {
     const quickSet = document.getElementById('dualMatchQuickSet');
+    const container = document.getElementById('e_sessionsContainer');
+
+    // 處理純候補模式的專屬欄位顯示
+    const maxChoicesContainer = document.getElementById('e_maxChoices_container');
+    const colsNormal = document.querySelectorAll('.col-normal');
+    const colsWaitlist = document.querySelectorAll('.col-waitlist');
+    const thCapacity = document.getElementById('th_capacity');
+
+    if (type === 'waitlist_only') {
+        maxChoicesContainer.style.display = 'block';
+        colsNormal.forEach(el => el.style.display = 'none');
+        colsWaitlist.forEach(el => el.style.display = 'table-cell');
+        if (thCapacity) thCapacity.innerText = '候補上限';
+    } else {
+        maxChoicesContainer.style.display = 'none';
+        colsNormal.forEach(el => el.style.display = 'table-cell');
+        colsWaitlist.forEach(el => el.style.display = 'none');
+        if (thCapacity) thCapacity.innerText = '容量';
+    }
+
+    // 處理雙科快捷鍵顯示與防呆切換
     if (type === 'dual_match') {
         quickSet.style.display = 'block';
-        // 如果底下沒有任何場次，安靜地幫他生出 8 個空的
-        const container = document.getElementById('e_sessionsContainer');
+        // 如果底下沒有任何場次，自動幫他生出 8 個 (不使用安靜模式，讓提示窗跳出來)
         if (container.children.length === 0) {
-            window.autoGenerateDualMatchSessions(true);
+            window.autoGenerateDualMatchSessions(false);
         }
     } else {
         quickSet.style.display = 'none';
+        // 智慧防呆：如果切換到非雙科模式，且底下卡著被鎖死的雙科場次，詢問是否清空
+        if (container.children.length > 0) {
+            const hasLockedFields = container.querySelector('.sess-key[readonly]');
+            if (hasLockedFields) {
+                if (confirm("🔄 您切換到了「非雙科配課模式」。\n是否要自動清空下方被鎖定的雙科專屬場次，以便您重新建立？")) {
+                    container.innerHTML = '';
+                }
+            }
+        }
+    }
+
+    // 2. 判斷是否處於「新增模式」(e_id 為空)，如果是，切換對應的文案
+    const eventId = document.getElementById('e_id').value;
+    if (!eventId && tinymce.get('e_desc')) {
+        const currentContent = tinymce.get('e_desc').getContent();
+        if (currentContent === "" || currentContent.includes('🎯 排序與候補規則') || currentContent.includes('🎯 志願分發規則') || currentContent.includes('🎯 雙科分發與保底機制') || currentContent.includes('🎯 意願登記規則')) {
+            const newHtml = HTML_TPL_TRIAL_BASE.replace('<!-- MAGIC_BLOCK -->', TRIAL_LOGIC_BLOCKS[type]);
+            tinymce.get('e_desc').setContent(newHtml);
+        }
     }
 };
 
-// ★★★ V36 雙科 8 場次產生器 (加入 silent 參數，允許安靜生成) ★★★
+// ★★★ V36 雙科 8 場次產生器 (補回詳細的 Alert 說明) ★★★
 window.autoGenerateDualMatchSessions = function (silent = false) {
     const container = document.getElementById('e_sessionsContainer');
     if (!silent && container.children.length > 0) {
@@ -2500,7 +2604,7 @@ window.autoGenerateDualMatchSessions = function (silent = false) {
     window.addEventSessionRow("sci_day2_slotA", "Day 2 自然 (時段 A)", "", "", "high_red", "sci", "40", true);
     window.addEventSessionRow("sci_day2_slotB", "Day 2 自然 (時段 B)", "", "", "high_red", "sci", "40", true);
 
-    if (!silent) alert("✅ 已自動建立 8 個雙科標準場次！");
+    if (!silent) alert("✅ 已自動建立 8 個雙科標準場次！\n\n您現在只需使用上方的『⚡ 快捷設定』或手動填寫名稱與時間即可。\n\n⚠️ 代碼已被鎖定以確保 AI 引擎正常運作。");
 };
 
 // ★★★ 魔法印表機：一鍵將上方 4 個格子套印到下方 8 個場次 ★★★
@@ -2567,10 +2671,11 @@ window.saveTrialEvent = async function () {
     const payload = {
         title: title,
         type: document.getElementById('e_type').value,
-        status: document.getElementById('e_status').value, // kept for backward compatibility if needed
+        status: document.getElementById('e_status').value,
         openTime: document.getElementById('e_openTime').value,
         closeTime: document.getElementById('e_closeTime').value,
         earlyAccessSec: parseInt(document.getElementById('e_earlyAccessSec').value) || 0,
+        maxChoices: parseInt(document.getElementById('e_maxChoices').value) || 2, // ★新增上限
         coverImage: imageUrl,
         teacher: document.getElementById('e_teacher').value,
         desc: tinymce.get('e_desc') ? tinymce.get('e_desc').getContent() : '',
@@ -2584,11 +2689,12 @@ window.saveTrialEvent = async function () {
     sessionRows.forEach(row => {
         const key = row.querySelector('.sess-key').value.trim();
         const name = row.querySelector('.sess-name').value.trim();
-        const date = row.querySelector('.sess-date').value.trim();
-        const time = row.querySelector('.sess-time').value.trim();
-        const classroom = row.querySelector('.sess-classroom').value;
-        const subject = row.querySelector('.sess-subject').value;
+        const date = row.querySelector('.sess-date')?.value.trim() || '';
+        const time = row.querySelector('.sess-time')?.value.trim() || '';
+        const classroom = row.querySelector('.sess-classroom')?.value || '';
+        const subject = row.querySelector('.sess-subject')?.value || '';
         const capacity = parseInt(row.querySelector('.sess-cap').value) || 0;
+        const startSeq = parseInt(row.querySelector('.sess-seq')?.value) || 1; // ★新增起始序號
 
         if (!key || !name) {
             errorMsg = "❌ 場次代碼與名稱不可留白";
@@ -2605,7 +2711,8 @@ window.saveTrialEvent = async function () {
             time: time,
             classroom: classroom,
             subject: subject,
-            capacity: capacity
+            capacity: capacity,
+            startSeq: startSeq // ★寫入
         };
     });
 
@@ -2636,6 +2743,7 @@ window.editEvent = function (id) {
     document.getElementById('e_openTime').value = ev.openTime || '';
     document.getElementById('e_closeTime').value = ev.closeTime || '';
     document.getElementById('e_earlyAccessSec').value = ev.earlyAccessSec || '0';
+    document.getElementById('e_maxChoices').value = ev.maxChoices || '2';
     document.getElementById('e_status').value = ev.status || 'active';
     document.getElementById('e_teacher').value = ev.teacher || '';
 
@@ -2665,9 +2773,12 @@ window.editEvent = function (id) {
 
         Object.keys(ev.sessions).forEach(key => {
             const s = ev.sessions[key];
-            // 傳入 isDualMatch 作為 addEventSessionRow 的第 8 個參數 (isReadOnly)
-            addEventSessionRow(key, s.name, s.date || "", s.time || "", s.classroom || "c_normal", s.subject, s.capacity, isDualMatch);
+            // 第 9 個參數為 startSeq
+            addEventSessionRow(key, s.name, s.date || "", s.time || "", s.classroom || "c_normal", s.subject, s.capacity, isDualMatch, s.startSeq || 1);
         });
+
+        // 載入完畢後，手動觸發一次 UI 切換以確保欄位正確顯示
+        window.handleEventTypeChange(ev.type || 'single_session');
     }
 };
 
@@ -2739,7 +2850,7 @@ window.runTrialAIAllocation = async function () {
                 optCount = runDualMatchEngine(processingList, capacities, allocated, waitlist) || 0;
                 break;
             case "waitlist_only":
-                runWaitlistOnlyEngine(processingList, waitlist);
+                runWaitlistOnlyEngine(processingList, waitlist, currentEvent.sessions);
                 break;
             default:
                 throw new Error("未知的活動類型：" + currentEvent.type);
@@ -2811,18 +2922,40 @@ function runMultiChoiceEngine(processingList, capacities, allocated, waitlist, s
     });
 }
 
-function runWaitlistOnlyEngine(processingList, waitlist) {
-    // 所有人不佔據 allocated，直接進 waitlist，且附帶所選的兩科志願
+function runWaitlistOnlyEngine(processingList, waitlist, sessionsMap) {
+    // 1. 讀取各班設定的起始序號
+    let currentSeq = {};
+    for (let k in sessionsMap) {
+        currentSeq[k] = parseInt(sessionsMap[k].startSeq) || 1;
+    }
+
     processingList.forEach(student => {
         if (student.status === 'deleted') return;
-        if (!student.preferences) student.preferences = {};
 
-        let prefList = [];
-        if (student.preferences.choice1 && student.preferences.choice1 !== "none") prefList.push(student.preferences.choice1);
-        if (student.preferences.choice2 && student.preferences.choice2 !== "none") prefList.push(student.preferences.choice2);
+        let descParts = [];
+        // 前台 Transaction 成功時，會將搶到的班級寫入 bookedClasses 陣列
+        const choices = student.bookedClasses || [];
 
-        student.assignDesc = `等位中 [${prefList.join(", ")}]`;
-        waitlist.push(student);
+        choices.forEach(choice => {
+            if (sessionsMap[choice]) {
+                const seq = currentSeq[choice]++; // 給予序號後遞增
+
+                // 為了讓下方的 renderTrialResults 能正確分班顯示，我們為每一科複製一個虛擬分身塞入 waitlist
+                let stuCopy = JSON.parse(JSON.stringify(student));
+                stuCopy.assignedClasses = []; // 清空以防被當成正取
+                stuCopy.waitlistTarget = choice; // 標記這張卡片是屬於哪個班的候補
+                stuCopy.rank = seq; // 賦予絕對序號
+
+                waitlist.push(stuCopy);
+                descParts.push(`${sessionsMap[choice].name} (#${seq})`);
+            }
+        });
+
+        if (choices.length > 0) {
+            student.assignDesc = `✅ 候補成功: ` + descParts.join(", ");
+        } else {
+            student.assignDesc = "❌ 名額已滿 / 未排入";
+        }
     });
 }
 
@@ -3357,19 +3490,16 @@ window.renderTrialResults = function (allocated, waitlist, sessionsMap) {
     }
 
     waitlist.forEach(stu => {
-        let targetKeys = getWaitlistTargetsKeys(stu.preferences);
+        // 如果是純候補引擎產生出來的分身，它已經自帶目標班級了
+        let targetKeys = stu.waitlistTarget ? [stu.waitlistTarget] : getWaitlistTargetsKeys(stu.preferences);
+
         targetKeys.forEach(key => {
             if (waitlistByClass[key]) {
-                // 排除他已經上榜(正取)的那個班級，只去排他沒上的
                 if (stu.assignedClasses && stu.assignedClasses.includes(key)) return;
-
                 waitlistByClass[key].push(stu);
             }
         });
     });
-
-    const wlGrid = document.getElementById('trialWaitlistByClassGrid');
-    wlGrid.innerHTML = "";
 
     for (let cls in waitlistByClass) {
         let div = document.createElement('div');
@@ -3407,7 +3537,11 @@ window.renderTrialResults = function (allocated, waitlist, sessionsMap) {
             stuItem.style.borderRadius = "4px";
             stuItem.style.fontSize = "12px";
             stuItem.style.cursor = "grab";
-            stuItem.innerHTML = `<span style="background:rgba(0,0,0,0.2); padding:2px 4px; border-radius:3px; margin-right:4px;">#${wIndex + 1}</span> <strong>${stu.studentName}</strong> (${stu.parentPhone})`;
+
+            // ★ 如果引擎已經賦予了絕對 rank，就用它的，否則按順序排
+            let displayRank = stu.rank ? stu.rank : (wIndex + 1);
+
+            stuItem.innerHTML = `<span style="background:rgba(0,0,0,0.2); padding:2px 4px; border-radius:3px; margin-right:4px;">#${displayRank}</span> <strong>${stu.studentName}</strong> (${stu.parentPhone})`;
             listContainer.appendChild(stuItem);
         });
 
@@ -3415,7 +3549,6 @@ window.renderTrialResults = function (allocated, waitlist, sessionsMap) {
         div.appendChild(listContainer);
         wlGrid.appendChild(div);
     }
-
     // 儲存到 module-level 供鎖死寫入時使用
     lastAllocatedResult = allocated;
     lastWaitlistByClass = waitlistByClass;
