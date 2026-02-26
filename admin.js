@@ -3549,14 +3549,10 @@ window.renderTrialResults = function (allocated, waitlist, sessionsMap) {
 
         div.appendChild(header);
         div.appendChild(listContainer);
-        wlGrid.appendChild(div);
     }
-
-}
-
-// 儲存到 module-level 供鎖死寫入時使用
-lastAllocatedResult = allocated;
-lastWaitlistByClass = waitlistByClass;
+    // 儲存到 module-level 供鎖死寫入時使用
+    lastAllocatedResult = allocated;
+    lastWaitlistByClass = waitlistByClass;
 }
 
 window.updateClassCounts = function () {
