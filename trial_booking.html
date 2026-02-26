@@ -634,14 +634,53 @@
             });
         };
 
+        // ==========================================
+        // 🧠 智慧階層式排他邏輯 (Smart Exclusion)
+        // ==========================================
         window.updatePreferenceOptions = function () {
             const allSelects = document.querySelectorAll('.preference-dropdown');
             const selectedValues = Array.from(allSelects).map(s => s.value).filter(v => v !== "");
+
+            // 判斷目前家長有沒有選擇「包牌」選項
+            const hasBothAny = selectedValues.includes('both_any');
+            const hasBothDay1 = selectedValues.includes('both_day1');
+            const hasBothDay2 = selectedValues.includes('both_day2');
+            const hasMathAny = selectedValues.includes('math_any');
+            const hasSciAny = selectedValues.includes('sci_any');
+
             allSelects.forEach(select => {
                 const currentVal = select.value;
                 Array.from(select.options).forEach(option => {
-                    if (option.value === "") return;
-                    if (selectedValues.includes(option.value) && currentVal !== option.value) {
+                    const optVal = option.value;
+                    if (optVal === "") return;
+
+                    let shouldDisable = false;
+
+                    // 1. 基本防護：已經選過的絕對不能再選
+                    if (selectedValues.includes(optVal) && currentVal !== optVal) {
+                        shouldDisable = true;
+                    }
+
+                    // 2. 階層防護：如果不等於當前格子的值，套用包牌排他邏輯
+                    if (currentVal !== optVal) {
+                        // 如果選了終極包牌，其他全部選項都不具意義
+                        if (hasBothAny) shouldDisable = true;
+
+                        // 如果選了 Day1 雙科包牌，那所有 Day1 相關的細項都不必再選
+                        if (hasBothDay1 && optVal.includes('day1')) shouldDisable = true;
+
+                        // 如果選了 Day2 雙科包牌，那所有 Day2 相關的細項都不必再選
+                        if (hasBothDay2 && optVal.includes('day2')) shouldDisable = true;
+
+                        // 如果選了數學包牌，個別數學時段不必再選
+                        if (hasMathAny && optVal.includes('math_')) shouldDisable = true;
+
+                        // 如果選了自然包牌，個別自然時段不必再選
+                        if (hasSciAny && optVal.includes('sci_')) shouldDisable = true;
+                    }
+
+                    // 執行 UI 鎖定
+                    if (shouldDisable) {
                         option.disabled = true;
                         option.style.backgroundColor = '#f4f6f7';
                         option.style.color = '#bdc3c7';
@@ -653,6 +692,34 @@
                 });
             });
         };
+
+        // 核心連動事件綁定
+        document.querySelectorAll('.preference-dropdown').forEach(select => {
+            select.addEventListener('change', function () {
+                const level = parseInt(this.getAttribute('data-level'));
+                const val = this.value;
+
+                // 魔法：如果選了「終極包牌 both_any」，直接隱藏並清空後面所有志願
+                if (val === 'both_any') {
+                    for (let i = level + 1; i <= window.MAX_PREFERENCES; i++) {
+                        const block = document.getElementById(`pref-block-${i}`);
+                        const dropdown = document.getElementById(`pref-${i}`);
+                        if (block && dropdown) {
+                            block.classList.remove('active');
+                            dropdown.value = ""; // 清空值
+                        }
+                    }
+                }
+                // 正常連動：開啟下一個格子
+                else if (val && level < window.MAX_PREFERENCES) {
+                    const nextBlock = document.getElementById(`pref-block-${level + 1}`);
+                    if (nextBlock) nextBlock.classList.add('active');
+                }
+
+                window.updatePreferenceOptions();
+                window.checkFormValidity();
+            });
+        });
 
         window.startCountdown = function () {
             const display = document.getElementById('countdownDisplay');
