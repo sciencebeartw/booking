@@ -2501,7 +2501,7 @@ window.addEventSessionRow = function (key = "", name = "", date = "", time = "",
     const currentType = document.getElementById('e_type').value;
     const isWaitlist = currentType === 'waitlist_only';
 
-    let clsOptions = '';
+    let clsOptions = '<option value="">-- 免選教室 --</option>';
     Object.keys(classrooms).forEach(k => {
         const sel = k === classroomId ? 'selected' : '';
         clsOptions += `<option value="${k}" ${sel}>${classrooms[k].name}</option>`;
@@ -2516,13 +2516,26 @@ window.addEventSessionRow = function (key = "", name = "", date = "", time = "",
         : `<button onclick="this.closest('tr').remove()" style="background:#e74c3c; color:white; border:none; border-radius:4px; padding:6px 10px; cursor:pointer;">✖</button>`;
 
     tr.innerHTML = `
-        <td style="padding:4px;"><div style="display:flex; height:100%; align-items:center;">${keyInputHtml}</div></td>
-        <td style="padding:4px;"><div style="display:flex; height:100%; align-items:center;"><input type="text" class="sess-name" placeholder="前台名稱" value="${name}" style="width:100%; padding:8px; box-sizing:border-box;"></div></td>
-        <td style="padding:4px; display: ${isWaitlist ? 'none' : 'table-cell'};" class="col-normal">
-            <div style="display:flex; flex-direction:column; gap:4px;">
-                <input type="text" class="sess-date" placeholder="日期" value="${date}" style="width:100%; padding:8px; box-sizing:border-box;">
-                <input type="text" class="sess-time" placeholder="時間" value="${time}" style="width:100%; padding:8px; box-sizing:border-box;">
+        <td style="padding:4px; vertical-align:top;">
+            <div style="display:flex; flex-direction:column; gap:6px; height:100%;">
+                ${keyInputHtml}
+                <input type="text" class="sess-name" placeholder="前台顯示名稱" value="${name}" style="width:100%; padding:8px; box-sizing:border-box;">
+            </div>
+        </td>
+        <td style="padding:4px; display: ${isWaitlist ? 'none' : 'table-cell'}; vertical-align:top;" class="col-normal">
+            <div style="display:flex; flex-direction:column; gap:6px;">
+                <input type="text" class="sess-date" placeholder="日期 (例: 5/1)" value="${date}" style="width:100%; padding:8px; box-sizing:border-box;">
+                <input type="text" class="sess-time" placeholder="時間 (例: 13:00-14:30)" value="${time}" style="width:100%; padding:8px; box-sizing:border-box;">
+            </div>
+        </td>
+        <td style="padding:4px; display: ${isWaitlist ? 'none' : 'table-cell'}; vertical-align:top;" class="col-normal">
+            <div style="display:flex; flex-direction:column; gap:6px;">
                 <select class="sess-classroom" style="width:100%; padding:8px; box-sizing:border-box;">${clsOptions}</select>
+                <input type="number" class="sess-cap" placeholder="容量 (可留空)" value="${capacity == 0 ? '' : capacity}" style="width:100%; padding:8px; box-sizing:border-box;">
+            </div>
+        </td>
+        <td style="padding:4px; display: ${isWaitlist ? 'none' : 'table-cell'}; vertical-align:top;" class="col-normal">
+            <div style="display:flex; height:100%;">
                 <select class="sess-subject" style="width:100%; padding:8px; box-sizing:border-box;">
                     <option value="math" ${subject === 'math' ? 'selected' : ''}>數學</option>
                     <option value="sci" ${subject === 'sci' ? 'selected' : ''}>自然</option>
@@ -2530,9 +2543,17 @@ window.addEventSessionRow = function (key = "", name = "", date = "", time = "",
                 </select>
             </div>
         </td>
-        <td style="padding:4px; display: ${isWaitlist ? 'table-cell' : 'none'};" class="col-waitlist"><div style="display:flex; height:100%; align-items:center;"><input type="number" class="sess-seq" value="${startSeq}" style="width:100%; padding:8px; box-sizing:border-box;"></div></td>
-        <td style="padding:4px;"><div style="display:flex; height:100%; align-items:center;"><input type="number" class="sess-cap" value="${capacity}" style="width:100%; padding:8px; box-sizing:border-box;"></div></td>
-        <td style="padding:4px; text-align:center;"><div style="display:flex; height:100%; align-items:center; justify-content:center;">${deleteBtnHtml}</div></td>
+        <td style="padding:4px; display: ${isWaitlist ? 'table-cell' : 'none'}; vertical-align:top;" class="col-waitlist">
+            <div style="display:flex; height:100%;"><input type="number" class="sess-seq" value="${startSeq}" style="width:100%; padding:8px; box-sizing:border-box;"></div>
+        </td>
+        <td style="padding:4px; display: ${isWaitlist ? 'table-cell' : 'none'}; vertical-align:top;" class="col-waitlist">
+            <div style="display:flex; height:100%;">
+                <input type="number" class="sess-waitcap" value="${capacity == 0 ? '' : capacity}" placeholder="候補上限" style="width:100%; padding:8px; box-sizing:border-box;">
+            </div>
+        </td>
+        <td style="padding:4px; text-align:center; vertical-align:middle;">
+            <div style="display:flex; height:100%; align-items:center; justify-content:center;">${deleteBtnHtml}</div>
+        </td>
     `;
     container.appendChild(tr);
 };
@@ -2703,7 +2724,15 @@ window.saveTrialEvent = async function () {
         const time = row.querySelector('.sess-time')?.value.trim() || '';
         const classroom = row.querySelector('.sess-classroom')?.value || '';
         const subject = row.querySelector('.sess-subject')?.value || '';
-        const capacity = parseInt(row.querySelector('.sess-cap').value) || 0;
+
+        const isWaitlistMode = document.getElementById('e_type').value === 'waitlist_only';
+        let capacity = 0;
+        if (isWaitlistMode) {
+            capacity = parseInt(row.querySelector('.sess-waitcap')?.value) || 0;
+        } else {
+            capacity = parseInt(row.querySelector('.sess-cap')?.value) || 0;
+        }
+
         const startSeq = parseInt(row.querySelector('.sess-seq')?.value) || 1; // ★新增起始序號
 
         if (!key || !name) {
