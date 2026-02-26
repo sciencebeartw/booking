@@ -2654,6 +2654,7 @@ window.runTrialAIAllocation = async function () {
         let capacities = {};
         let allocated = {};
         let waitlist = [];
+        let optCount = 0; // 用來接住 AI 無損挪位的次數
 
         if (currentEvent.sessions) {
             Object.keys(currentEvent.sessions).forEach(key => {
@@ -2673,7 +2674,7 @@ window.runTrialAIAllocation = async function () {
                 break;
             case "dual_match":
                 // 讀取已經在上方建構好的 capacities
-                runDualMatchEngine(processingList, capacities, allocated, waitlist);
+                optCount = runDualMatchEngine(processingList, capacities, allocated, waitlist) || 0;
                 break;
             case "waitlist_only":
                 runWaitlistOnlyEngine(processingList, waitlist);
@@ -2693,7 +2694,8 @@ window.runTrialAIAllocation = async function () {
         renderTrialMonitorTable();
 
         const totalAllocated = Object.values(allocated).reduce((sum, arr) => sum + arr.length, 0);
-        statusEl.innerHTML += `<br>🏆 引擎執行完畢。成功劃位 ${totalAllocated} 人次，進入候補 ${waitlist.length} 人。`;
+        let optMsg = optCount > 0 ? ` <span style="color:#8e44ad; font-weight:bold;">(其中 ${optCount} 人次透過 AI 無損挪位獲得黃金席次 ✨)</span>` : '';
+        statusEl.innerHTML += `<br>🏆 引擎執行完畢。成功劃位 ${totalAllocated} 人次${optMsg}，進入候補 ${waitlist.length} 人。`;
 
     } catch (err) {
         statusEl.innerHTML = "❌ 分發失敗：" + err.message;
@@ -3104,6 +3106,8 @@ function runDualMatchEngine(processingList, capacities, allocated, waitlist) {
     // 將新名單覆蓋回 waitlist 陣列，達成指標更新
     waitlist.length = 0;
     waitlist.push(...finalWaitlist);
+
+    return optimizationCount; // 回傳無損挪位次數給主引擎
 }
 
 window.renderTrialResults = function (allocated, waitlist, sessionsMap) {
@@ -4002,41 +4006,3 @@ window.clearTrialTestData = async function () {
         }
     }
 }
-
-// ★★★ 批次管理員匯入工具 (由 AI 協助一次性執行) ★★★
-window.batchImportAdmins = async function () {
-    const adminEmails = [
-        "kuohsu33@gmail.com",
-        "foxgiddens@gmail.com",
-        "gk322923@gmail.com",
-        "hamasaki0710@gmail.com",
-        "bearslab3m@gmail.com",
-        "yehyaya1125@gmail.com",
-        "wade020788@gmail.com",
-        "4415wayne@gmail.com",
-        "qsc93344@gmail.com",
-        "anna00332@gmail.com",
-        "sciencebearhigh@gmail.com",
-        "owencheng11078@gmail.com",
-        "yoyo89227@gmail.com",
-        "hwangshaotarng@gmail.com",
-        "chiaoi4477@gmail.com",
-        "bear6667360@gmail.com"
-    ];
-
-    if (!confirm(`確定要將這 ${adminEmails.length} 位成員加入管理員名單嗎？\n(這將賦予他們最高管理權限)`)) return;
-
-    const updates = {};
-    adminEmails.forEach(email => {
-        const safeKey = email.trim().replace(/\./g, ',');
-        updates[`admins/${safeKey}`] = true;
-    });
-
-    try {
-        await update(ref(db), updates);
-        alert("✅ 管理員名單已成功批次更新！\n現在這些成員可以使用 Google 登入後台了。");
-    } catch (error) {
-        console.error("更新失敗:", error);
-        alert("❌ 更新失敗，請確認您是否具備最高權限：" + error.message);
-    }
-};

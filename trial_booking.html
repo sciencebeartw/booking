@@ -586,9 +586,23 @@
 
         // 依據活動類型有不同的下拉選單組合策略
         if (currentEvent.type === 'dual_match') {
+            // 動態抓取後台設定的日期
+            let day1Date = "Day 1";
+            let day2Date = "Day 2";
+            if (currentEvent.sessions) {
+                if (currentEvent.sessions['math_day1_slotA'] && currentEvent.sessions['math_day1_slotA'].date) {
+                    day1Date = currentEvent.sessions['math_day1_slotA'].date;
+                }
+                if (currentEvent.sessions['math_day2_slotA'] && currentEvent.sessions['math_day2_slotA'].date) {
+                    day2Date = currentEvent.sessions['math_day2_slotA'].date;
+                }
+            }
+
             PREFERENCE_OPTIONS_HTML += `
                 <optgroup label="🌟 雙科連排系列">
                     <option value="both_any">🥇 兩科都上，所有時段皆可 (優先同日)</option>
+                    <option value="both_day1">🥈 兩科都上，限 ${day1Date} 雙科</option>
+                    <option value="both_day2">🥈 兩科都上，限 ${day2Date} 雙科</option>
                 </optgroup>
                 <optgroup label="📘 單科數學系列">
                     <option value="math_any">單補數學，所有時段皆可</option>
