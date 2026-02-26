@@ -512,8 +512,8 @@
 
     <script type="module">
         import { db, ref, set, push, get, child } from './firebase-config.js';
-        // ★★★ 新增：引入 onValue 用來監聽伺服器時間 ★★★
-        import { serverTimestamp, onValue } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-database.js";
+        // ★★★ 引入 Transaction 供限量候補使用 ★★★
+        import { serverTimestamp, onValue, runTransaction } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-database.js";
 
         // ==========================================
         // 變數初始化與頂層監聽
@@ -551,18 +551,63 @@
             const prefContainer = document.getElementById('preferenceContainer');
             prefContainer.innerHTML = ''; // 清空可能存在的舊框架
 
+            // ★★★ 新增：純候補模式專屬渲染 (Checkbox 多選) ★★★
+            if (eventData.type === 'waitlist_only') {
+                window.MAX_PREFERENCES = eventData.maxChoices || 2;
+                document.querySelector('#form-section h2:nth-of-type(2)').innerText = "🎓 限量候補登記區";
+                document.querySelector('#form-section p').innerHTML = `本活動為候補登記，名額有限。<br>每位學生最多可勾選 <strong style="color:#e74c3c; font-size:18px;">${window.MAX_PREFERENCES}</strong> 個班級候補。`;
+
+                const cbContainer = document.createElement('div');
+                cbContainer.style.display = 'flex';
+                cbContainer.style.flexDirection = 'column';
+                cbContainer.style.gap = '10px';
+
+                for (let key in eventData.sessions) {
+                    const s = eventData.sessions[key];
+                    // 為了前台視覺美觀，組裝名稱
+                    let dispName = s.name;
+                    if (s.date && s.time) dispName += ` (${s.date} ${s.time})`;
+
+                    const label = document.createElement('label');
+                    label.style.display = 'flex';
+                    label.style.alignItems = 'center';
+                    label.style.background = '#fff';
+                    label.style.padding = '15px';
+                    label.style.borderRadius = '8px';
+                    label.style.border = '1px solid #ddd';
+                    label.style.cursor = 'pointer';
+                    label.style.fontSize = '16px';
+
+                    label.innerHTML = `
+                        <input type="checkbox" class="waitlist-cb" value="${key}" style="transform:scale(1.5); margin-right:15px;">
+                        <span>${dispName}</span>
+                    `;
+                    cbContainer.appendChild(label);
+                }
+                prefContainer.appendChild(cbContainer);
+
+                // 綁定 Checkbox 數量限制事件
+                document.querySelectorAll('.waitlist-cb').forEach(cb => {
+                    cb.addEventListener('change', function () {
+                        const checkedCount = document.querySelectorAll('.waitlist-cb:checked').length;
+                        if (checkedCount > window.MAX_PREFERENCES) {
+                            this.checked = false; // 取消勾選
+                            Swal.fire({ icon: 'warning', title: '已達上限', text: `您最多只能選擇 ${window.MAX_PREFERENCES} 個班級候補！` });
+                        }
+                        window.checkFormValidity();
+                    });
+                });
+                return; // 純候補模式渲染完畢，直接離開函數
+            }
+
+            // --- 以下為一般模式 (單場次、多梯次、雙科) 的下拉選單渲染 ---
             if (eventData.type === 'single_session') {
                 window.MAX_PREFERENCES = 1;
                 document.querySelector('#form-section p').innerText = "這是一個單場次活動選項，請確認無誤後即可送出。";
-            } else if (eventData.type === 'waitlist_only') {
-                window.MAX_PREFERENCES = 2;
-                document.querySelector('#form-section h2:nth-of-type(2)').innerText = "🎓 候補志願序選擇";
-                document.querySelector('#form-section p').innerText = "目前正式名額已滿，我們開放您填寫 2 個候補志願。若有釋出名額將依序通知。";
             }
 
             let optionsHtml = '<option value="">請選擇 🔽</option>';
 
-            // 依據活動類型建構下拉選單內容
             if (eventData.type === 'dual_match') {
                 let day1Date = "Day 1", day2Date = "Day 2";
                 if (eventData.sessions) {
@@ -594,7 +639,6 @@
                 }
             }
 
-            // 動態產生志願框
             for (let i = 1; i <= window.MAX_PREFERENCES; i++) {
                 const isRequired = i === 1 ? '<span style="color:red">* 必填</span>' : ' <span style="color:#999; font-size:14px;">(選填)</span>';
                 const prefDiv = document.createElement('div');
@@ -609,7 +653,6 @@
                 prefContainer.appendChild(prefDiv);
             }
 
-            // 處理單場次自動帶入
             if (eventData.type === 'single_session') {
                 const onlyKey = Object.keys(eventData.sessions || {})[0];
                 if (onlyKey) {
@@ -620,17 +663,14 @@
                 }
             }
 
-            // 核心連動事件綁定
             document.querySelectorAll('.preference-dropdown').forEach(select => {
                 select.addEventListener('change', function () {
                     const level = parseInt(this.getAttribute('data-level'));
                     const val = this.value;
 
-                    // ★★★ 防斷層截斷：只要「退回請選擇(空值)」或「選了終極包牌」
                     if (val === '' || val === 'both_any') {
                         window.clearAndHideSubsequent(level);
                     }
-                    // 正常連動：如果有選值，且還沒到最後一格，打開下一格
                     else if (val !== '' && level < window.MAX_PREFERENCES) {
                         const nextBlock = document.getElementById(`pref-block-${level + 1}`);
                         if (nextBlock) nextBlock.classList.add('active');
@@ -780,15 +820,24 @@
 
             const rulesAgreed = document.getElementById('rulesAgreed').checked;
             const btn = document.getElementById('mainSubmitBtn');
-            const pref1 = document.getElementById('pref-1').value;
 
             let isValid = true;
+
+            // 1. 檢查基本資料
             if (!document.getElementById('studentName').value || !document.getElementById('parentPhone').value) {
                 isValid = false;
             }
-            if (!pref1) {
-                isValid = false;
+
+            // 2. 檢查選項是否填寫
+            if (currentEvent && currentEvent.type === 'waitlist_only') {
+                const checkedCount = document.querySelectorAll('.waitlist-cb:checked').length;
+                if (checkedCount === 0) isValid = false;
+            } else {
+                const pref1 = document.getElementById('pref-1')?.value;
+                if (!pref1) isValid = false;
             }
+
+            // 3. 檢查同意條款
             if (!rulesAgreed) isValid = false;
 
             if (isValid && isSystemOpen) {
@@ -889,11 +938,23 @@
                 console.warn("無法取得安全憑證 (如非管理員，仍可能被規則阻擋)", err);
             }
 
+            // ★★★ 核心分歧點：判斷是否為純候補限量搶購模式 ★★★
+            const isWaitlistOnly = (currentEvent.type === 'waitlist_only');
+
             let preferences = {};
-            for (let i = 1; i <= window.MAX_PREFERENCES; i++) {
-                const element = document.getElementById(`pref-${i}`);
-                if (element) {
-                    preferences[`choice${i}`] = element.value || "none";
+            let selectedCheckboxes = [];
+
+            if (isWaitlistOnly) {
+                // 收集勾選的班級
+                document.querySelectorAll('.waitlist-cb:checked').forEach(cb => {
+                    selectedCheckboxes.push(cb.value);
+                });
+            } else {
+                for (let i = 1; i <= window.MAX_PREFERENCES; i++) {
+                    const element = document.getElementById(`pref-${i}`);
+                    if (element) {
+                        preferences[`choice${i}`] = element.value || "none";
+                    }
                 }
             }
 
@@ -911,6 +972,97 @@
             const newRegistrationRef = push(eventsRef);
             formData.serverTimestamp = serverTimestamp();
 
+            // ==========================================
+            // 🚀 分支 A：限量候補即時搶購邏輯 (Best-Effort)
+            // ==========================================
+            if (isWaitlistOnly) {
+                let bookedClasses = [];
+                let fullClasses = [];
+
+                // 準備多個非同步交易任務
+                const transactionPromises = selectedCheckboxes.map(classKey => {
+                    const countRef = ref(db, `trial_events_config/${window.currentEventId}/sessions/${classKey}/currentWaitlistCount`);
+                    const limit = currentEvent.sessions[classKey].capacity || 0;
+
+                    return runTransaction(countRef, (currentCount) => {
+                        let count = currentCount || 0;
+                        if (count < limit) {
+                            return count + 1; // 還有名額，佔走一個
+                        } else {
+                            return; // 中止交易 (Aborted)，表示滿了
+                        }
+                    }).then((result) => {
+                        if (result.committed) {
+                            bookedClasses.push(classKey); // 搶到啦
+                        } else {
+                            fullClasses.push(classKey); // 殘念，滿了
+                        }
+                    });
+                });
+
+                // 等待所有班級的搶購交易完成
+                Promise.all(transactionPromises).then(() => {
+                    // 如果全部都滿了，根本不用送出表單，直接回絕
+                    if (bookedClasses.length === 0) {
+                        document.getElementById('anti-cyborg-challenge').style.display = 'none';
+                        Swal.fire({
+                            icon: 'error',
+                            title: '🚨 慢了一步',
+                            html: '<p>您選擇的班級候補名額皆已被搶空！<br>請重新選擇其他班級試試看。</p>',
+                            confirmButtonText: '重新選擇'
+                        });
+                        return; // 中斷後續寫入
+                    }
+
+                    // 將成功搶到的班級記錄在表單中
+                    formData.bookedClasses = bookedClasses;
+
+                    // 寫入最終名單
+                    return set(newRegistrationRef, formData).then(() => {
+                        document.getElementById('anti-cyborg-challenge').style.display = 'none';
+
+                        // 準備成功畫面的文案
+                        let successHtml = '';
+                        bookedClasses.forEach(k => {
+                            successHtml += `<div>✅ ${currentEvent.sessions[k].name}</div>`;
+                        });
+                        let failHtml = '';
+                        if (fullClasses.length > 0) {
+                            failHtml += `<hr><div style="color:#e74c3c; font-weight:bold;">⚠️ 以下班級已額滿，未能排入：</div>`;
+                            fullClasses.forEach(k => {
+                                failHtml += `<div style="color:#e74c3c;">❌ ${currentEvent.sessions[k].name}</div>`;
+                            });
+                        }
+
+                        Swal.fire({
+                            icon: 'success',
+                            title: '🎉 候補登記成功！',
+                            html: `<div style="text-align:left; background:#f4f6f7; padding:15px; border-radius:10px; margin-top:15px; font-size:16px;">
+                                <p style="margin-top:0;"><strong>您的登記結果如下：</strong></p>
+                                ${successHtml}
+                                ${failHtml}
+                                <hr>
+                                <p style="font-size:13px; color:#555; margin-bottom:0;">系統已為您保留上述成功班級的候補資格。<br>確切候補序號將由專人稍後透過 LINE 通知您！</p>
+                                </div>`,
+                            confirmButtonText: '✅ 關閉返回',
+                            confirmButtonColor: '#2ecc71',
+                            allowOutsideClick: false
+                        }).then(() => {
+                            window.location.reload();
+                        });
+                    });
+                }).catch(error => {
+                    console.error("交易失敗:", error);
+                    document.getElementById('anti-cyborg-challenge').style.display = 'none';
+                    Swal.fire('錯誤', '系統忙碌中，請稍後再試。', 'error');
+                });
+
+                return; // 純候補模式流程結束
+            }
+
+            // ==========================================
+            // 🚀 分支 B：一般模式 (原有的寫入邏輯)
+            // ==========================================
             set(newRegistrationRef, formData).then(() => {
                 const dateObj = new Date(msTimestamp);
                 const timeString = `${dateObj.getFullYear()} /${String(dateObj.getMonth() + 1).padStart(2, '0')}/${String(dateObj.getDate()).padStart(2, '0')} ` +
@@ -934,6 +1086,7 @@
                     window.location.reload();
                 });
             }).catch(error => {
+                // 防護：若 Firebase 寫入失敗 (可能是 Token 沒帶對或被阻擋)
                 document.getElementById('anti-cyborg-challenge').style.display = 'none';
                 console.error("寫入被阻擋：", error);
                 Swal.fire({

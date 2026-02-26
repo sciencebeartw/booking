@@ -3549,7 +3549,57 @@ window.renderTrialResults = function (allocated, waitlist, sessionsMap) {
 
         div.appendChild(header);
         div.appendChild(listContainer);
+        wlGrid.appendChild(div);
     }
+
+    const wlGrid = document.getElementById('trialWaitlistByClassGrid');
+    wlGrid.innerHTML = "";
+
+    for (let cls in waitlistByClass) {
+        let div = document.createElement('div');
+        div.style.background = "#fff";
+        div.style.padding = "10px";
+        div.style.borderRadius = "8px";
+        div.style.border = "1px dashed #e74c3c";
+
+        let header = document.createElement('h4');
+        header.style.marginTop = "0";
+        header.style.color = "#c0392b";
+        header.innerText = `⏳排 ${classNames[cls] || cls} (${waitlistByClass[cls].length})`;
+
+        let listContainer = document.createElement('div');
+        listContainer.className = "class-list-container";
+        listContainer.setAttribute('data-cls', cls);
+        listContainer.style.minHeight = "40px";
+        listContainer.style.background = "#fdf2f0";
+        listContainer.style.padding = "5px";
+        listContainer.ondrop = window.drop;
+        listContainer.ondragover = window.allowDrop;
+
+        waitlistByClass[cls].forEach((stu, wIndex) => {
+            let stuItem = document.createElement('div');
+            // 注意：因為同一個人可能出現在多個候補班級中，ID 需要唯一
+            stuItem.id = `stu_${stu.id}_wl_${cls}`;
+            stuItem.setAttribute('data-class', cls);
+            stuItem.setAttribute('data-original-id', stu.id);
+            stuItem.draggable = true;
+            stuItem.ondragstart = window.drag;
+            stuItem.style.background = "#e74c3c";
+            stuItem.style.color = "white";
+            stuItem.style.padding = "6px";
+            stuItem.style.margin = "4px 0";
+            stuItem.style.borderRadius = "4px";
+            stuItem.style.fontSize = "12px";
+            stuItem.style.cursor = "grab";
+            stuItem.innerHTML = `<span style="background:rgba(0,0,0,0.2); padding:2px 4px; border-radius:3px; margin-right:4px;">#${wIndex + 1}</span> <strong>${stu.studentName}</strong> (${stu.parentPhone})`;
+            listContainer.appendChild(stuItem);
+        });
+
+        div.appendChild(header);
+        div.appendChild(listContainer);
+        wlGrid.appendChild(div);
+    }
+
     // 儲存到 module-level 供鎖死寫入時使用
     lastAllocatedResult = allocated;
     lastWaitlistByClass = waitlistByClass;
