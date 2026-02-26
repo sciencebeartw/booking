@@ -621,7 +621,7 @@
     </header>
 
     <div class="main-container">
-        <a href="index.html" class="back-btn">回上一頁</a>
+        <a href="#" id="backBtn" class="back-btn">回上一頁</a>
 
         <div id="courseInfoHeader" class="course-info-header">
             <h2 id="pageTitle">課程名稱</h2>
@@ -815,6 +815,7 @@
             }
 
             currentClassId = courseId;
+            document.getElementById('backBtn').href = "detail.html?id=" + courseId;
 
             onValue(ref(db, `courses/${courseId}`), (snapshot) => {
                 if (!snapshot.exists()) {
