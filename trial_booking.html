@@ -624,102 +624,118 @@
             document.querySelectorAll('.preference-dropdown').forEach(select => {
                 select.addEventListener('change', function () {
                     const level = parseInt(this.getAttribute('data-level'));
-                    if (this.value && level < window.MAX_PREFERENCES) {
+                    const val = this.value;
+
+                    // ★★★ 防斷層截斷：只要「退回請選擇(空值)」或「選了終極包牌」
+                    if (val === '' || val === 'both_any') {
+                        window.clearAndHideSubsequent(level);
+                    }
+                    // 正常連動：如果有選值，且還沒到最後一格，打開下一格
+                    else if (val !== '' && level < window.MAX_PREFERENCES) {
                         const nextBlock = document.getElementById(`pref-block-${level + 1}`);
                         if (nextBlock) nextBlock.classList.add('active');
                     }
+
                     window.updatePreferenceOptions();
                     window.checkFormValidity();
                 });
             });
         };
 
-        // ==========================================
-        // 🧠 智慧階層式排他邏輯 (Smart Exclusion)
-        // ==========================================
+        // 獨立出的輔助函數：負責把大於某個 level 的所有格子清空並隱藏
+        window.clearAndHideSubsequent = function (level) {
+            for (let i = level + 1; i <= window.MAX_PREFERENCES; i++) {
+                const block = document.getElementById(`pref-block-${i}`);
+                const dropdown = document.getElementById(`pref-${i}`);
+                if (block && dropdown) {
+                    dropdown.value = ""; // 清空值
+                    block.classList.remove('active'); // 隱藏框框
+                }
+            }
+        };
+
+        // 🧠 終極智慧排他邏輯：嚴格的 Top-Down (由上而下) 階級制
         window.updatePreferenceOptions = function () {
-            const allSelects = document.querySelectorAll('.preference-dropdown');
-            const selectedValues = Array.from(allSelects).map(s => s.value).filter(v => v !== "");
+            const allSelects = Array.from(document.querySelectorAll('.preference-dropdown'));
+            let prevVals = []; // 用來收集「排在自己前面」的志願選項
+            let forceClearRest = false; // 觸發連鎖清空的旗標
 
-            // 判斷目前家長有沒有選擇「包牌」選項
-            const hasBothAny = selectedValues.includes('both_any');
-            const hasBothDay1 = selectedValues.includes('both_day1');
-            const hasBothDay2 = selectedValues.includes('both_day2');
-            const hasMathAny = selectedValues.includes('math_any');
-            const hasSciAny = selectedValues.includes('sci_any');
-
-            allSelects.forEach(select => {
+            for (let i = 0; i < allSelects.length; i++) {
+                const select = allSelects[i];
                 const currentVal = select.value;
+
+                // 如果前面的格子發生了邏輯矛盾被清空，後面的格子一律連坐清空隱藏
+                if (forceClearRest) {
+                    select.value = "";
+                    continue;
+                }
+
+                // 分析排在自己「前面」的志願，有沒有包牌？ (向下壓制)
+                const hasBothAny = prevVals.includes('both_any');
+                const hasBothDay1 = prevVals.includes('both_day1');
+                const hasBothDay2 = prevVals.includes('both_day2');
+                const hasMathAny = prevVals.includes('math_any');
+                const hasSciAny = prevVals.includes('sci_any');
+
+                // 分析排在自己「前面」的志願，有沒有選細項？ (向上阻擋)
+                const hasAnyMath = prevVals.some(v => v.includes('math_'));
+                const hasAnySci = prevVals.some(v => v.includes('sci_'));
+                const hasAnyDay1 = prevVals.some(v => v.includes('day1'));
+                const hasAnyDay2 = prevVals.some(v => v.includes('day2'));
+
+                let isCurrentValValid = true;
+
+                // 檢查這格的每一個下拉選項
                 Array.from(select.options).forEach(option => {
                     const optVal = option.value;
                     if (optVal === "") return;
 
                     let shouldDisable = false;
 
-                    // 1. 基本防護：已經選過的絕對不能再選
-                    if (selectedValues.includes(optVal) && currentVal !== optVal) {
-                        shouldDisable = true;
-                    }
+                    // 1. 基本防護：前面選過的不能再選
+                    if (prevVals.includes(optVal)) shouldDisable = true;
 
-                    // 2. 階層防護：如果不等於當前格子的值，套用包牌排他邏輯
-                    if (currentVal !== optVal) {
-                        // 如果選了終極包牌，其他全部選項都不具意義
-                        if (hasBothAny) shouldDisable = true;
+                    // 2. 向下壓制：前面選了大包牌，後面細項不可選
+                    if (hasBothAny) shouldDisable = true;
+                    if (hasBothDay1 && optVal.includes('day1')) shouldDisable = true;
+                    if (hasBothDay2 && optVal.includes('day2')) shouldDisable = true;
+                    if (hasMathAny && optVal.includes('math_')) shouldDisable = true;
+                    if (hasSciAny && optVal.includes('sci_')) shouldDisable = true;
 
-                        // 如果選了 Day1 雙科包牌，那所有 Day1 相關的細項都不必再選
-                        if (hasBothDay1 && optVal.includes('day1')) shouldDisable = true;
-
-                        // 如果選了 Day2 雙科包牌，那所有 Day2 相關的細項都不必再選
-                        if (hasBothDay2 && optVal.includes('day2')) shouldDisable = true;
-
-                        // 如果選了數學包牌，個別數學時段不必再選
-                        if (hasMathAny && optVal.includes('math_')) shouldDisable = true;
-
-                        // 如果選了自然包牌，個別自然時段不必再選
-                        if (hasSciAny && optVal.includes('sci_')) shouldDisable = true;
-                    }
+                    // 3. 向上阻擋：前面已經選了細項，後面不可反悔選大包牌 (邏輯矛盾)
+                    if (hasAnyMath && (optVal === 'math_any' || optVal === 'both_any')) shouldDisable = true;
+                    if (hasAnySci && (optVal === 'sci_any' || optVal === 'both_any')) shouldDisable = true;
+                    if (hasAnyDay1 && (optVal === 'both_day1' || optVal === 'both_any')) shouldDisable = true;
+                    if (hasAnyDay2 && (optVal === 'both_day2' || optVal === 'both_any')) shouldDisable = true;
 
                     // 執行 UI 鎖定
                     if (shouldDisable) {
                         option.disabled = true;
                         option.style.backgroundColor = '#f4f6f7';
                         option.style.color = '#bdc3c7';
+
+                        // 矛盾修復：如果這格「目前選的值」因為前面的改動變成了非法選項，標記為失效
+                        if (currentVal === optVal) {
+                            isCurrentValValid = false;
+                        }
                     } else {
                         option.disabled = false;
                         option.style.backgroundColor = '';
                         option.style.color = '';
                     }
                 });
-            });
+
+                // 如果這格的值失效了，清空它，並立起旗標，準備把後面全砍了
+                if (!isCurrentValValid) {
+                    select.value = "";
+                    forceClearRest = true;
+                    window.clearAndHideSubsequent(i + 1); // 隱藏後面的格子
+                } else if (currentVal !== "") {
+                    // 如果這格是合法的，加入學長陣列，用來約束後面的學弟
+                    prevVals.push(currentVal);
+                }
+            }
         };
-
-        // 核心連動事件綁定
-        document.querySelectorAll('.preference-dropdown').forEach(select => {
-            select.addEventListener('change', function () {
-                const level = parseInt(this.getAttribute('data-level'));
-                const val = this.value;
-
-                // 魔法：如果選了「終極包牌 both_any」，直接隱藏並清空後面所有志願
-                if (val === 'both_any') {
-                    for (let i = level + 1; i <= window.MAX_PREFERENCES; i++) {
-                        const block = document.getElementById(`pref-block-${i}`);
-                        const dropdown = document.getElementById(`pref-${i}`);
-                        if (block && dropdown) {
-                            block.classList.remove('active');
-                            dropdown.value = ""; // 清空值
-                        }
-                    }
-                }
-                // 正常連動：開啟下一個格子
-                else if (val && level < window.MAX_PREFERENCES) {
-                    const nextBlock = document.getElementById(`pref-block-${level + 1}`);
-                    if (nextBlock) nextBlock.classList.add('active');
-                }
-
-                window.updatePreferenceOptions();
-                window.checkFormValidity();
-            });
-        });
 
         window.startCountdown = function () {
             const display = document.getElementById('countdownDisplay');
