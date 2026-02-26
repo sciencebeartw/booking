@@ -515,7 +515,9 @@
         // ★★★ 新增：引入 onValue 用來監聽伺服器時間 ★★★
         import { serverTimestamp, onValue } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-database.js";
 
-        // ★★★ 核心時間校準監聽 (與正式劃位系統相同) ★★★
+        // ==========================================
+        // 變數初始化與頂層監聽
+        // ==========================================
         let serverTimeOffset = 0;
         onValue(ref(db, ".info/serverTimeOffset"), (snap) => {
             serverTimeOffset = snap.val() || 0;
@@ -533,141 +535,112 @@
         document.getElementById('backBtn').href = `detail.html?eventId=${window.currentEventId}`;
 
         let currentEvent = null;
-        try {
-            const snap = await get(ref(db, `trial_events_config/${window.currentEventId}`));
-            if (snap.exists() && snap.val().status === 'active') {
-                currentEvent = snap.val();
-                // 顯示課程名稱於表單頂部
-                document.getElementById('bookingEventTitle').textContent = currentEvent.title || '試聽預約';
-
-                // 驗證已移至 detail.html 彈窗，直接顯示表單
-                document.getElementById('form-section').style.display = 'block';
-
-                // ★★★ 關鍵修正：資料載入成功後，必須立即啟動倒數計時引擎 ★★★
-                startCountdown();
-
-            } else {
-                document.body.innerHTML = "<h2 style='text-align:center;margin-top:50px;'>活動不存在或尚未開放/已結束</h2>";
-                throw new Error("Event unavailable");
-            }
-        } catch (e) {
-            console.error(e);
-            throw e;
-        }
-
-        // 設定報名開放時間 (優先抓取設定的確切時間，若無則預設為現在)
         let OPEN_DATE = new Date();
-        if (currentEvent.openTime) {
-            // ★★★ 強化相容性：處理 datetime-local 可能產生的格式問題 ★★★
-            const safeDateStr = currentEvent.openTime.replace('T', ' ').replace(/-/g, '/');
-            OPEN_DATE = new Date(safeDateStr);
-        } else {
-            // 向下相容舊的 countdownSeconds
-            OPEN_DATE.setSeconds(OPEN_DATE.getSeconds() + (currentEvent.countdownSeconds || 0));
-        }
-
         let countdownTimer = null;
         let isSystemOpen = false;
 
-        window.onRecaptchaSuccess = function (token) {
-            document.getElementById('gateway-section').style.display = 'none';
-            document.getElementById('form-section').style.display = 'block';
-            startCountdown();
-        }
+        let penaltyTimeout = null;
+        let incorrectAttempts = 0;
 
         // ==========================================
-        // 🌟 志願序動態生成與連動邏輯
+        // ★★★ 函數宣告區 (必須放在 await 之前) ★★★
         // ==========================================
-        window.MAX_PREFERENCES = 6;
-        if (currentEvent.type === 'single_session') {
-            window.MAX_PREFERENCES = 1;
-            document.querySelector('#form-section p').innerText = "這是一個單場次活動選項，請確認無誤後即可送出。";
-        } else if (currentEvent.type === 'waitlist_only') {
-            window.MAX_PREFERENCES = 2;
-            document.querySelector('#form-section h2:nth-of-type(2)').innerText = "🎓 候補志願序選擇";
-            document.querySelector('#form-section p').innerText = "目前正式名額已滿，我們開放您填寫 2 個候補志願。若有釋出名額將依序通知。";
-        }
 
-        const preferenceContainer = document.getElementById('preferenceContainer');
-        let PREFERENCE_OPTIONS_HTML = '<option value="">請選擇 🔽</option>';
+        window.initializePreferenceUI = function (eventData) {
+            window.MAX_PREFERENCES = 6;
+            const prefContainer = document.getElementById('preferenceContainer');
+            prefContainer.innerHTML = ''; // 清空可能存在的舊框架
 
-        // 依據活動類型有不同的下拉選單組合策略
-        if (currentEvent.type === 'dual_match') {
-            // 動態抓取後台設定的日期
-            let day1Date = "Day 1";
-            let day2Date = "Day 2";
-            if (currentEvent.sessions) {
-                if (currentEvent.sessions['math_day1_slotA'] && currentEvent.sessions['math_day1_slotA'].date) {
-                    day1Date = currentEvent.sessions['math_day1_slotA'].date;
+            if (eventData.type === 'single_session') {
+                window.MAX_PREFERENCES = 1;
+                document.querySelector('#form-section p').innerText = "這是一個單場次活動選項，請確認無誤後即可送出。";
+            } else if (eventData.type === 'waitlist_only') {
+                window.MAX_PREFERENCES = 2;
+                document.querySelector('#form-section h2:nth-of-type(2)').innerText = "🎓 候補志願序選擇";
+                document.querySelector('#form-section p').innerText = "目前正式名額已滿，我們開放您填寫 2 個候補志願。若有釋出名額將依序通知。";
+            }
+
+            let optionsHtml = '<option value="">請選擇 🔽</option>';
+
+            // 依據活動類型建構下拉選單內容
+            if (eventData.type === 'dual_match') {
+                let day1Date = "Day 1", day2Date = "Day 2";
+                if (eventData.sessions) {
+                    if (eventData.sessions['math_day1_slotA']?.date) day1Date = eventData.sessions['math_day1_slotA'].date;
+                    if (eventData.sessions['math_day2_slotA']?.date) day2Date = eventData.sessions['math_day2_slotA'].date;
                 }
-                if (currentEvent.sessions['math_day2_slotA'] && currentEvent.sessions['math_day2_slotA'].date) {
-                    day2Date = currentEvent.sessions['math_day2_slotA'].date;
+
+                optionsHtml += `
+                    <optgroup label="🌟 雙科連排系列">
+                        <option value="both_any">🥇 兩科都上，所有時段皆可 (配位順序：同日雙科 ➔ 跨日雙科 ➔ 保底單科 ➔ 候補)</option>
+                        <option value="both_day1">🥈 兩科都上，限 ${day1Date} (若雙科滿班，則降級保底單科或候補)</option>
+                        <option value="both_day2">🥈 兩科都上，限 ${day2Date} (若雙科滿班，則降級保底單科或候補)</option>
+                    </optgroup>
+                    <optgroup label="📘 單科數學系列">
+                        <option value="math_any">單補數學，所有時段皆可</option>
+                `;
+                let mathOptions = '', sciOptions = '', otherOptions = '';
+                for (let key in eventData.sessions) {
+                    let s = eventData.sessions[key];
+                    if (s.subject === 'math') mathOptions += `<option value="${key}">${s.name}</option>`;
+                    else if (s.subject === 'sci') sciOptions += `<option value="${key}">${s.name}</option>`;
+                    else otherOptions += `<option value="${key}">${s.name}</option>`;
+                }
+                optionsHtml += mathOptions + '</optgroup><optgroup label="📗 單科自然系列"><option value="sci_any">單補自然，所有時段皆可</option>' + sciOptions + '</optgroup>';
+                if (otherOptions) optionsHtml += '<optgroup label="🔧 其他科目">' + otherOptions + '</optgroup>';
+            } else {
+                for (let key in eventData.sessions) {
+                    optionsHtml += `<option value="${key}">${eventData.sessions[key].name}</option>`;
                 }
             }
 
-            PREFERENCE_OPTIONS_HTML += `
-                <optgroup label="🌟 雙科連排系列">
-                    <option value="both_any">🥇 兩科都上，所有時段皆可 (配位順序：同日雙科 ➔ 跨日雙科 ➔ 保底單科 ➔ 候補)</option>
-                    <option value="both_day1">🥈 兩科都上，限 ${day1Date} (若雙科滿班，則降級保底單科或候補)</option>
-                    <option value="both_day2">🥈 兩科都上，限 ${day2Date} (若雙科滿班，則降級保底單科或候補)</option>
-                </optgroup>
-                <optgroup label="📘 單科數學系列">
-                    <option value="math_any">單補數學，所有時段皆可</option>
-            `;
-            let mathOptions = '';
-            let sciOptions = '';
-            let otherOptions = '';
-            for (let key in currentEvent.sessions) {
-                let s = currentEvent.sessions[key];
-                if (s.subject === 'math') mathOptions += `<option value="${key}">${s.name}</option>`;
-                else if (s.subject === 'sci') sciOptions += `<option value="${key}">${s.name}</option>`;
-                else otherOptions += `<option value="${key}">${s.name}</option>`;
+            // 動態產生志願框
+            for (let i = 1; i <= window.MAX_PREFERENCES; i++) {
+                const isRequired = i === 1 ? '<span style="color:red">* 必填</span>' : ' <span style="color:#999; font-size:14px;">(選填)</span>';
+                const prefDiv = document.createElement('div');
+                prefDiv.className = 'preference-item' + (i === 1 ? ' active' : '');
+                prefDiv.id = `pref-block-${i}`;
+                prefDiv.innerHTML = `
+                    <label for="pref-${i}">第 ${i} 志願 ${isRequired}</label>
+                    <select id="pref-${i}" class="intent-select preference-dropdown" data-level="${i}">
+                        ${optionsHtml}
+                    </select>
+                `;
+                prefContainer.appendChild(prefDiv);
             }
-            PREFERENCE_OPTIONS_HTML += mathOptions + '</optgroup><optgroup label="📗 單科自然系列"><option value="sci_any">單補自然，所有時段皆可</option>' + sciOptions + '</optgroup>';
-            if (otherOptions) {
-                PREFERENCE_OPTIONS_HTML += '<optgroup label="🔧 其他科目">' + otherOptions + '</optgroup>';
-            }
-        } else {
-            for (let key in currentEvent.sessions) {
-                PREFERENCE_OPTIONS_HTML += `<option value="${key}">${currentEvent.sessions[key].name}</option>`;
-            }
-        }
 
-        // 初始化志願框
-        for (let i = 1; i <= window.MAX_PREFERENCES; i++) {
-            const isRequired = i === 1 ? '<span style="color:red">* 必填</span>' : ' <span style="color:#999; font-size:14px;">(選填)</span>';
-            const prefDiv = document.createElement('div');
-            prefDiv.className = 'preference-item' + (i === 1 ? ' active' : '');
-            prefDiv.id = `pref-block-${i}`;
-
-            prefDiv.innerHTML = `
-                <label for="pref-${i}">第 ${i} 志願 ${isRequired}</label>
-                <select id="pref-${i}" class="intent-select preference-dropdown" data-level="${i}">
-                    ${PREFERENCE_OPTIONS_HTML}
-                </select>
-            `;
-            preferenceContainer.appendChild(prefDiv);
-        }
-
-        if (currentEvent.type === 'single_session') {
-            const onlyKey = Object.keys(currentEvent.sessions || {})[0];
-            if (onlyKey) {
-                document.getElementById('pref-1').value = onlyKey;
-                // 自動鎖定這個單場次選擇
-                document.getElementById('pref-1').style.pointerEvents = 'none';
-                document.getElementById('pref-1').style.background = '#eee';
+            // 處理單場次自動帶入
+            if (eventData.type === 'single_session') {
+                const onlyKey = Object.keys(eventData.sessions || {})[0];
+                if (onlyKey) {
+                    const el = document.getElementById('pref-1');
+                    el.value = onlyKey;
+                    el.style.pointerEvents = 'none';
+                    el.style.background = '#eee';
+                }
             }
-        }
+
+            // 核心連動事件綁定
+            document.querySelectorAll('.preference-dropdown').forEach(select => {
+                select.addEventListener('change', function () {
+                    const level = parseInt(this.getAttribute('data-level'));
+                    if (this.value && level < window.MAX_PREFERENCES) {
+                        const nextBlock = document.getElementById(`pref-block-${level + 1}`);
+                        if (nextBlock) nextBlock.classList.add('active');
+                    }
+                    window.updatePreferenceOptions();
+                    window.checkFormValidity();
+                });
+            });
+        };
 
         window.updatePreferenceOptions = function () {
             const allSelects = document.querySelectorAll('.preference-dropdown');
             const selectedValues = Array.from(allSelects).map(s => s.value).filter(v => v !== "");
-
             allSelects.forEach(select => {
                 const currentVal = select.value;
                 Array.from(select.options).forEach(option => {
                     if (option.value === "") return;
-
                     if (selectedValues.includes(option.value) && currentVal !== option.value) {
                         option.disabled = true;
                         option.style.backgroundColor = '#f4f6f7';
@@ -681,27 +654,6 @@
             });
         };
 
-        // 綁定連動事件：填完第 N 個，顯示第 N+1 個
-        document.querySelectorAll('.preference-dropdown').forEach(select => {
-            select.addEventListener('change', function () {
-                const level = parseInt(this.getAttribute('data-level'));
-                const val = this.value;
-
-                if (val && level < window.MAX_PREFERENCES) {
-                    // 如果有選值，且還沒到最後一個，就打開下一個
-                    const nextBlock = document.getElementById(`pref-block-${level + 1}`);
-                    if (nextBlock) nextBlock.classList.add('active');
-                }
-
-                window.updatePreferenceOptions();
-
-                // 每次下拉改變都重新檢查整個表單是否可送
-                window.checkFormValidity();
-            });
-        });
-
-        // 3. 倒數計時邏輯
-        // 3. 倒數計時邏輯 (已校準伺服器時間)
         window.startCountdown = function () {
             const display = document.getElementById('countdownDisplay');
             const btn = document.getElementById('mainSubmitBtn');
@@ -709,12 +661,10 @@
             const btnText = document.getElementById('btnText');
 
             countdownTimer = setInterval(() => {
-                // ★★★ 加上 serverTimeOffset，強制抓取 Firebase 伺服器時間 ★★★
                 const now = new Date(Date.now() + serverTimeOffset);
                 const diff = OPEN_DATE.getTime() - now.getTime();
 
                 if (diff <= 0) {
-                    // 時間到！解鎖按鈕
                     clearInterval(countdownTimer);
                     isSystemOpen = true;
 
@@ -723,15 +673,12 @@
                     btn.classList.add('btn-unlocked');
                     btn.disabled = false;
                     btnIcon.innerText = "✅";
-
-                    // 文字變成固定
                     btnText.innerHTML = "送出報名";
 
                     window.checkFormValidity();
                     return;
                 }
 
-                // 計算剩餘時間
                 const hrs = Math.floor((diff % (1000 * 60 * 60 * 24)) / (1000 * 60 * 60));
                 const mins = Math.floor((diff % (1000 * 60 * 60)) / (1000 * 60));
                 const secs = Math.floor((diff % (1000 * 60)) / 1000);
@@ -745,7 +692,6 @@
             }, 50);
         };
 
-        // 4. 表單防呆與驗證
         window.checkFormValidity = function () {
             if (!isSystemOpen) return false;
 
@@ -754,20 +700,14 @@
             const pref1 = document.getElementById('pref-1').value;
 
             let isValid = true;
-
-            // 基本資料必填檢查
             if (!document.getElementById('studentName').value || !document.getElementById('parentPhone').value) {
                 isValid = false;
             }
-
-            // 第一志願必填
             if (!pref1) {
                 isValid = false;
             }
-
             if (!rulesAgreed) isValid = false;
 
-            // 切換按鈕樣式
             if (isValid && isSystemOpen) {
                 btn.classList.remove('btn-locked');
                 btn.classList.add('btn-unlocked');
@@ -775,25 +715,10 @@
                 btn.classList.remove('btn-unlocked');
                 btn.classList.add('btn-locked');
             }
-
             return isValid;
         }
 
-        // 綁定輸入檢查
-        document.querySelectorAll('input').forEach(el => {
-            el.addEventListener('change', window.checkFormValidity);
-            el.addEventListener('keyup', window.checkFormValidity);
-        });
-
-        // ==========================================
-        // 🚀 終極防禦：隨機座標確認框與盲點懲罰 (Anti-Clicker)
-        // ==========================================
-
-        let penaltyTimeout = null;
-        let incorrectAttempts = 0;
-
         window.triggerAntiCyborgChallenge = function () {
-            // 再次檢查表單與規約
             if (!document.getElementById('rulesAgreed').checked) {
                 Swal.fire({ icon: 'warning', title: '請先同意規則', text: '您必須同意排位規則聲明才能送出！' });
                 return;
@@ -807,21 +732,15 @@
                 return;
             }
 
-            // 打開全螢幕蓋板
             const challengeUI = document.getElementById('anti-cyborg-challenge');
             challengeUI.style.display = 'flex';
-
-            // 重置並生成隨機位置確認框
             generateRandomConfirmBox();
         }
 
         window.generateRandomConfirmBox = function () {
-            if (penaltyTimeout) return; // 正在處罰中不重新生成
+            if (penaltyTimeout) return;
 
             const box = document.getElementById('challengeBox');
-
-            // 隨機大幅度偏移整個框框位置 (防止腳本定點連點)
-            // 假設螢幕寬高，我們讓它在 -150px 到 150px 之間隨機平移
             const offsetX = (Math.random() - 0.5) * 300;
             const offsetY = (Math.random() - 0.5) * 300;
             box.style.transform = `translate(${offsetX}px, ${offsetY}px)`;
@@ -843,32 +762,16 @@
             };
 
             document.getElementById('finalConfirmBtn').onclick = function (e) {
-                e.stopPropagation(); // 阻止事件冒泡到背景的盲點偵測
+                e.stopPropagation();
                 if (penaltyTimeout) return;
-
-                // 成功！抓取校準後的絕對毫秒時間並發送資料
-                // ★★★ 加上 serverTimeOffset，確保成績排名絕對公平 ★★★
                 const finalTimestampMs = Date.now() + serverTimeOffset;
                 window.submitFinalData(finalTimestampMs);
             };
         }
 
-        // 防盲點：點擊到容器背景也算錯誤
-        document.getElementById('anti-cyborg-challenge').addEventListener('click', function (e) {
-            // 只有點在黑灰背景 (而非白框內部) 算異常連點
-            if (e.target.id === 'anti-cyborg-challenge') {
-                incorrectAttempts++;
-                if (incorrectAttempts >= 3) {
-                    triggerPenalty("偵測到異常盲點行為！<br>防護機制啟動，鎖定表單 5 秒。");
-                }
-            }
-        });
-
         window.triggerPenalty = function (msg) {
             incorrectAttempts = 0;
             const box = document.getElementById('challengeBox');
-
-            // 鎖定狀態 UI 置中重置
             box.style.transform = 'translate(0px, 0px)';
             box.innerHTML = `<h2 style="color:#e74c3c;">🚨 驗證失敗</h2><p style="font-size:18px;">${msg}</p><div class="timer-text" id="penaltyTimer" style="font-size:30px; margin-top:20px; color:#c0392b;">05</div>`;
 
@@ -879,16 +782,13 @@
                 if (secondsLeft <= 0) {
                     clearInterval(penaltyTimeout);
                     penaltyTimeout = null;
-                    // 處罰結束，重新生成隨機確認框
                     window.generateRandomConfirmBox();
                 }
             }, 1000);
         }
 
         window.submitFinalData = async function (msTimestamp) {
-            // 隱藏驗證區，換上 Loading Spinner
             const box = document.getElementById('challengeBox');
-            // 固定住高度防止突然被壓縮變成「小視窗」
             box.style.minHeight = box.offsetHeight + 'px';
             box.style.display = 'flex';
             box.style.flexDirection = 'column';
@@ -896,7 +796,6 @@
             box.style.transform = 'translate(0px, 0px)';
             box.innerHTML = '<h2>🚀 正在安全傳送中...</h2><p style="color:#7f8c8d;">此過程將採用嚴格時間戳記認證</p>';
 
-            // 🔐 緊急抓取資料庫目前的通行 Token (防 API 繞過)
             let currentToken = "";
             try {
                 const tokenSnapshot = await get(child(ref(db), 'trial_events/current_token'));
@@ -907,7 +806,6 @@
                 console.warn("無法取得安全憑證 (如非管理員，仍可能被規則阻擋)", err);
             }
 
-            // 收集所有 6 個志願的資料
             let preferences = {};
             for (let i = 1; i <= window.MAX_PREFERENCES; i++) {
                 const element = document.getElementById(`pref-${i}`);
@@ -921,21 +819,16 @@
                 parentName: document.getElementById('parentName').value,
                 parentPhone: document.getElementById('parentPhone').value,
                 preferences: preferences,
-                clientTimestampMs: msTimestamp, // 精準到毫秒
-                status: 'pending', // 狀態：待分發
-                secureToken: currentToken // 🔐 關鍵！夾帶這把鑰匙才能通過 Firebase 的伺服器寫入規則
+                clientTimestampMs: msTimestamp,
+                status: 'pending',
+                secureToken: currentToken
             };
 
-            // 使用 Firebase Database 的 PUSH 寫入資料
             const eventsRef = ref(db, `trial_events/registrations/${window.currentEventId}`);
             const newRegistrationRef = push(eventsRef);
-
-            // 加入 Firebase serverTimestamp 保障
             formData.serverTimestamp = serverTimestamp();
 
-            // 紀錄寫入時間與送出時間
             set(newRegistrationRef, formData).then(() => {
-                // 轉換毫秒格式呈現給使用者看
                 const dateObj = new Date(msTimestamp);
                 const timeString = `${dateObj.getFullYear()} /${String(dateObj.getMonth() + 1).padStart(2, '0')}/${String(dateObj.getDate()).padStart(2, '0')} ` +
                     `${String(dateObj.getHours()).padStart(2, '0')}:${String(dateObj.getMinutes()).padStart(2, '0')}:${String(dateObj.getSeconds()).padStart(2, '0')}.${String(msTimestamp % 1000).padStart(3, '0')}`;
@@ -955,11 +848,9 @@
                     confirmButtonColor: '#2ecc71',
                     allowOutsideClick: false
                 }).then(() => {
-                    // 送出後重新整理頁面
                     window.location.reload();
                 });
             }).catch(error => {
-                // 防護：若 Firebase 寫入失敗 (可能是 Token 沒帶對或被阻擋)
                 document.getElementById('anti-cyborg-challenge').style.display = 'none';
                 console.error("寫入被阻擋：", error);
                 Swal.fire({
@@ -972,6 +863,60 @@
                 });
             });
         }
+
+        // ==========================================
+        // ★★★ 核心執行區 (在所有函數宣告後執行) ★★★
+        // ==========================================
+
+        try {
+            const snap = await get(ref(db, `trial_events_config/${window.currentEventId}`));
+            if (snap.exists() && snap.val().status === 'active') {
+                currentEvent = snap.val();
+
+                // 1. 顯示課程名稱於表單頂部
+                document.getElementById('bookingEventTitle').textContent = currentEvent.title || '試聽預約';
+
+                // 2. 設定報名開放時間 (強化相容性處理)
+                if (currentEvent.openTime) {
+                    const safeDateStr = currentEvent.openTime.replace('T', ' ').replace(/-/g, '/');
+                    OPEN_DATE = new Date(safeDateStr);
+                } else {
+                    OPEN_DATE = new Date();
+                    OPEN_DATE.setSeconds(OPEN_DATE.getSeconds() + (currentEvent.countdownSeconds || 0));
+                }
+
+                // 3. ★ 核心修正：資料拿到了，現在才開始根據資料建立志願序 UI
+                window.initializePreferenceUI(currentEvent);
+
+                // 4. 顯示表單
+                document.getElementById('form-section').style.display = 'block';
+
+                // 5. 啟動倒數計時引擎
+                window.startCountdown();
+
+            } else {
+                document.body.innerHTML = "<h2 style='text-align:center;margin-top:50px;'>活動不存在或尚未開放/已結束</h2>";
+            }
+        } catch (e) {
+            console.error("載入活動資料時發生錯誤：", e);
+        }
+
+        // 綁定盲點背景檢查 (防腳本)
+        document.getElementById('anti-cyborg-challenge').addEventListener('click', function (e) {
+            if (e.target.id === 'anti-cyborg-challenge') {
+                incorrectAttempts++;
+                if (incorrectAttempts >= 3) {
+                    window.triggerPenalty("偵測到異常盲點行為！<br>防護機制啟動，鎖定表單 5 秒。");
+                }
+            }
+        });
+
+        // 綁定輸入檢查
+        document.querySelectorAll('input').forEach(el => {
+            el.addEventListener('change', window.checkFormValidity);
+            el.addEventListener('keyup', window.checkFormValidity);
+        });
+
     </script>
 </body>
 
