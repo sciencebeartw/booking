@@ -1116,29 +1116,7 @@
                 }
             };
 
-            // 如果 getRedirectResult 成功攔截到了新登入
-            getRedirectResult(auth).then((result) => {
-                if (result && result.user) {
-                    // 已確定是剛剛 Redirect 回來的
-                    sessionStorage.removeItem('pendingRedirect');
-                    checkAdminRedirect(result.user);
-                }
-            }).catch((error) => {
-                sessionStorage.removeItem('pendingRedirect');
-                console.error("登入跳轉結果處理失敗:", error);
-                alert("登入發生錯誤：" + error.message);
-            });
-
-            // 如果因為某些瀏覽器 Bug，getRedirectResult 回傳 null，利用 onAuthStateChanged 補救
-            onAuthStateChanged(auth, (user) => {
-                if (user && sessionStorage.getItem('pendingRedirect') === 'true') {
-                    // 使用者已登入，且設定過準備跳轉的標記，代表是由按鈕觸發的登入
-                    sessionStorage.removeItem('pendingRedirect');
-                    checkAdminRedirect(user);
-                }
-            });
-
-            // ★★★ 管理員 Google 登入（跳轉模式，防彈窗阻擋）★★★
+            // ★★★ 管理員 Google 登入（重新採用彈出視窗模式，並加強提示）★★★
             window.loginAdminWithGoogle = async function () {
                 // 如果已經登入過，則直接檢查並進入
                 if (auth.currentUser) {
@@ -1146,10 +1124,25 @@
                     return;
                 }
 
-                // 設定一組 Session Storage 讓 onAuthStateChanged 可以作為 redirect 防護網
-                sessionStorage.setItem('pendingRedirect', 'true');
                 const provider = new GoogleAuthProvider();
-                signInWithRedirect(auth, provider);
+                try {
+                    const { signInWithPopup } = await import('./firebase-config.js');
+                    const result = await signInWithPopup(auth, provider);
+                    if (result && result.user) {
+                        await checkAdminRedirect(result.user);
+                    }
+                } catch (error) {
+                    if (error.code === 'auth/popup-blocked') {
+                        alert("⚠️ 瀏覽器封鎖了登入視窗！\n\n【解決方法】\n請在網址列右側尋找「已封鎖彈出式視窗」的圖示，點擊並選擇「一律允許」，然後再按一次登入按鈕。");
+                    } else if (error.code === 'auth/popup-closed-by-user') {
+                        // 使用者自行關閉，不需警告
+                    } else if (error.code === 'auth/unauthorized-domain') {
+                        alert("⚠️ 登入失敗：網域未被授權。請確保此網站在 Firebase 的授權網域清單中。");
+                    } else {
+                        console.error("登入失敗:", error);
+                        alert("登入發生錯誤：" + error.message);
+                    }
+                }
             };
 
             // ★★★ Check URL ?mode= Parameter to auto enter mode ★★★
