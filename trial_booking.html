@@ -539,8 +539,13 @@
                 currentEvent = snap.val();
                 // 顯示課程名稱於表單頂部
                 document.getElementById('bookingEventTitle').textContent = currentEvent.title || '試聽預約';
+
                 // 驗證已移至 detail.html 彈窗，直接顯示表單
                 document.getElementById('form-section').style.display = 'block';
+
+                // ★★★ 關鍵修正：資料載入成功後，必須立即啟動倒數計時引擎 ★★★
+                startCountdown();
+
             } else {
                 document.body.innerHTML = "<h2 style='text-align:center;margin-top:50px;'>活動不存在或尚未開放/已結束</h2>";
                 throw new Error("Event unavailable");
@@ -553,7 +558,9 @@
         // 設定報名開放時間 (優先抓取設定的確切時間，若無則預設為現在)
         let OPEN_DATE = new Date();
         if (currentEvent.openTime) {
-            OPEN_DATE = new Date(currentEvent.openTime);
+            // ★★★ 強化相容性：處理 datetime-local 可能產生的格式問題 ★★★
+            const safeDateStr = currentEvent.openTime.replace('T', ' ').replace(/-/g, '/');
+            OPEN_DATE = new Date(safeDateStr);
         } else {
             // 向下相容舊的 countdownSeconds
             OPEN_DATE.setSeconds(OPEN_DATE.getSeconds() + (currentEvent.countdownSeconds || 0));
@@ -600,9 +607,9 @@
 
             PREFERENCE_OPTIONS_HTML += `
                 <optgroup label="🌟 雙科連排系列">
-                    <option value="both_any">🥇 兩科都上，所有時段皆可 (優先同日)</option>
-                    <option value="both_day1">🥈 兩科都上，限 ${day1Date} 雙科</option>
-                    <option value="both_day2">🥈 兩科都上，限 ${day2Date} 雙科</option>
+                    <option value="both_any">🥇 兩科都上，所有時段皆可 (配位順序：同日雙科 ➔ 跨日雙科 ➔ 保底單科 ➔ 候補)</option>
+                    <option value="both_day1">🥈 兩科都上，限 ${day1Date} (若雙科滿班，則降級保底單科或候補)</option>
+                    <option value="both_day2">🥈 兩科都上，限 ${day2Date} (若雙科滿班，則降級保底單科或候補)</option>
                 </optgroup>
                 <optgroup label="📘 單科數學系列">
                     <option value="math_any">單補數學，所有時段皆可</option>
