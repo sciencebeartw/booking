@@ -879,6 +879,19 @@
 
     <!-- ★★★ Phase 6 通知發送中心 ★★★ -->
     <div id="tab-notify" class="page-section">
+        <div class="center-box" style="margin-bottom:30px; background:#f4f6f7; border:1px solid #bdc3c7;">
+            <h2 style="margin-top:0; color:#2c3e50;">🔗 LINE 通知 API 綁定 (GAS Webhook URL)</h2>
+            <p style="color:#7f8c8d; font-size:14px; margin-top:-10px;">請貼上已部署的 Google Apps Script 網頁應用程式網址，用於自動發送 LINE
+                訊息給家長。</p>
+            <div style="display:flex; gap:10px;">
+                <input type="url" id="setting-gas-webhook" class="swal2-input"
+                    style="flex-grow:1; margin:0; height:40px;"
+                    placeholder="https://script.google.com/macros/s/..../exec">
+                <button onclick="saveGasWebhook()" class="success" style="height:40px; margin:0; background:#00B900;">💾
+                    儲存 API 網址</button>
+            </div>
+        </div>
+
         <div class="center-box">
             <h2 style="margin-top:0; color:#2c3e50;">⚙️ 通知文案模板設定</h2>
             <p style="color:#7f8c8d; font-size:14px; margin-top:-10px;">修改後請點擊下方「儲存模板」。可用變數：{{姓名}}, {{劃位名單}}, {{候補名單}}
@@ -892,7 +905,11 @@
             <h2 style="margin-top:0; color:#16a085;">📡 正式課程 - 智慧通知名單</h2>
             <div id="regularCourseCheckboxes"
                 style="display:flex; flex-wrap:wrap; gap:10px; justify-content:center; margin-bottom:15px;"></div>
-            <button onclick="generateRegularNotifyList()" class="success">🔍 產生正式課程發送名單</button>
+            <div style="display:flex; gap:10px; justify-content:center;">
+                <button onclick="generateRegularNotifyList()" class="success">🔍 產生正式課程發送名單</button>
+                <button onclick="sendAllRegularNotifications()" id="btn-send-all-regular" class="success"
+                    style="background:#00B900; background-color: #00B900; display:none;">🚀 一鍵全數推播 LINE</button>
+            </div>
         </div>
         <div id="regularNotifyList"
             style="max-width:1000px; margin:20px auto; display:flex; flex-direction:column; gap:10px;"></div>
@@ -900,10 +917,15 @@
         <div class="center-box" style="margin-top:30px; background:#fdf2e9; border:1px solid #e67e22;">
             <h2 style="margin-top:0; color:#d35400;">🎯 試聽活動 - 智慧通知名單</h2>
             <p style="color:#e74c3c; font-size:12px; font-weight:bold;">⚠️ 必須先在「試聽分發引擎」中點擊【💾 確定鎖死並發布通知】，這裡才能抓到資料！</p>
-            <select id="trialNotifySelector" class="big-selector" style="border-color:#e67e22;">
+            <select id="trialNotifySelector" class="big-selector"
+                style="border-color:#e67e22; display:block; margin: 0 auto 10px auto;">
                 <option value="">-- 請選擇已鎖死的試聽活動 --</option>
             </select>
-            <button onclick="generateTrialNotifyList()" class="warning" style="margin-left:10px;">🔍 產生試聽發送名單</button>
+            <div style="display:flex; gap:10px; justify-content:center;">
+                <button onclick="generateTrialNotifyList()" class="warning">🔍 產生試聽發送名單</button>
+                <button onclick="sendAllTrialNotifications()" id="btn-send-all-trial" class="success"
+                    style="background:#00B900; background-color: #00B900; display:none;">🚀 一鍵全數推播 LINE</button>
+            </div>
         </div>
         <div id="trialNotifyList"
             style="max-width:1000px; margin:20px auto; display:flex; flex-direction:column; gap:10px;"></div>

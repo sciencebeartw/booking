@@ -64,6 +64,7 @@ const DEFAULT_TEMPLATES = {
     trial_mix: `✨ 山熊科學 - 試聽分發與候補統整 ✨\n\n{{姓名}} 家長您好，為您統整本次試聽分發結果：\n\n✅ 【已錄取班級】\n{{劃位名單}}\n\n⏳ 【目前候補進度】\n{{候補名單}}\n\n📌 錄取班級請保留此訊息作為憑證；候補班級若有釋出將依序通知您！`
 };
 let currentTemplates = { ...DEFAULT_TEMPLATES };
+let gasWebhookUrl = ""; // 用於發送 LINE 通知
 
 // ==========================================
 // 📝 TinyMCE 預設文案模板庫 (Rich Text Templates)
@@ -126,6 +127,12 @@ onValue(ref(db, 'settings/templates'), (snap) => {
     if (document.getElementById('templateEditorArea') && document.getElementById('tab-notify').classList.contains('active')) {
         renderTemplateEditor();
     }
+});
+
+onValue(ref(db, 'settings/gasWebhookUrl'), (snap) => {
+    gasWebhookUrl = snap.val() || "";
+    const input = document.getElementById('setting-gas-webhook');
+    if (input) input.value = gasWebhookUrl;
 });
 
 tinymce.init({
@@ -3814,6 +3821,19 @@ window.clearTrialAllocationBoard = function () {
 // Phase 6: 通知發送中心與手動候補黑箱
 // ==========================================
 
+window.saveGasWebhook = async function () {
+    const url = document.getElementById('setting-gas-webhook').value.trim();
+    if (!url.startsWith('https://script.google.com/macros/s/')) {
+        return alert('❌ 錯誤：這看起來不是有效的 Google Apps Script /exec 網址！\n請確定您的網址開頭是 https://script.google.com/macros/s/');
+    }
+    try {
+        await set(ref(db, 'settings/gasWebhookUrl'), url);
+        alert('✅ GAS Webhook API 網址已儲存！');
+    } catch (e) {
+        alert('儲存失敗：' + e.message);
+    }
+};
+
 window.saveTemplates = async function () {
     await set(ref(db, 'settings/templates'), currentTemplates);
     alert('✅ 模板已成功儲存至 Firebase！');
@@ -3890,6 +3910,14 @@ window.generateRegularNotifyList = function () {
     });
 
     renderNotifyCards('regularNotifyList', personMap, 'regular');
+
+    // Toggle send all button visibility
+    const btnSendAll = document.getElementById('btn-send-all-regular');
+    if (Object.keys(personMap).length > 0) {
+        btnSendAll.style.display = 'block';
+    } else {
+        btnSendAll.style.display = 'none';
+    }
 };
 
 window.populateTrialNotifySelector = function () {
@@ -3942,6 +3970,14 @@ window.generateTrialNotifyList = function () {
     }
 
     renderNotifyCards('trialNotifyList', personMap, 'trial');
+
+    // Toggle send all button visibility
+    const btnSendAll = document.getElementById('btn-send-all-trial');
+    if (Object.keys(personMap).length > 0) {
+        btnSendAll.style.display = 'block';
+    } else {
+        btnSendAll.style.display = 'none';
+    }
 };
 
 // 通用名單渲染函數（修正 \n 換行 Bug）
@@ -3972,6 +4008,10 @@ function renderNotifyCards(containerId, personMap, typePrefix) {
         msg = msg.replace(/\{\{候補名單\}\}/g, p.waits.join('\n'));
 
         const div = document.createElement('div');
+        div.className = 'notify-card'; // Add class for batch processing
+        div.dataset.name = p.name;
+        div.dataset.phone = p.phone;
+        div.dataset.message = msg;
         div.style.cssText = 'background:#fff; padding:15px; border-radius:8px; box-shadow:0 2px 5px rgba(0,0,0,0.1); display:flex; justify-content:space-between; align-items:flex-start; gap:15px;';
 
         // HTML 預覽要把 \n 轉 <br>
@@ -3979,37 +4019,151 @@ function renderNotifyCards(containerId, personMap, typePrefix) {
 
         div.innerHTML = `
             <div style="flex:1;">
-                <h4 style="margin:0 0 10px 0; color:#2c3e50;">👤 ${p.name} (${p.phone})</h4>
+                <h4 style="margin:0 0 10px 0; color:#2c3e50;">👤 ${p.name} (<span class="card-phone">${p.phone}</span>)</h4>
                 <div style="font-size:13px; color:#555; background:#f4f6f7; padding:10px; border-radius:5px; max-height:150px; overflow-y:auto; line-height:1.6;">${textPreview}</div>
+                <div class="send-status" style="margin-top: 5px; font-weight: bold; font-size: 13px;"></div>
+            </div>
+            <div style="display: flex; flex-direction: column; gap: 10px; align-self: center;">
+                <button class="success btn-copy" style="white-space:nowrap;">📋 複製通知</button>
+                <button class="success btn-line" style="white-space:nowrap; background:#00B900;">🚀 單獨傳送</button>
             </div>
         `;
 
-        const btn = document.createElement('button');
-        btn.className = 'success';
-        btn.style.cssText = 'white-space:nowrap; height:fit-content; align-self:center;';
-        btn.innerHTML = '📋 複製通知';
-        btn.onclick = () => {
+        const btnCopy = div.querySelector('.btn-copy');
+        btnCopy.onclick = () => {
             navigator.clipboard.writeText(msg).then(() => {
-                const old = btn.innerHTML;
-                btn.innerHTML = '✔️ 已複製！';
-                btn.classList.replace('success', 'warning');
-                setTimeout(() => { btn.innerHTML = old; btn.classList.replace('warning', 'success'); }, 2000);
+                const old = btnCopy.innerHTML;
+                btnCopy.innerHTML = '✔️ 已複製！';
+                btnCopy.classList.replace('success', 'warning');
+                setTimeout(() => { btnCopy.innerHTML = old; btnCopy.classList.replace('warning', 'success'); }, 2000);
             }).catch(() => {
-                // Fallback for http://
                 const ta = document.createElement('textarea');
                 ta.value = msg;
                 document.body.appendChild(ta);
                 ta.select();
                 document.execCommand('copy');
                 document.body.removeChild(ta);
-                btn.innerHTML = '✔️ 已複製！';
-                setTimeout(() => { btn.innerHTML = '📋 複製通知'; }, 2000);
+                btnCopy.innerHTML = '✔️ 已複製！';
+                setTimeout(() => { btnCopy.innerHTML = '📋 複製通知'; }, 2000);
             });
         };
 
-        div.appendChild(btn);
+        const btnLine = div.querySelector('.btn-line');
+        btnLine.onclick = () => {
+            sendNotificationToGAS([{ name: p.name, phone: p.phone, message: msg }], [div]);
+        };
+
         container.appendChild(div);
     });
+}
+
+// 發送通知到 GAS Webhook
+async function sendNotificationToGAS(payloadList, cardElements) {
+    if (!gasWebhookUrl) {
+        return alert('❌ 錯誤：請先在「通知文案模板設定」上方綁定 LINE API (GAS Webhook URL)！');
+    }
+
+    // 將按鈕與狀態改成 loading
+    cardElements.forEach(card => {
+        const btnLine = card.querySelector('.btn-line');
+        const statusEl = card.querySelector('.send-status');
+        btnLine.disabled = true;
+        btnLine.innerHTML = '⏳ 發送中...';
+        btnLine.style.background = '#ccc';
+        statusEl.innerHTML = '';
+    });
+
+    try {
+        const payloadData = {
+            action: 'send_notifications',
+            payloadList: payloadList
+        };
+
+        // GAS 經常阻擋 application/json 的 preflight request，改用 FormData / url-encoded 可以完美繞過
+        const formBody = [];
+        for (const property in payloadData) {
+            const encodedKey = encodeURIComponent(property);
+            const encodedValue = encodeURIComponent(typeof payloadData[property] === 'object' ? JSON.stringify(payloadData[property]) : payloadData[property]);
+            formBody.push(encodedKey + "=" + encodedValue);
+        }
+
+        const response = await fetch(gasWebhookUrl, {
+            method: 'POST',
+            body: formBody.join('&'),
+            headers: {
+                'Content-Type': 'application/x-www-form-urlencoded;charset=UTF-8'
+            },
+            redirect: 'follow'
+        });
+
+        // 必須等待重導向完成，抓出最後的 json 回應
+        const result = await response.json();
+
+        // 處理回傳結果
+        if (result.status === 'completed' && result.scan_results) {
+            result.scan_results.forEach((res, index) => {
+                const card = cardElements[index];
+                if (!card) return;
+                const btnLine = card.querySelector('.btn-line');
+                const statusEl = card.querySelector('.send-status');
+
+                btnLine.disabled = false;
+
+                if (res.status === 'success') {
+                    btnLine.innerHTML = '✔️ 傳送成功';
+                    btnLine.style.background = '#27ae60';
+                    btnLine.classList.replace('success', 'warning'); // Change styling to show completion
+                    statusEl.innerHTML = '🟢 已成功推播至 LINE';
+                    statusEl.style.color = '#27ae60';
+                } else {
+                    btnLine.innerHTML = '❌ 傳送失敗';
+                    btnLine.style.background = '#e74c3c';
+                    statusEl.innerHTML = `🔴 發送失敗：${res.msg}`;
+                    statusEl.style.color = '#e74c3c';
+                }
+            });
+        } else {
+            throw new Error(result.message || '未知 API 錯誤');
+        }
+    } catch (error) {
+        console.error('GAS Webhook Error:', error);
+        cardElements.forEach(card => {
+            const btnLine = card.querySelector('.btn-line');
+            const statusEl = card.querySelector('.send-status');
+            btnLine.disabled = false;
+            btnLine.innerHTML = '❌ 連線錯誤';
+            btnLine.style.background = '#e74c3c';
+            statusEl.innerHTML = `🔴 網路錯誤，請重新發送`;
+            statusEl.style.color = '#e74c3c';
+        });
+        alert('🚨 與 LINE API (GAS) 連線失敗，請檢查網址或權限設定！\n' + error.message);
+    }
+}
+
+// 一鍵全數推播 (正式課程)
+window.sendAllRegularNotifications = function () {
+    triggerBatchSend('regularNotifyList', 'btn-send-all-regular');
+};
+
+// 一鍵全數推播 (試聽活動)
+window.sendAllTrialNotifications = function () {
+    triggerBatchSend('trialNotifyList', 'btn-send-all-trial');
+};
+
+function triggerBatchSend(containerId, buttonId) {
+    const container = document.getElementById(containerId);
+    const cards = Array.from(container.querySelectorAll('.notify-card'));
+
+    if (cards.length === 0) return alert('沒有可以推播的名單！');
+    if (!confirm(`確定要將這 ${cards.length} 筆通知全部推播至 LINE 嗎？\n(未綁定 LINE 的家長系統會回報錯誤)`)) return;
+
+    const payloadList = cards.map(card => ({
+        name: card.dataset.name,
+        phone: card.dataset.phone,
+        message: card.dataset.message
+    }));
+
+    sendNotificationToGAS(payloadList, cards);
 }
 
 // 🧰 任務四：正式候補黑箱 - 手動安插候補

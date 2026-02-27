@@ -675,7 +675,7 @@
             </ul>
 
             <h2 id="ch3-8">📢 III-c. 通知發送中心 (Notification Center)</h2>
-            <p>Phase 6 導入的功能，徹底自動化通知文案的撰寫。不再需要對著 Excel 一個個打 LINE 字幕了。</p>
+            <p>Phase 6 與 Phase 7 導入的旗艦功能，徹底自動化通知文案的撰寫與發送，不再需要對著 Excel 一個個打 LINE 字幕了。</p>
             <div class="highlight-box"
                 style="background:#e8f4f8; padding:15px; border-radius:10px; border:1px solid #3498db;">
                 <h4>✅ 智慧文案模板</h4>
@@ -684,7 +684,12 @@
             <ul>
                 <li><strong>正式課程一鍵產生：</strong> 勾選多門課程，系統自動比對劃位紀錄與候補名單，依家長為單位產生每人專屬的通知卡片。</li>
                 <li><strong>試聽分配結果通知：</strong> 需在分發引擎點擊「💾 確定鎖死並發布」後，此處方可抓取到分發後的結果資料。</li>
-                <li><strong>📋 快速複製：</strong> 每個名單後方均有「複製」按鈕，行政老師只需在後台點一下，切換到 LINE 貼上即可。</li>
+                <li><strong>🚀 GAS LINE API 全自動推播引擎：</strong>
+                    <br>通知產生後，卡片上具有「🚀 單獨傳送」按鈕；右上方亦有「🚀 一鍵全數傳送」按鈕。
+                    <br>點擊後，系統會直接連線至雲端 <strong>Google Apps Script (GAS)</strong>，自動核對學生名單上的 LINE ID，將訊息 0 秒直達家長手機！
+                    <br>👉 <strong>防呆機制</strong>：若系統發現該電話號碼查無對應家長、或家長並未綁定官方 LINE，畫面上會即刻亮起紅色 ❌ 表示發送失敗，方便行政老師進行人工追蹤補發。
+                </li>
+                <li><strong>📋 人工複製備用：</strong> 若因家長未綁定而發送失敗，每個名單後方仍保有傳統的「複製」按鈕，行政老師只需在此點一下，切換到一般 LINE 視窗手動貼上即可。</li>
             </ul>
 
             <h3 id="ch3-5">🖨️ 報表室：A4 自動縮放座位表 (Print)</h3>
