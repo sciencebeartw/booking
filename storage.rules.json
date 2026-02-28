@@ -7,10 +7,11 @@ service firebase.storage {
       // 允許所有人讀取圖片 (這樣前台才看得到橫幅)
       allow read: if true;
 
-      // 嚴格限制寫入：只允許「圖片格式」，且檔案必須小於 5MB，且「必須是登入狀態」
+      // 嚴格限制寫入：只允許「圖片格式」，且檔案必須小於 5MB，且「必須是登入狀態及指定的管理員信箱」
       allow write: if request.resource.contentType.matches('image/.*')
                    && request.resource.size < 5 * 1024 * 1024
-                   && request.auth != null;
+                   && request.auth != null
+                   && request.auth.token.email.matches('^(neatnelsonhuang|kuohsu33|foxgiddens|gk322923|hamasaki0710|bearslab3m|yehyaya1125|wade020788|4415wayne|qsc93344|anna00332|sciencebearhigh|owencheng11078|yoyo89227|hwangshaotarng|chiaoi4477|bear6667360)@gmail\\\\.com$');
     }
   }
 }

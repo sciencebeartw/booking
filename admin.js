@@ -40,6 +40,17 @@ window.logoutAdmin = async function () {
     }
 };
 
+// ★★★ 前端 XSS 防護處理 ★★★
+window.escapeHTML = function (str) {
+    if (!str) return '';
+    return String(str)
+        .replace(/&/g, '&amp;')
+        .replace(/</g, '&lt;')
+        .replace(/>/g, '&gt;')
+        .replace(/\"/g, '&quot;')
+        .replace(/'/g, '&#039;');
+};
+
 // ★★★ 防偷跑與時間校準 ★★★
 let serverTimeOffset = 0;
 onValue(ref(db, ".info/serverTimeOffset"), (snap) => {
@@ -86,7 +97,7 @@ const HTML_TPL_REGULAR = `
 </ul>
 <div style="background-color: #e8f6f3; padding: 15px; border-radius: 8px; margin-bottom: 20px;">
 <h4 style="color: #16a085; margin-top: 0; font-size: 18px;">💰 繳費與保留座位流程</h4>
-<p style="margin-bottom: 0; color: #333; line-height: 1.6; font-size: 16px;">劃位成功後，若為新生家長，請<strong>務必主動透過 LINE 官方帳號傳送訊息</strong>，告知我們「學生姓名」。我們將在劃位名單整理完後回傳劃位成功確認及學費通知。<br><br>收到通知後，請於 <strong style="color: #d35400;">3 日內</strong> 完成繳費（可現場現金或轉帳）。<br>⚠️ 若逾期未繳且未主動聯繫，系統將自動釋出您的座位給候補同學。</p>
+<p style="margin-bottom: 0; color: #333; line-height: 1.6; font-size: 16px;">劃位前請<strong>務必加入官方 LINE 並傳送學生姓名</strong>以完成家長身分綁定。<br>劃位完成後，我們將在整理名單後，透過 LINE 回傳劃位成功確認及繳費通知。<br><br>收到通知後，請於 <strong style="color: #d35400;">3 日內</strong> 完成繳費（可現場現金或轉帳）。<br>⚠️ 若逾期未繳且未主動聯繫，系統將自動釋出您的座位給候補同學。</p>
 </div>
 <h3 style="color: #2c3e50; border-bottom: 2px dashed #bdc3c7; padding-bottom: 8px;">📞 聯絡資訊</h3>
 <p style="color: #555; line-height: 1.8; font-size: 16px;"><strong>山熊科學電話：</strong>03-6662248<br><strong>官方 LINE 帳號：</strong><span style="color: #06c755; font-weight: bold; background:#eafaf1; padding:2px 6px; border-radius:4px;">@bearhigh</span> (請記得加 @ 唷！)</p>
@@ -108,7 +119,7 @@ const HTML_TPL_TRIAL_BASE = `
 </ul>
 <div style="background-color: #e8f6f3; padding: 15px; border-radius: 8px; margin-bottom: 20px;">
 <h4 style="color: #16a085; margin-top: 0; font-size: 18px;">📩 後續通知與錄取確認</h4>
-<p style="margin-bottom: 0; color: #333; line-height: 1.6; font-size: 16px;">請注意，網頁送出僅代表完成「意願登記」。<br>分發作業完成後，我們將透過 <strong>山熊官方 LINE 帳號</strong> 單獨發送【正式錄取憑證】或候補進度給您。請留意您的 LINE 訊息！</p>
+<p style="margin-bottom: 0; color: #333; line-height: 1.6; font-size: 16px;">請注意，網頁送出僅代表完成「意願登記」。<br>分發作業完成後，系統將會透過 <strong>山熊科學實驗教室 官方 LINE 帳號</strong> 將【正式錄取通知】或候補進度全自動推播給您。<br><strong style="color: #d35400;">※ 報名前請務必確認已加入官方 LINE 並傳送過學生姓名完成綁定！</strong></p>
 </div>
 <h3 style="color: #2c3e50; border-bottom: 2px dashed #bdc3c7; padding-bottom: 8px;">📞 聯絡資訊</h3>
 <p style="color: #555; line-height: 1.8; font-size: 16px;"><strong>山熊科學電話：</strong>03-6662248<br><strong>官方 LINE 帳號：</strong><span style="color: #06c755; font-weight: bold; background:#eafaf1; padding:2px 6px; border-radius:4px;">@bearhigh</span> (請記得加 @ 唷！)</p>
@@ -703,10 +714,22 @@ function renderTable() {
     const phoneCounts = {};
     displayList.forEach(b => {
         if (b.status === 'sold') {
-            nameCounts[b.studentName] = (nameCounts[b.studentName] || 0) + 1;
-            phoneCounts[b.parentPhone] = (phoneCounts[b.parentPhone] || 0) + 1;
+            const stuKey = b.courseId + '_' + b.studentName;
+            const phoneKey = b.courseId + '_' + b.parentPhone;
+            nameCounts[stuKey] = (nameCounts[stuKey] || 0) + 1;
+            phoneCounts[phoneKey] = (phoneCounts[phoneKey] || 0) + 1;
         }
     });
+
+    // 動態重複調色盤：用名字算出專屬背景色，保證同一人顏色一樣，不同群組顏色不同。
+    const duplicatePalette = ['#ffe6e6', '#e6f2ff', '#e6ffe6', '#fffada', '#f2e6ff', '#ffebe6'];
+    const getColorForName = (name) => {
+        let hash = 0;
+        for (let i = 0; i < name.length; i++) {
+            hash = name.charCodeAt(i) + ((hash << 5) - hash);
+        }
+        return duplicatePalette[Math.abs(hash) % duplicatePalette.length];
+    };
 
     displayList.forEach(b => {
         const tr = document.createElement('tr');
@@ -717,8 +740,11 @@ function renderTable() {
         let recoverBtnHtml = '';
         if (b.status === 'sold') {
             statusBadge = '<span class="badge sold">已劃位</span>';
-            if (nameCounts[b.studentName] > 1 || phoneCounts[b.parentPhone] > 1) {
-                tr.classList.add('duplicate-row');
+            const stuKey = b.courseId + '_' + b.studentName;
+            const phoneKey = b.courseId + '_' + b.parentPhone;
+            if (nameCounts[stuKey] > 1 || phoneCounts[phoneKey] > 1) {
+                const rowColor = getColorForName(b.studentName);
+                tr.style.backgroundColor = rowColor;
             }
         } else if (b.status === 'locked') {
             statusBadge = '<span class="badge locked">填寫中</span>';
@@ -730,7 +756,7 @@ function renderTable() {
             recoverBtnHtml = `<button class="success" style="padding:5px 10px; font-size:12px; margin-right:5px;" onclick="window.recoverSeat('${b.courseId}', '${b.seatId}', '${b.studentName}', '${b.archiveKey || ""}')">恢復劃位</button>`;
         }
 
-        tr.innerHTML = `<td>${b.orderId}</td><td class="wrap-text">${b.courseName}</td><td>${b.time}</td><td>${statusBadge}</td><td>${b.seatId}</td><td>${b.studentName}</td><td>${b.parentPhone}</td>
+        tr.innerHTML = `<td>${b.orderId}</td><td class=\"wrap-text\">${b.courseName}</td><td>${b.time}</td><td>${statusBadge}</td><td>${b.seatId}</td><td>${window.escapeHTML(b.studentName)}</td><td>${window.escapeHTML(b.parentPhone)}</td>
                 <td>
                     ${recoverBtnHtml}
                     <button class="warning" style="padding:5px 10px; font-size:12px;" onclick="window.editOrder('${b.courseId}', '${b.seatId}', '${b.parentPhone}', '${b.orderId}', '${b.studentName}')">編輯</button>
@@ -806,7 +832,7 @@ window.loadVisualMap = function () {
                                 displayName = '保留';
                             }
                             nameSpan.textContent = displayName;
-                            seat.innerHTML += `<div class="seat-tooltip">${info.studentName}<br>${info.parentPhone}</div>`;
+                            seat.innerHTML += `<div class="seat-tooltip">${window.escapeHTML(info.studentName)}<br>${window.escapeHTML(info.parentPhone)}</div>`;
                         } else if (info.status === 'locked') {
                             seat.classList.add('locked');
                             if (info.user === 'admin_reserved') {
@@ -1280,6 +1306,16 @@ window.renderWaitlistTable = function () {
         }
     });
 
+    // 動態重複調色盤：用名字算出專屬背景色，保證同一人顏色一樣，不同群組顏色不同。
+    const duplicatePalette = ['#ffe6e6', '#e6f2ff', '#e6ffe6', '#fffada', '#f2e6ff', '#ffebe6'];
+    const getColorForName = (name) => {
+        let hash = 0;
+        for (let i = 0; i < name.length; i++) {
+            hash = name.charCodeAt(i) + ((hash << 5) - hash);
+        }
+        return duplicatePalette[Math.abs(hash) % duplicatePalette.length];
+    };
+
     waitlistDisplayList.forEach(w => {
         const tr = document.createElement('tr');
         const time = new Date(w.timestamp).toLocaleString();
@@ -1298,7 +1334,8 @@ window.renderWaitlistTable = function () {
             recoverBtn = `<button class="success" style="padding:5px 10px; font-size:12px; margin-right:5px;" onclick="window.recoverWaitlist('${w.courseId}', '${w.key}')">復原候補</button>`;
         } else {
             if (nameCounts[w.studentName] > 1 || phoneCounts[w.parentPhone] > 1) {
-                tr.classList.add('duplicate-row');
+                const rowColor = getColorForName(w.studentName);
+                tr.style.backgroundColor = rowColor;
             }
         }
 
@@ -1307,9 +1344,9 @@ window.renderWaitlistTable = function () {
                     <td>${time}</td>
                     <td>${statusBadge}</td>
                     <td style="font-weight:bold; color:#d35400;">${seqDisplay}</td>
-                    <td>${w.studentName}</td>
-                    <td>${w.parentPhone}</td>
-                    <td>${w.note || '-'}</td>
+                    <td>${window.escapeHTML(w.studentName)}</td>
+                    <td>${window.escapeHTML(w.parentPhone)}</td>
+                    <td>${window.escapeHTML(w.note || '-')}</td>
                     <td>
                         ${recoverBtn}
                         <button class="warning" style="padding:5px 10px; font-size:12px;" onclick="window.editWaitlist('${w.courseId}', '${w.key}', '${w.studentName}', '${w.parentPhone}', '${w.note}')">編輯</button>
@@ -1425,7 +1462,7 @@ function startZombieSweeper() {
                     if (now - info.timestamp > ZOMBIE_TIMEOUT) {
                         set(ref(db, `seats/${courseId}/${seatId}`), null);
                         clearedCount++;
-                        console.log(`[Sweeper] 清除殭屍座位: ${courseId} - ${seatId}`);
+                        // [Sweeper] 清除殭屍座位
                     }
                 }
             });
@@ -1735,6 +1772,107 @@ window.downloadCurrentBill = function () {
     });
 };
 
+window.sendBillToLine = async function () {
+    if (typeof currentBillIndex === 'undefined' || !billStudents[currentBillIndex]) {
+        if (typeof Swal !== 'undefined') {
+            Swal.fire("發送失敗", "無法取得目前學費單資料，請先產生學費單！", "error");
+        } else {
+            alert("發送失敗：無法取得目前學費單資料，請先產生學費單！");
+        }
+        return;
+    }
+
+    // 從現有學費單物件中取得資料
+    const s = billStudents[currentBillIndex];
+    const courseName = s.items.map(item => item.name).filter(n => n && n !== '科目名稱').join('、') || "科學課程";
+
+    const element = document.getElementById('billArea');
+    const studentName = document.getElementById('billName').textContent || s.name || "未知姓名";
+
+    // 確認是否發送
+    let userConfirmed = true;
+    if (typeof Swal !== 'undefined') {
+        const result = await Swal.fire({
+            title: '確認發送學費單？',
+            html: `即將發送 <b>${studentName}</b> 的專屬學費單至 LINE<br><br>這需要幾秒鐘的時間產生圖片並上傳，請稍候。`,
+            icon: 'question',
+            showCancelButton: true,
+            confirmButtonColor: '#2ecc71',
+            cancelButtonColor: '#d33',
+            confirmButtonText: '🚀 確定發送',
+            cancelButtonText: '取消'
+        });
+        userConfirmed = result.isConfirmed;
+    } else {
+        userConfirmed = confirm(`確認發送學費單？\n\n即將發送 ${studentName} 的專屬學費單至 LINE\n\n這需要幾秒鐘的時間產生圖片並上傳，請稍候。`);
+    }
+
+    if (!userConfirmed) return;
+
+    if (typeof Swal !== 'undefined') {
+        Swal.fire({
+            title: '圖片產生與傳送中...',
+            html: '正在對接山熊魔法通道 🚀',
+            allowOutsideClick: false,
+            didOpen: () => { Swal.showLoading(); }
+        });
+    }
+
+    try {
+        const canvas = await html2canvas(element, { scale: 2 });
+        const base64Data = canvas.toDataURL("image/png");
+
+        // 取得設定好的 Webhook 網址 (從 settings/gasWebhookUrl)
+        const scriptUrl = gasWebhookUrl;
+
+        if (!scriptUrl) {
+            if (typeof Swal !== 'undefined') {
+                Swal.fire("發送失敗", "尚未設定 GAS Webhook API 網址，請先至下方【系統設定】頁面設定！", "error");
+            } else {
+                alert("發送失敗：尚未設定 GAS Webhook API 網址，請先至下方【系統設定】頁面設定！");
+            }
+            return;
+        }
+
+        // 為了完美避開 CORS 阻擋 (Load failed)，發送時不要使用 URLSearchParams，
+        // 也不要用隱藏表單 (因為圖檔 Base64 容易超出表單上限)。
+        // 這裡改使用純文字 (text/plain) 將 JSON 字串包入 body 送出，GAS 的 doPost() 可以直接讀取 e.postData.contents 解析。
+        const response = await fetch(scriptUrl, {
+            method: 'POST',
+            body: JSON.stringify({
+                'action': 'send_bill_to_line',
+                'studentName': studentName,
+                'courseNames': courseName,
+                'base64Data': base64Data
+            }),
+            headers: {
+                // 不能用 application/json 否則會觸發 CORS preflight 導致被 block
+                'Content-Type': 'text/plain;charset=utf-8',
+            }
+        });
+
+        // 雖然是 text/plain 發出，但 GAS 理論上會回傳 MimeType JSON 的資料回來
+        const resData = await response.json();
+
+        if (typeof Swal !== 'undefined') {
+            if (resData.success) {
+                Swal.fire("發送成功！", resData.msg, "success");
+            } else {
+                Swal.fire("發送失敗", resData.msg, "error");
+            }
+        } else {
+            alert(resData.success ? "發送成功！\n" + resData.msg : "發送失敗：\n" + resData.msg);
+        }
+    } catch (error) {
+        console.error("LINE 發送錯誤:", error);
+        if (typeof Swal !== 'undefined') {
+            Swal.fire("發送發生異常", error.message, "error");
+        } else {
+            alert("發送發生異常：\n" + error.message);
+        }
+    }
+};
+
 window.downloadAllBills = async function () {
     if (!confirm(`確定要下載全部 ${billStudents.length} 張學費單嗎？`)) return;
 
@@ -1752,6 +1890,105 @@ window.downloadAllBills = async function () {
         });
     }
     alert("✅ 全部下載完成！");
+};
+
+window.sendAllBillsToLine = async function () {
+    const scriptUrl = gasWebhookUrl;
+    if (!scriptUrl) {
+        if (typeof Swal !== 'undefined') {
+            Swal.fire("發送失敗", "尚未設定 GAS Webhook API 網址，請先至下方【系統設定】頁面設定！", "error");
+        } else {
+            alert("發送失敗：尚未設定 GAS Webhook API 網址，請先至下方【系統設定】頁面設定！");
+        }
+        return;
+    }
+
+    if (billStudents.length === 0) {
+        if (typeof Swal !== 'undefined') {
+            Swal.fire("發送失敗", "目前沒有任何學費單可發送，請先計算！", "error");
+        } else {
+            alert("發送失敗：目前沒有任何學費單可發送，請先計算！");
+        }
+        return;
+    }
+
+    let userConfirmed = true;
+    if (typeof Swal !== 'undefined') {
+        const result = await Swal.fire({
+            title: `確認一鍵發送 ${billStudents.length} 張學費單？`,
+            html: `這將會逐一產生圖片並發送到對應家長的 LINE。<br><br>請準備好等候幾十秒鐘。`,
+            icon: 'warning',
+            showCancelButton: true,
+            confirmButtonColor: '#27ae60',
+            cancelButtonColor: '#d33',
+            confirmButtonText: '🚀 全部發送！',
+            cancelButtonText: '取消'
+        });
+        userConfirmed = result.isConfirmed;
+    } else {
+        userConfirmed = confirm(`確認一鍵發送 ${billStudents.length} 張學費單？\n\n這將會逐一產生圖片並發送到對應家長的 LINE。\n會花費數十秒鐘，請按確定後耐心等待。`);
+    }
+
+    if (!userConfirmed) return;
+
+    if (typeof Swal !== 'undefined') {
+        Swal.fire({
+            title: '大批學費單產生與傳送中...',
+            html: '正在對接山熊魔法通道，請勿關閉網頁 🚀',
+            allowOutsideClick: false,
+            didOpen: () => { Swal.showLoading(); }
+        });
+    }
+
+    let successCount = 0;
+    let failCount = 0;
+
+    for (let i = 0; i < billStudents.length; i++) {
+        // 更新 UI (若 Swal 存在則更新內文進度)
+        if (typeof Swal !== 'undefined' && Swal.isVisible()) {
+            Swal.update({ html: `正在處理第 <b>${i + 1} / ${billStudents.length}</b> 張學費單 (${billStudents[i].name})...` });
+        }
+
+        loadBill(i);
+        await new Promise(r => setTimeout(r, 600)); // 等待畫面渲染
+
+        const s = billStudents[i];
+        const courseName = s.items.map(item => item.name).filter(n => n && n !== '科目名稱').join('、') || "科學課程";
+        const element = document.getElementById('billArea');
+        const studentName = document.getElementById('billName').textContent || s.name || "未知姓名";
+
+        try {
+            const canvas = await html2canvas(element, { scale: 2 });
+            const base64Data = canvas.toDataURL("image/png");
+
+            await fetch(scriptUrl, {
+                method: 'POST',
+                body: JSON.stringify({
+                    'action': 'send_bill_to_line',
+                    'studentName': studentName,
+                    'courseNames': courseName,
+                    'base64Data': base64Data
+                }),
+                headers: { 'Content-Type': 'text/plain;charset=utf-8' }
+            }).then(r => r.json());
+
+            successCount++;
+        } catch (error) {
+            console.error(`發送給 ${studentName} 時發生錯誤:`, error);
+            failCount++;
+        }
+    }
+
+    // 發送完成結果報告
+    if (typeof Swal !== 'undefined') {
+        Swal.fire(
+            "批次發送完成！",
+            `共處理 ${billStudents.length} 張學費單，<br>請家長陸續到各自的 LINE 確認收件。`,
+            "success"
+        );
+    } else {
+        alert(`批次發送完成！共處理 ${billStudents.length} 張學費單，如果有失敗的會記錄在您的 GAS 後台中。`);
+    }
 };
 
 window.initPrintPage = function () {
@@ -2171,58 +2408,8 @@ window.listenToTrialRegistrations = function (eventId) {
     });
 };
 
-// ★ 實時監聽目前的安全 Token
-onValue(ref(db, 'trial_events/current_token'), (snapshot) => {
-    const el = document.getElementById('currentTokenDisplay');
-    if (el) {
-        el.textContent = snapshot.val() || "尚未設定 (前台將無法報名)";
-    }
-});
 
-// 實際操作的換輪函數
-function executeTokenRotation() {
-    const chars = 'ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789-_';
-    let newToken = '';
-    for (let i = 0; i < 16; i++) {
-        newToken += chars.charAt(Math.floor(Math.random() * chars.length));
-    }
-    set(ref(db, 'trial_events/current_token'), newToken)
-        .then(() => console.log("✅ 安全憑證 (Token) 已更新！"))
-        .catch(err => console.error("❌ Token 更新失敗：" + err.message));
-}
 
-window.rotateSecureToken = function () {
-    if (confirm("⚠️ 確定要重新生成安全憑證 (Token) 嗎？\n生成後，若前台家長已經停留很久沒有重整，送出時會被阻擋。\n(建議在快開放登記前一刻按下)")) {
-        executeTokenRotation();
-        alert("✅ 手動更新成功！");
-    }
-};
-
-// 🌟 自動換鑰匙機制：在指定時間的前 5 秒自動觸發
-// 這裡可以手動設定與前台 `trial_booking.html` 相同的開放時間
-const ADMIN_OPEN_DATE = new Date();
-ADMIN_OPEN_DATE.setMinutes(ADMIN_OPEN_DATE.getMinutes() + 1); // 配合前台的測試時間：1 分鐘後
-ADMIN_OPEN_DATE.setSeconds(0);
-
-const timeUntilOpen = ADMIN_OPEN_DATE.getTime() - Date.now();
-const timeUntilRotation = timeUntilOpen - 5000; // 提早 5 秒
-
-if (timeUntilRotation > 0) {
-    console.log(`⏳ 系統將於 ${Math.round(timeUntilRotation / 1000)} 秒後自動更換安全 Token。`);
-    setTimeout(() => {
-        console.log("🔥 啟動考前 5 秒自動換鎖防禦機制！");
-        executeTokenRotation();
-
-        // 可選：在畫面提示管理員
-        const statusEl = document.getElementById('aiEngineStatus');
-        if (statusEl) {
-            statusEl.innerHTML = "🛡️ 考前 5 秒防禦機制已觸發，新 Token 已配發！";
-            statusEl.style.color = "#27ae60";
-        }
-    }, timeUntilRotation);
-} else {
-    console.log("⚠️ 設定的自動換把時間已過。");
-}
 
 const prefMap = {
     "both_any": "所有雙科皆可",
@@ -2270,9 +2457,33 @@ window.renderTrialMonitorTable = function () {
         return 0;
     });
 
+    const nameCounts = {};
+    const phoneCounts = {};
+    filteredList.forEach(student => {
+        if (student.status !== 'deleted') {
+            nameCounts[student.studentName] = (nameCounts[student.studentName] || 0) + 1;
+            phoneCounts[student.parentPhone] = (phoneCounts[student.parentPhone] || 0) + 1;
+        }
+    });
+
+    // 動態重複調色盤：用名字算出專屬背景色，保證同一人顏色一樣，不同群組顏色不同。
+    const duplicatePalette = ['#ffe6e6', '#e6f2ff', '#e6ffe6', '#fffada', '#f2e6ff', '#ffebe6'];
+    const getColorForName = (name) => {
+        let hash = 0;
+        for (let i = 0; i < name.length; i++) {
+            hash = name.charCodeAt(i) + ((hash << 5) - hash);
+        }
+        return duplicatePalette[Math.abs(hash) % duplicatePalette.length];
+    };
+
     filteredList.forEach(student => {
         const tr = document.createElement('tr');
         const timeStr = new Date(student.clientTimestampMs).toLocaleString() + `.<span style="color:#aaa;font-size:10px;">${student.clientTimestampMs % 1000}</span>`;
+
+        if (student.status !== 'deleted' && (nameCounts[student.studentName] > 1 || phoneCounts[student.parentPhone] > 1)) {
+            const rowColor = getColorForName(student.studentName);
+            tr.style.backgroundColor = rowColor;
+        }
 
         // 整理志願字串
         let prefArr = [];
@@ -2306,8 +2517,8 @@ window.renderTrialMonitorTable = function () {
 
         tr.innerHTML = `
             <td style="font-family:monospace; ${trStyle}">${timeStr}</td>
-            <td style="font-weight:bold; ${trStyle}">${student.studentName}</td>
-            <td style="${trStyle}">${student.parentPhone}</td>
+            <td style="font-weight:bold; ${trStyle}">${window.escapeHTML(student.studentName)}</td>
+            <td style="${trStyle}">${window.escapeHTML(student.parentPhone)}</td>
             <td style="max-width:300px; display:flex; flex-wrap:wrap; gap:5px; ${trStyle}">${prefStr}</td>
             <td>${resultBadge}</td>
             <td>${btnHtml}</td>
@@ -3485,7 +3696,7 @@ window.renderTrialResults = function (allocated, waitlist, sessionsMap) {
                 });
             };
 
-            stuItem.innerHTML = `<strong>${stu.studentName}</strong> (${stu.parentPhone}) 
+            stuItem.innerHTML = `<strong>${window.escapeHTML(stu.studentName)}</strong> (${window.escapeHTML(stu.parentPhone)}) 
             <div style="font-size:11px; margin-top:5px; background:rgba(0,0,0,0.2); padding:2px 5px; border-radius:3px; color:white; display:inline-block;">${stu.assignDesc}</div>`;
             stuItem.appendChild(copyBtn);
             listContainer.appendChild(stuItem);
@@ -3592,7 +3803,7 @@ window.renderTrialResults = function (allocated, waitlist, sessionsMap) {
             // ★ 如果引擎已經賦予了絕對 rank，就用它的，否則按順序排
             let displayRank = stu.rank ? stu.rank : (wIndex + 1);
 
-            stuItem.innerHTML = `<span style="background:rgba(0,0,0,0.2); padding:2px 4px; border-radius:3px; margin-right:4px;">#${displayRank}</span> <strong>${stu.studentName}</strong> (${stu.parentPhone})`;
+            stuItem.innerHTML = `<span style=\"background:rgba(0,0,0,0.2); padding:2px 4px; border-radius:3px; margin-right:4px;\">#${displayRank}</span> <strong>${window.escapeHTML(stu.studentName)}</strong> (${window.escapeHTML(stu.parentPhone)})`;
             listContainer.appendChild(stuItem);
         });
 

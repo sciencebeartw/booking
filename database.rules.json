@@ -52,11 +52,12 @@
         "orders": {
             ".read": "auth != null && auth.token.email != null && root.child('admins').child(auth.token.email.replace('.', ',').replace('.', ',').replace('.', ',')).exists()",
             "$phone": {
-                ".read": true,
+                ".read": false,
                 ".indexOn": [
                     "orderId"
                 ],
                 "$orderId": {
+                    ".read": true,
                     ".write": "( !data.exists() && newData.exists() ) || (auth != null && auth.token.email != null && root.child('admins').child(auth.token.email.replace('.', ',').replace('.', ',').replace('.', ',')).exists())"
                 }
             }
@@ -104,7 +105,8 @@
                 // 情境 A：空位被點擊上鎖 (只能從 null 或 deleted 變成 locked)
                 ( 
                   (!data.exists() || data.child('status').val() === 'deleted') && 
-                  newData.child('status').val() === 'locked' 
+                  newData.child('status').val() === 'locked' &&
+                  newData.child('user').val() === auth.uid
                 ) 
                 ||
                 // 情境 B：填寫完成送出結帳 (只能從 locked 變成 sold，且必須驗證 user ID)
@@ -112,7 +114,8 @@
                   data.exists() && 
                   data.child('status').val() === 'locked' && 
                   newData.child('status').val() === 'sold' && 
-                  data.child('user').val() === newData.child('user').val() 
+                  data.child('user').val() === newData.child('user').val() &&
+                  data.child('user').val() === auth.uid
                 )
               )
             )
@@ -142,14 +145,10 @@
         },
         "trial_events": {
             ".read": "auth != null && auth.token.email != null && root.child('admins').child(auth.token.email.replace('.', ',').replace('.', ',').replace('.', ',')).exists()",
-            "current_token": {
-                ".read": true,
-                ".write": "auth != null && auth.token.email != null && root.child('admins').child(auth.token.email.replace('.', ',').replace('.', ',').replace('.', ',')).exists()"
-            },
             "registrations": {
                 "$eventId": {
-                    "$registration_id": {
-                        ".write": "(auth != null && auth.token.email != null && root.child('admins').child(auth.token.email.replace('.', ',').replace('.', ',').replace('.', ',')).exists()) || (!data.exists() && newData.exists() && root.child('trial_events/current_token').exists() && newData.child('secureToken').isString() && newData.child('secureToken').val() === root.child('trial_events/current_token').val())"
+                    "$uid": {
+                        ".write": "(auth != null && auth.token.email != null && root.child('admins').child(auth.token.email.replace('.', ',').replace('.', ',').replace('.', ',')).exists()) || (newData.exists() && auth != null && auth.uid === $uid)"
                     }
                 }
             }

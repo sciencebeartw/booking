@@ -9,7 +9,9 @@
     <title>山熊科學 - 劃位系統</title>
     <link rel="icon" href="icon.png" type="image/png">
     <link rel="apple-touch-icon" href="icon.png">
-    <script src="https://www.google.com/recaptcha/api.js?hl=zh-TW" async defer></script>
+    <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
+    <script src="https://www.google.com/recaptcha/api.js?onload=onloadCallback&render=explicit&hl=zh-TW" async
+        defer></script>
     <style>
         body {
             font-family: "Microsoft JhengHei", sans-serif;
@@ -605,6 +607,8 @@
             }
         }
     </style>
+    <!-- SweetAlert2 -->
+    <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
 </head>
 
 <body>
@@ -747,27 +751,12 @@
         </a>
     </div>
 
-    <script type="module">
-        import { db, ref, set, update, get, child, push } from './firebase-config.js';
-        import { onValue, runTransaction, serverTimestamp } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-database.js";
+    <script>
+        var widgetId1, widgetId2;
+        var isVerified1 = false;
+        var isVerified2 = false;
 
-        let widgetId1, widgetId2;
-        let isVerified1 = false;
-        let isVerified2 = false;
-        let serverTimeOffset = 0;
-        let courseSettings = null;
-        let waitlistCount = 0;
-        let totalSeats = 0;
-        let soldCount = 0;
-        let isClassroomRendered = false;
-
-        let isManualRelease = false;
-
-        // ★★★ 新增：反應時間紀錄變數 ★★★
-        let pageLoadTime = 0;
-        let reactionMs = 0;
-
-        window.onloadCallback = function () {
+        function onloadCallback() {
             widgetId1 = grecaptcha.render('recaptcha1', {
                 'sitekey': '6LdkWVwsAAAAAKBQSZKiPxOQ7E3ZbL0V-zaclqt5',
                 'callback': function () { isVerified1 = true; document.getElementById('confirmBtn').disabled = false; },
@@ -778,17 +767,39 @@
                 'callback': function () { isVerified2 = true; document.getElementById('w_confirmBtn').disabled = false; },
                 'expired-callback': function () { isVerified2 = false; document.getElementById('w_confirmBtn').disabled = true; }
             });
-        };
+        }
+    </script>
 
+    <script type="module">
+        import { db, ref, set, update, get, child, push, auth, onAuthStateChanged, signInAnonymously } from './firebase-config.js';
+        import { onValue, runTransaction, serverTimestamp } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-database.js";
         import { classrooms } from './classrooms.js';
+
+        let serverTimeOffset = 0;
+        let courseSettings = null;
+        let waitlistCount = 0;
+        let totalSeats = 0;
+        let soldCount = 0;
+        let isClassroomRendered = false;
+
+        let isManualRelease = false;
+
+        // ★★★ 新增：反應時間紀錄變數 ★★★
+        let reactionMs = 0;
+        let pageLoadTime = 0;
 
         let currentClassId = null;
         let currentCourseData = null;
-        let myUserId = localStorage.getItem('tempUserId');
-        if (!myUserId) {
-            myUserId = 'user_' + Math.floor(Math.random() * 100000);
-            localStorage.setItem('tempUserId', myUserId);
-        }
+        let myUserId = null;
+        onAuthStateChanged(auth, (user) => {
+            if (user) {
+                myUserId = user.uid;
+            } else {
+                signInAnonymously(auth).catch((error) => {
+                    console.error("匿名登入失敗: ", error);
+                });
+            }
+        });
 
         const classroomDiv = document.getElementById('classroom');
         const stageArea = document.getElementById('stageArea');
@@ -809,7 +820,7 @@
             const courseId = params.get('class');
 
             if (!courseId) {
-                alert("無效的課程連結！");
+                Swal.fire("無效的課程連結！");
                 window.location.href = "index.html";
                 return;
             }
@@ -819,7 +830,7 @@
 
             onValue(ref(db, `courses/${courseId}`), (snapshot) => {
                 if (!snapshot.exists()) {
-                    alert("課程不存在");
+                    Swal.fire("課程不存在");
                     window.location.href = "index.html";
                     return;
                 }
@@ -840,7 +851,7 @@
                 // 如果教室已經渲染過一次，代表使用者正在看頁面
                 // 這時候如果後台改了 Layout，我們要強制重畫
                 if (isClassroomRendered) {
-                    console.log("偵測到課程資料變更，重新渲染座位表...");
+                    // 偵測到課程資料變更，重新渲染座位表
                     renderClassroom(currentCourseData.classroom);
                     // 重畫後，必須重新掛載座位狀態監聽 (紅/黃燈)
                     startRealtimeListener();
@@ -888,7 +899,7 @@
                 let msg = "⛔ 目前非開放劃位時間！";
                 if (now < start1) msg = "⛔ 劃位尚未開始！請勿偷跑！";
                 if (now >= end1 && now < start2) msg = "⛔ 系統整理中，暫停開放！";
-                alert(msg);
+                Swal.fire(msg);
                 window.location.href = "index.html";
                 return;
             }
@@ -965,11 +976,11 @@
             const { start1, end1, start2, end2 } = settings;
 
             if (now >= end1 && now < start2) {
-                alert("⏰ 第一階段劃位時間已結束！\n系統整理中，請稍後再回來。");
+                Swal.fire("⏰ 第一階段劃位時間已結束！\n系統整理中，請稍後再回來。");
                 window.location.href = "index.html";
             }
             if (end2 && end2 < 9999999999999 && now >= end2) {
-                alert("⏰ 劃位時間已全部結束！");
+                Swal.fire("⏰ 劃位時間已全部結束！");
                 window.location.href = "index.html";
             }
         }
@@ -1041,7 +1052,7 @@
                     if (!currentSeatData || (currentSeatData.user !== myUserId && currentSeatData.status !== 'sold')) {
                         if (!isManualRelease) {
                             if (!currentSeatData || currentSeatData.user !== myUserId) {
-                                alert("⚠️ 您的保留位已被釋出或由管理員移除！請重新劃位。");
+                                Swal.fire("⚠️ 您的保留位已被釋出或由管理員移除！請重新劃位。");
                                 closeModal();
                             }
                         }
@@ -1109,7 +1120,7 @@
                      📅 開課：${currentCourseData.startDate || ''}`;
             }
 
-            try { if (grecaptcha && grecaptcha.reset && widgetId2 !== undefined) grecaptcha.reset(widgetId2); } catch (e) { console.log("ReCAPTCHA reset skipped"); }
+            try { if (grecaptcha && grecaptcha.reset && widgetId2 !== undefined) grecaptcha.reset(widgetId2); } catch (e) { }
         }
 
         function closeWaitlistModal() {
@@ -1117,15 +1128,15 @@
         }
 
         document.getElementById('w_confirmBtn').addEventListener('click', () => {
-            if (!isVerified2) { alert("🤖 請勾選「我不是機器人」！"); return; }
+            if (!isVerified2) { Swal.fire("🤖 請勾選「我不是機器人」！"); return; }
 
             const name = document.getElementById('w_studentName').value.trim();
             const phone = document.getElementById('w_parentPhone').value.trim();
             const note = document.getElementById('w_note').value.trim();
 
-            if (!name || !phone) { alert("請填寫完整資料！"); return; }
+            if (!name || !phone) { Swal.fire("請填寫完整資料！"); return; }
             const phoneRegex = /^09\d{8}$/;
-            if (!phoneRegex.test(phone)) { alert("❌ 手機號碼格式錯誤！"); return; }
+            if (!phoneRegex.test(phone)) { Swal.fire("❌ 手機號碼格式錯誤！"); return; }
 
             const waitlistRef = push(ref(db, `waitlist/${currentClassId}`));
             set(waitlistRef, {
@@ -1134,18 +1145,18 @@
                 note: note,
                 timestamp: serverTimestamp()
             }).then(() => {
-                alert("✅ 候補登記成功！\n若有座位釋出，將依序通知。");
+                Swal.fire("✅ 候補登記成功！\n若有座位釋出，將依序通知。");
                 closeWaitlistModal();
-            }).catch(err => alert("錯誤：" + err));
+            }).catch(err => Swal.fire("錯誤：" + err));
         });
 
         function tryLockSeat(seatId) {
             // ★★★ 新增：點擊時計算反應時間 ★★★
             const clickTime = Date.now();
             reactionMs = clickTime - pageLoadTime;
-            console.log(`反應時間: ${reactionMs} ms`);
 
-            if (currentSeatId && currentSeatId !== seatId) { alert("您已經有一個座位正在保留中！"); return; }
+
+            if (currentSeatId && currentSeatId !== seatId) { Swal.fire("您已經有一個座位正在保留中！"); return; }
             const seatEl = document.getElementById(`seat-${seatId}`);
 
             if (seatEl.classList.contains('sold') || seatEl.classList.contains('locked') || seatEl.classList.contains('blocked')) {
@@ -1169,11 +1180,17 @@
             }).then((result) => {
                 seatEl.classList.remove('loading');
                 if (result.committed) { openBookingModal(seatId, nowTimestamp); }
-                else { alert("慢了一步！"); }
+                else { Swal.fire("慢了一步！"); }
             }).catch(err => {
                 console.error(err);
                 seatEl.classList.remove('loading');
-                alert("❌ 劃位失敗！(可能是非開放時間)");
+                Swal.fire({
+                    icon: 'error',
+                    title: '🚨 劃位失敗',
+                    html: '<p style=\"font-size:16px;\">可能是目前尚未開放，或該座位剛剛被搶走。</p><p style=\"font-size:14px; color:#7f8c8d;\">請重新整理頁面再試一次！</p>',
+                    confirmButtonText: '確定',
+                    confirmButtonColor: '#e74c3c'
+                });
             });
         }
 
@@ -1215,7 +1232,7 @@
             isVerified1 = false;
             confirmBtn.disabled = true;
             honeyPotInput.value = "";
-            try { if (grecaptcha && grecaptcha.reset && widgetId1 !== undefined) grecaptcha.reset(widgetId1); } catch (e) { console.log("ReCAPTCHA reset skipped"); }
+            try { if (grecaptcha && grecaptcha.reset && widgetId1 !== undefined) grecaptcha.reset(widgetId1); } catch (e) { }
             startPrecisionTimer(lockTimestamp);
         }
 
@@ -1266,7 +1283,7 @@
             } else {
                 set(ref(db, `seats/${currentClassId}/${seatToRelease}`), { status: 'deleted', user: myUserId }).then(() => {
                     closeModal();
-                    if (!isAuto) { alert("已取消保留。"); }
+                    if (!isAuto) { Swal.fire("已取消保留。"); }
                 }).catch(err => { console.error("釋出失敗", err); closeModal(); });
             }
         }
@@ -1281,15 +1298,15 @@
         document.getElementById('cancelBtn').addEventListener('click', () => releaseSeat(false));
 
         confirmBtn.addEventListener('click', () => {
-            if (honeyPotInput.value !== "") { alert("系統偵測到異常操作。"); return; }
-            if (!currentSeatId) { alert("⚠️ 座位保留時間已到，請重新選位！"); closeModal(); return; }
+            if (honeyPotInput.value !== "") { Swal.fire("系統偵測到異常操作。"); return; }
+            if (!currentSeatId) { Swal.fire("⚠️ 座位保留時間已到，請重新選位！"); closeModal(); return; }
 
             const name = nameInput.value.trim();
             const phone = phoneInput.value.trim();
-            if (!isVerified1) { alert("🤖 請勾選「我不是機器人」！"); return; }
-            if (!name || !phone) { alert("請填寫完整資料！"); return; }
+            if (!isVerified1) { Swal.fire("🤖 請勾選「我不是機器人」！"); return; }
+            if (!name || !phone) { Swal.fire("請填寫完整資料！"); return; }
             const phoneRegex = /^09\d{8}$/;
-            if (!phoneRegex.test(phone)) { alert("❌ 手機號碼格式錯誤！"); return; }
+            if (!phoneRegex.test(phone)) { Swal.fire("❌ 手機號碼格式錯誤！"); return; }
 
             const orderId = Date.now().toString().slice(-6) + Math.floor(Math.random() * 100);
             const timestamp = new Date().toLocaleString();
@@ -1319,14 +1336,35 @@
             updates[`orders/${phone}/${orderId}`] = orderData;
 
             update(ref(db), updates).then(() => {
-                alert(`✅ 劃位成功！\n座位：${currentSeatId}\n訂單編號：${orderId}\n請截圖留存！`);
-                closeModal();
+                Swal.fire({
+                    icon: 'success',
+                    title: '🎉 劃位成功！',
+                    html: '<div style=\"text-align:left; background:#f4f6f7; padding:15px; border-radius:10px; margin-top:15px;\">' +
+                        '<p style=\"font-size:16px; margin-bottom:5px;\">座位：<strong><span style=\"font-size:22px; color:#c0392b;\">' + currentSeatId + '</span></strong></p>' +
+                        '<p style=\"font-size:16px; margin-bottom:10px;\">訂單編號：<strong>' + orderId + '</strong></p>' +
+                        '<hr style=\"margin: 10px 0; border: 0; border-top: 1px solid #ccc;\">' +
+                        '<p style=\"font-size:15px; color:#c0392b; font-weight:bold; margin-bottom:0;\">📸 請務必「截圖」留存此畫面！</p>' +
+                        '</div>',
+                    confirmButtonText: '✅ 確定關閉並已截圖',
+                    confirmButtonColor: '#2ecc71',
+                    allowOutsideClick: false
+                }).then(() => {
+                    closeModal();
+                });
             }).catch((err) => {
+                let errorHtml = '<p style=\"font-size:16px;\">系統發生未知的錯誤，請重新整理重試。</p>';
                 if (err.message.includes("PERMISSION_DENIED")) {
-                    alert("送出失敗：⛔ 目前非劃位時段或已被搶走！");
+                    errorHtml = '<p style=\"font-size:16px;\">可能非開放時段，或該位子剛剛已被別人搶走！</p>';
                 } else {
-                    alert("送出失敗：" + err.message);
+                    errorHtml = '<p style=\"font-size:16px;\">' + err.message + '</p>';
                 }
+                Swal.fire({
+                    icon: 'error',
+                    title: '🚨 送出失敗',
+                    html: errorHtml,
+                    confirmButtonText: '確定',
+                    confirmButtonColor: '#e74c3c'
+                });
                 console.error(err);
             });
         });

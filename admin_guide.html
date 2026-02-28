@@ -567,6 +567,8 @@
                 <li><strong>資料快照防閃爍 (Anti-Thrashing)：</strong>
                     系統導入了進階的 <code>onValue</code>
                     即時監聽快照技術，取代傳統的單次讀取。即使前線湧入大量訂單，後台的選單與列表也會無縫熱更新，且不會因為重繪而「閃退或閃白」，確保行政操作的絕對穩定。</li>
+                <li><span class="highlight">NEW!</span> <strong>動態重複調色盤 (防重覆劃位)：</strong>
+                    當學員重複劃位時，系統會運用特殊演算法為「同名學生」生成專屬的背景色區塊進行高光標示。讓您在茫茫名單中，免搜尋就能一眼看出哪些座位是被「同一人」霸佔，抓出重複劃位如同找碴遊戲般輕鬆。</li>
                 <li><span class="highlight">NEW!</span> <strong>測試資料工具：</strong> 提供「🎲 產生」與「🗑️
                     清除」按鈕。產生時系統會自動建立帶有「(測試)」字樣的預約紀錄，優先填滿座位再轉入候補，供正式劃位前進行壓力測試。清除時則會一鍵刪除所有「(測試)」相關紀錄，不留痕跡。</li>
             </ul>
@@ -618,6 +620,8 @@
                 </li>
                 <li><strong>A5 完美比例與批次下載：</strong> 學費單已設定為標準 A5 比例，並加上了 25% 完美透明度的山熊浮水印。按下「📥
                     全部下載」，系統自動將所有單據轉成高解析度圖片檔，全選列印一氣呵成！</li>
+                <li><span class="highlight">NEW!</span> <strong>🚀 一鍵發送至家長 LINE：</strong> 無需手動下載轉傳！系統具備直接串接雲端 GAS API
+                    的能力。只需點擊單張學費單旁的「傳送」按鈕，或使用上方的「一鍵全數傳送」，系統便會在雲端直接生成圖片，並全自動透過山熊官方 LINE 精準推播至每一位對應家長的手機裡！</li>
             </ul>
 
             <h2 id="ch3-6">✨ III-a. 試聽活動管理庫 (Trial Events Config)</h2>
@@ -731,8 +735,8 @@
             </ul>
 
             <h3 id="ch4-3">🔍 查詢頁：雙重驗證個資堡壘 (check.html)</h3>
-            <p>因應最新個資法規，我們徹底封死了舊系統「輸入名字就能查」的隱私漏洞。現在必須同時輸入<strong>「學生姓名」與「完整 10 碼家長手機」</strong>，兩者 100%
-                吻合才能調閱訂單。且具備防呆提示，引導家長自行確認資料是否打錯。</p>
+            <p>因應最新個資法規，我們再次升級防護，徹底封死了「輸入姓名與手機就能查」的隱私漏洞。現在必須同時輸入<strong>「完整 10 碼家長手機」與「劃位成功後取得的訂單編號」</strong>，兩者 100%
+                吻合才能調閱個人訂單。這是目前業界最高標準的 PII (個人可識別資訊) 防護機制，讓惡意人士絕對無法透過窮舉法撈取其他家長的劃位資料。</p>
 
             <h3 id="ch4-4">📜 SOP：正式劃位防禦戰略 (Regular Courses)</h3>
             <p>這是一份精心設計的「戰略文件」，我們導入了高階的<strong>「期望值管理」</strong>：</p>
@@ -773,7 +777,11 @@
                     行政後台已與 Google Firebase Auth 深度整合。採用「白名單信箱」雲端校驗，繞過了本機儲存密碼的洩漏風險，讓沒有獲得授權的人完全無從攻擊。</p>
                 <p><strong>四、 鐵壁防線：伺服器端「衛星校時」</strong><br>
                     所有請求皆比對 Firebase 伺服器時間。修改電腦時間、或預寫腳本提早發送請求，皆會被 Security Rules 直接丟棄，絕無偷跑空間。</p>
-                <p><strong>五、 經濟效益分析：為何「作弊」是不划算的？</strong><br>
+                <p><strong>五、 隱形守衛：防惡意佔位之 UID 綁定機制 (Anonymous Auth)</strong><br>
+                    為了徹底防堵「殭屍號」霸佔位子不結帳的惡意 DoS 攻擊，系統在一進入劃位網頁時，便會在背景悄悄為每一位訪客註冊一組「隱形臨時身分證 (Anonymous
+                    UID)」。當該訪客點擊座位時，Firebase 底層的 Security Rules 會強制比對，確保只有「擁有該 UID 的本人」才能購買該座位，完美防堵了意圖透過 API
+                    偽造他人身分卡位的駭客行為。</p>
+                <p><strong>六、 經濟效益分析：為何「作弊」是不划算的？</strong><br>
                     要寫出一支能完美模仿真人生理特徵（滑鼠路徑、觸控微震）的腳本需要耗費極大成本。即便成功，也僅能爭取到 0.5 秒優勢，最終仍須面對不可控的 AI
                     驗證。對於竹科家長而言，花費數十小時開發腳本，遠不如準時坐在電腦前「用手點擊」來得划算。</p>
                 <p><strong>技術長結語：</strong><br>
@@ -796,6 +804,9 @@
         // ★★★ 處理 Redirect 登入結果與登入狀態檢查 (雙重驗證) ★★★
         const checkAdminRedirect = async (user) => {
             try {
+                // ★ 防護：如果是匿名帳號或沒信箱，直接阻斷
+                if (!user || !user.email) throw new Error("無效的信箱");
+
                 const safeEmail = user.email.replace(/\./g, ',');
                 const snapshot = await get(child(dbRef(db), `admins/${safeEmail}`));
                 if (snapshot.exists()) {
@@ -812,7 +823,8 @@
         // ★★★ 智慧登入狀態偵測 ★★★
         onAuthStateChanged(auth, async (user) => {
             const btn = document.getElementById('navLoginBtn');
-            if (user) {
+            // ★ 核心修正：只有「非匿名」的真實登入者，按鈕才會變綠色
+            if (user && !user.isAnonymous) {
                 if (btn) {
                     // 如果已經登入過了，按鈕直接變成綠色的前往後台
                     btn.innerHTML = "🚀 前往後台指揮中心";
@@ -822,8 +834,8 @@
         });
 
         window.loginAdminWithGoogle = async function () {
-            // 如果已經有登入紀錄，直接進去
-            if (auth.currentUser) {
+            // ★ 核心修正：必須確認「有登入」且「不是匿名訪客」
+            if (auth.currentUser && !auth.currentUser.isAnonymous) {
                 await checkAdminRedirect(auth.currentUser);
                 return;
             }

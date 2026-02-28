@@ -435,19 +435,9 @@
             <h2 style="color: #2c3e50; border-bottom: 2px solid #eee; padding-bottom: 10px; margin-bottom: 20px;">📋
                 試聽對象與聯繫方式</h2>
 
-            <div class="preference-row">
-                <div class="preference-col">
-                    <div class="form-group">
-                        <label for="studentName">學生姓名 <span style="color:red">*</span></label>
-                        <input type="text" id="studentName" placeholder="請輸入學生真實姓名" required>
-                    </div>
-                </div>
-                <div class="preference-col">
-                    <div class="form-group">
-                        <label for="parentName">家長姓名 <span style="color:red">*</span></label>
-                        <input type="text" id="parentName" placeholder="請輸入家長姓名" required>
-                    </div>
-                </div>
+            <div class="form-group">
+                <label for="studentName">學生姓名 <span style="color:red">*</span></label>
+                <input type="text" id="studentName" placeholder="請輸入學生真實姓名" required>
             </div>
 
             <div class="form-group">
@@ -511,9 +501,12 @@
     </div>
 
     <script type="module">
-        import { db, ref, set, push, get, child } from './firebase-config.js';
+        import { db, ref, set, push, get, child, auth, signInAnonymously, onAuthStateChanged } from './firebase-config.js';
         // ★★★ 引入 Transaction 供限量候補使用 ★★★
         import { serverTimestamp, onValue, runTransaction } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-database.js";
+
+        // 確保訪客具備匿名 UID 以供 Firebase Rules 驗證
+        signInAnonymously(auth).catch(err => console.error("匿名登入失敗:", err));
 
         // ==========================================
         // 變數初始化與頂層監聽
@@ -928,15 +921,7 @@
             box.style.transform = 'translate(0px, 0px)';
             box.innerHTML = '<h2>🚀 正在安全傳送中...</h2><p style="color:#7f8c8d;">此過程將採用嚴格時間戳記認證</p>';
 
-            let currentToken = "";
-            try {
-                const tokenSnapshot = await get(child(ref(db), 'trial_events/current_token'));
-                if (tokenSnapshot.exists()) {
-                    currentToken = tokenSnapshot.val();
-                }
-            } catch (err) {
-                console.warn("無法取得安全憑證 (如非管理員，仍可能被規則阻擋)", err);
-            }
+
 
             // ★★★ 核心分歧點：判斷是否為純候補限量搶購模式 ★★★
             const isWaitlistOnly = (currentEvent.type === 'waitlist_only');
@@ -960,16 +945,37 @@
 
             const formData = {
                 studentName: document.getElementById('studentName').value,
-                parentName: document.getElementById('parentName').value,
                 parentPhone: document.getElementById('parentPhone').value,
                 preferences: preferences,
                 clientTimestampMs: msTimestamp,
-                status: 'pending',
-                secureToken: currentToken
+                status: 'pending'
             };
 
-            const eventsRef = ref(db, `trial_events/registrations/${window.currentEventId}`);
-            const newRegistrationRef = push(eventsRef);
+            let myUid = null;
+            if (auth.currentUser) {
+                myUid = auth.currentUser.uid;
+            } else {
+                // 強制確保登入並等待
+                await new Promise((resolve, reject) => {
+                    const unsubscribe = onAuthStateChanged(auth, user => {
+                        if (user) {
+                            myUid = user.uid;
+                            unsubscribe();
+                            resolve();
+                        }
+                    });
+                    signInAnonymously(auth).catch((err) => {
+                        console.error("即時註冊失敗: ", err);
+                    });
+                    setTimeout(() => reject(new Error("身分驗證超時，請重新整理網頁")), 5000);
+                }).catch(err => {
+                    document.getElementById('anti-cyborg-challenge').style.display = 'none';
+                    Swal.fire('錯誤', err.message, 'error');
+                    throw err; // 中斷執行
+                });
+            }
+
+            const newRegistrationRef = ref(db, `trial_events/registrations/${window.currentEventId}/${myUid}`);
             formData.serverTimestamp = serverTimestamp();
 
             // ==========================================

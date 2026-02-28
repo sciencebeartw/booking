@@ -332,7 +332,11 @@
                     秒</span>。這段期間全世界只有您能填寫這個位子的資料，請安心、從容地填寫。若超時未送出，座位將自動釋出。</li>
             <li><strong>🚫 禁止雙重劃位 (醜話說在前頭)：</strong> 同一位學生在同一門課程中，僅能佔用一個座位。系統會即時偵測，若發現重複佔位，將保留第一筆並 <span
                     class="highlight">系統自動隨機刪除重複的座位</span>，為避免爭議，請勿嘗試多佔位。</li>
-            <li><strong>自動化繳費核帳：</strong> 劃位完成後，我們會透過 LINE 寄發給您專屬的「AI 學費單」，請依單據上的金額匯款，並回報帳號後 5 碼，以利行政團隊一鍵核帳。</li>
+            <li><strong>自動化繳費核帳：</strong> 劃位完成後，我們的系統會透過官方 LINE \u003cspan
+                class=\"highlight\"\u003e全自動推播\u003c/span\u003e專屬的「AI 學費單」給您，請依單據上的金額匯款，並回報帳號後 5 碼，以利行政團隊一鍵核帳。</li>
+            <li><strong>訂單資料雙重保密查詢：</strong>
+                劃位成功後系統會配發一組專屬的「訂單編號」。若您需要事後查詢劃位結果，請至查詢頁面，同時輸入<strong>「家長手機號碼」</strong>與<strong>「訂單編號」</strong>，以最高規格保護您的個人隱私。請務必將劃位成功畫面的訂單編號截圖留存！
+            </li>
             <li><strong>候補機制：</strong> 若座位已額滿，將開放「登記候補」。若有釋出座位，我們將依照候補登記順序，透過 LINE 或電話通知遞補。</li>
         </ul>
 
@@ -383,5 +387,12 @@
     </div>
 
 </body>
+<script>
+    const urlParams = new URLSearchParams(window.location.search);
+    const mode = urlParams.get('mode');
+    if (mode) {
+        document.querySelector('.back-btn').href = 'index.html?mode=' + mode;
+    }
+</script>
 
 </html>

@@ -550,17 +550,7 @@
                 4. 無損平移空間魔術：遇到後期卡關，AI 嘗試將早前標記為「皆可」的家長平移，以騰出指定時段。
             </div>
 
-            <div
-                style="width: 100%; max-width: 800px; margin: 0 auto 20px auto; background:#fff; padding:15px; border-radius:8px; border:1px solid #ddd; text-align:left;">
-                <h4 style="margin-top:0; color:#c0392b;">🔐 終極安全防護：動態寫入 Token (防 API 外掛)</h4>
-                <div style="font-size:14px; color:#555; margin-bottom:10px;">
-                    目前的 `secureToken`： <span id="currentTokenDisplay"
-                        style="font-family:monospace; background:#eee; padding:2px 6px; border-radius:4px; font-weight:bold;">載入中...</span>
-                    (開放劃位前一刻，請點擊右方按鈕更新 Token 以阻擋提早跑腳本的外掛)
-                </div>
-                <button onclick="rotateSecureToken()" class="danger" style="padding:8px 15px; font-size:14px;">🔄 立即重新生成
-                    Token</button>
-            </div>
+
 
             <div
                 style="width: 100%; max-width: 800px; margin: 0 auto 20px auto; background:#fff; padding:15px; border-radius:8px; border:1px solid #ddd; text-align:left;">
@@ -734,20 +724,30 @@
 
         <div class="bill-preview-container">
             <div
-                style="width: 210mm; margin-bottom:10px; color:#e74c3c; font-weight:bold; font-size:16px; background:#fff3cd; padding:10px; border-radius:8px; box-sizing: border-box; box-shadow: 0 2px 5px rgba(0,0,0,0.1);">
+                style="width: 210mm; margin: 0 auto 10px auto; color:#e74c3c; font-weight:bold; font-size:16px; background:#fff3cd; padding:10px; border-radius:8px; box-sizing: border-box; box-shadow: 0 2px 5px rgba(0,0,0,0.1);">
                 💡 提示：可以直接點擊學費單上的「姓名、學校、備註、項目、日期、金額與總計」欄位進行手動修改！
             </div>
-            <div class="bill-controls">
-                <button onclick="prevBill()"
-                    style="background:#5f6368; color:white; border:none; padding:5px 15px; border-radius:5px; cursor:pointer;">◀
-                    上一張</button>
-                <span id="billCounter" style="font-weight:bold; font-size:16px;">0 / 0</span>
-                <button onclick="nextBill()"
-                    style="background:#5f6368; color:white; border:none; padding:5px 15px; border-radius:5px; cursor:pointer;">下一張
-                    ▶</button>
-                <div style="flex-grow:1;"></div>
-                <button onclick="downloadCurrentBill()" class="warning">📸 下載這張</button>
-                <button onclick="downloadAllBills()" class="success">📥 全部下載</button>
+            <div class="bill-controls"
+                style="display: flex; flex-direction: column; gap: 10px; width: 210mm; margin: 0 auto 15px auto;">
+                <!-- 上排：翻頁控制 -->
+                <div style="display: flex; justify-content: flex-start; align-items: center; gap: 15px;">
+                    <button onclick="prevBill()"
+                        style="background:#5f6368; color:white; border:none; padding:8px 20px; border-radius:5px; cursor:pointer;">◀
+                        上一張</button>
+                    <span id="billCounter" style="font-weight:bold; font-size:16px;">0 / 0</span>
+                    <button onclick="nextBill()"
+                        style="background:#5f6368; color:white; border:none; padding:8px 20px; border-radius:5px; cursor:pointer;">下一張
+                        ▶</button>
+                </div>
+                <!-- 下排：執行動作 -->
+                <div style="display: flex; justify-content: flex-start; gap: 10px; flex-wrap: wrap;">
+                    <button onclick="downloadCurrentBill()" class="warning">📸 下載這張</button>
+                    <button onclick="sendBillToLine()" class="success"
+                        style="background-color:#2ecc71; border-color:#2ecc71;">📫 發送至 LINE</button>
+                    <button onclick="sendAllBillsToLine()" class="success"
+                        style="background-color:#27ae60; border-color:#27ae60;">📫 一鍵發送全部</button>
+                    <button onclick="downloadAllBills()" class="success">📥 全部下載</button>
+                </div>
             </div>
 
             <div class="bill-container" id="billArea">

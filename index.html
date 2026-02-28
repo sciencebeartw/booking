@@ -7,6 +7,8 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>山熊科學 - 課程劃位入口</title>
+    <!-- SweetAlert2 -->
+    <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
     <link rel="icon" href="icon.png" type="image/png">
     <link rel="apple-touch-icon" href="icon.png">
     <script>
@@ -628,8 +630,8 @@
                 <div class="header-right">
                     <button onclick="checkResetMode()" class="nav-link"
                         style="background:none;border:none;cursor:pointer;font-size:15px;">↩ 返回入口</button>
-                    <a href="sop.html" class="nav-link" target="_blank">📖 劃位須知</a>
-                    <a href="check.html" class="nav-link">🔍 查詢結果</a>
+                    <a id="navSopLink" href="sop.html" class="nav-link" target="_blank">📖 劃位須知</a>
+                    <a id="navCheckLink" href="check.html" class="nav-link">🔍 查詢結果</a>
                     <button onclick="loginAdminWithGoogle()" class="btn-admin-login" title="管理員登入">
                         <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor"
                             stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
@@ -674,7 +676,7 @@
             import { db, ref, auth, signInWithRedirect, getRedirectResult, GoogleAuthProvider, get, child, ref as dbRef, onAuthStateChanged } from './firebase-config.js';
             import { onValue } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-database.js";
 
-            console.log("[DEBUG] Firebase modules imported successfully");
+            // Firebase modules imported successfully
 
             // ★★★ 核心時間校準監聽 ★★★
             let serverTimeOffset = 0;
@@ -689,6 +691,8 @@
 
                 // ★★★ 新增：讓網址列靜默更新，加入 ?mode 參數，這樣重整就不會迷路 ★★★
                 window.history.replaceState(null, '', '?mode=' + mode);
+                document.getElementById('navSopLink').href = 'sop.html?mode=' + mode;
+                document.getElementById('navCheckLink').href = 'check.html?mode=' + mode;
 
                 document.getElementById('entrySelection').style.display = 'none';
                 document.getElementById('mainApp').style.display = 'block';
@@ -1114,15 +1118,19 @@
                 if (!noRefresh) refreshDisplay();
             };
 
-            // ★★★ 處理 Redirect 登入結果與登入狀態檢查 (雙重驗證) ★★★
             const checkAdminRedirect = async (user) => {
                 try {
+                    // ★ 防護：如果是匿名帳號或沒信箱，直接阻斷
+                    if (!user || !user.email) throw new Error("無效的信箱");
+
                     const safeEmail = user.email.replace(/\./g, ',');
                     const snapshot = await get(child(dbRef(db), `admins/${safeEmail}`));
                     if (snapshot.exists()) {
                         window.location.href = "admin_bear2026.html";
                     } else {
-                        alert("權限不足！此帳號（" + user.email + "）非系統管理員。");
+                        const errMsg = "權限不足！此帳號（" + user.email + "）非系統管理員。";
+                        if (typeof Swal !== 'undefined') Swal.fire(errMsg);
+                        else alert(errMsg);
                         const { signOut } = await import('./firebase-config.js');
                         await signOut(auth);
                     }
@@ -1133,29 +1141,44 @@
 
             // ★★★ 管理員 Google 登入（重新採用彈出視窗模式，並加強提示）★★★
             window.loginAdminWithGoogle = async function () {
-                // 如果已經登入過，則直接檢查並進入
-                if (auth.currentUser) {
+                // ★ 核心修正：必須確認「有登入」且「不是匿名訪客」
+                if (auth.currentUser && !auth.currentUser.isAnonymous) {
                     await checkAdminRedirect(auth.currentUser);
                     return;
                 }
 
                 const provider = new GoogleAuthProvider();
+
+                if (typeof Swal !== 'undefined') {
+                    Swal.fire({
+                        title: '登入中...',
+                        allowOutsideClick: false,
+                        didOpen: () => { Swal.showLoading(); }
+                    });
+                }
+
                 try {
                     const { signInWithPopup } = await import('./firebase-config.js');
-                    const result = await signInWithPopup(auth, provider);
-                    if (result && result.user) {
-                        await checkAdminRedirect(result.user);
+                    const signResult = await signInWithPopup(auth, provider);
+                    if (typeof Swal !== 'undefined') Swal.close();
+                    if (signResult && signResult.user) {
+                        await checkAdminRedirect(signResult.user);
                     }
                 } catch (error) {
-                    if (error.code === 'auth/popup-blocked') {
-                        alert("⚠️ 瀏覽器封鎖了登入視窗！\n\n【解決方法】\n請在網址列右側尋找「已封鎖彈出式視窗」的圖示，點擊並選擇「一律允許」，然後再按一次登入按鈕。");
+                    console.error("登入失敗:", error);
+                    let errorMsg = "登入發生錯誤：" + error.message;
+                    if (error.code === 'auth/popup-blocked' || error.message.includes('popup')) {
+                        errorMsg = "⚠️ 瀏覽器依然封鎖了登入視窗！\n請務必關閉 AdBlock，或在網址列設定為「一律允許彈出式視窗」。";
                     } else if (error.code === 'auth/popup-closed-by-user') {
-                        // 使用者自行關閉，不需警告
+                        errorMsg = "您已取消登入。";
                     } else if (error.code === 'auth/unauthorized-domain') {
-                        alert("⚠️ 登入失敗：網域未被授權。請確保此網站在 Firebase 的授權網域清單中。");
+                        errorMsg = "⚠️ 登入失敗：網域未被授權。";
+                    }
+
+                    if (typeof Swal !== 'undefined') {
+                        Swal.fire("登入取消或失敗", errorMsg, "warning");
                     } else {
-                        console.error("登入失敗:", error);
-                        alert("登入發生錯誤：" + error.message);
+                        alert("登入取消或失敗\n\n" + errorMsg);
                     }
                 }
             };
