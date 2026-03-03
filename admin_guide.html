@@ -678,6 +678,63 @@
                 </li>
             </ul>
 
+            <h3>🏫 雙科配課引擎的教室設計哲學 (深度技術解析)</h3>
+            <div class="box tech">
+                <div class="box-title">為什麼要這樣設計？－告訴你我們做了哪些決定，以及背後的理由</div>
+                <p>雙科配課模式（dual_match）在設計上需要同時考慮三個目標：<strong>① 減輕家長接送負擔、② 讓大教室自然成為分發主力、③ 保底公平不偏心任何一科</strong>。以下是我們在 2026
+                    年 3 月完成的終極版設計決策記錄。</p>
+            </div>
+
+            <h3>📐 教室對應關係</h3>
+            <p>我們的場地邏輯如下：</p>
+            <div class="box warning">
+                <div class="box-title">🏫 場地配置原則（以 Day 1 為例，Day 2 相同）</div>
+                <ul style="margin-bottom:0;">
+                    <li><strong>大紅教室（60 人）</strong>：SlotA 上數學 → SlotB 換老師上自然（留在同教室！）</li>
+                    <li><strong>大橘教室（35 人）</strong>：SlotA 上自然 → SlotB 換老師上數學（留在同教室！）</li>
+                </ul>
+                <p style="margin-top:10px; margin-bottom:0;">因此，對「雙科都上」的學生來說，真正的選擇只有兩條動線：</p>
+                <ul style="margin-bottom:0;">
+                    <li>🔴 <strong>大紅路線</strong>：math_slotA ＋ sci_slotB（共 60 個名額）</li>
+                    <li>🟠 <strong>大橘路線</strong>：math_slotB ＋ sci_slotA（共 35 個名額）</li>
+                </ul>
+            </div>
+
+            <h3>⚖️ 決策一：「同天優先 → 動態容量平衡」雙層排序</h3>
+            <p>引擎在決定把每個人分到哪個組合時，會先算出每個組合的<strong>「瓶頸剩餘容量」（兩個班中較少的那個）</strong>，再按下列兩層優先序排序：</p>
+            <ol>
+                <li><strong>同天組合優先於拆天組合</strong>：確保家長只跑一天，不用接送兩趟。</li>
+                <li><strong>同層級內，瓶頸剩餘容量大的優先</strong>：大紅教室（60 人）初始瓶頸遠大於大橘（35 人），所以系統自然會先把人塞進大紅路線，直到大紅剩 35
+                    席時，兩條動線才趨於均等——這就是「水桶平衡效應」，完全不需要人工干預！</li>
+            </ol>
+            <div class="box success">
+                <div class="box-title">✅ 為什麼不做「Day 1 vs Day 2」的動態平衡？</div>
+                選擇 <code>both_any</code>（所有時段皆可）的家長，本來就是「我都可以、請系統決定」。固定先嘗試 Day 1 → Day
+                2，保證了<strong>相同資料永遠跑出相同結果（決定論）</strong>，不會因執行當下各班填充狀態不同而產生蝴蝶效應。若未來發現 Day 1
+                永遠爆滿，只需由管理員人為調整陣列順序，無需寫複雜的動態邏輯。
+            </div>
+
+            <h3>🤝 決策二：保底單科「不偏心數學」</h3>
+            <p>舊版引擎在雙科塞不進去時，會「永遠先搶數學、再搶自然」，這導致：</p>
+            <ul>
+                <li>自然科有空位，數學卻爆滿 → 保底一律先去數學，自然空著沒人用</li>
+                <li>家長感覺系統偏心，不公平</li>
+            </ul>
+            <p>新版終極引擎改為：<strong>把所有可行的數學班與自然班攤開，同時比較剩餘容量，誰空位最多就優先保底誰</strong>，讓大教室（不管哪科）自然成為保底首選，徹底消除偏心問題。</p>
+
+            <h3>🔄 決策三：Stage 2 無損挪位也套用雙層排序</h3>
+            <p>Stage 2 在嘗試把已分配者移往其他組合時，同樣套用「同天優先 → 瓶頸大優先」的排序，確保 AI
+                挪位不會把人從同天（大紅路線）挪到拆天（跨兩天上課）的劣等組合。挪位者的志願選項（<code>both_any</code> / <code>both_day1</code> /
+                <code>both_day2</code>）也會嚴格限制，絕對不會違反家長原本的意願填寫。</p>
+
+            <div class="box magic">
+                <div class="box-title">🏆 終極版演算法全景圖</div>
+                <strong>Stage 1（初步分發）</strong>→ 雙層排序：同天優先 + 動態容量平衡<br>
+                <strong>Stage 2（無損挪位）</strong>→ 找出彈性家長，平移讓位給指定志願者<br>
+                <strong>Stage 3（候補補位）</strong>→ 用相同雙層邏輯，再次嘗試讓候補者正取；若仍無法雙科，啟動公平保底單科
+            </div>
+
+
             <h2 id="ch3-8">📢 III-c. 通知發送中心 (Notification Center)</h2>
             <p>Phase 6 與 Phase 7 導入的旗艦功能，徹底自動化通知文案的撰寫與發送，不再需要對著 Excel 一個個打 LINE 字幕了。</p>
             <div class="highlight-box"
@@ -805,9 +862,7 @@
         const checkAdminRedirect = async (user) => {
             try {
                 // ★ 防護：如果是匿名帳號或沒信箱，直接阻斷
-                if (!user || !user.email) throw new Error("無效的信箱");
-
-                const safeEmail = user.email.replace(/\./g, ',');
+                const safeEmail = (user.email || '').replace(/\./g, ',');
                 const snapshot = await get(child(dbRef(db), `admins/${safeEmail}`));
                 if (snapshot.exists()) {
                     window.location.href = "admin_bear2026.html";

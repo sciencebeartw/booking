@@ -448,7 +448,7 @@
             <h2
                 style="color: #2c3e50; border-bottom: 2px solid #eee; padding-bottom: 10px; margin-top: 40px; margin-bottom: 20px;">
                 🎓 試聽志願序選擇</h2>
-            <p style="color: #666; font-size: 14px; margin-bottom: 15px;">請依序填寫您的志願。第一志願為必填，選完第一志願後將解鎖第二志願，最多可填寫六個志願。
+            <p style="color: #666; font-size: 14px; margin-bottom: 15px;">請依序填寫您的志願。第一志願為必填，選完第一志願後將解鎖第二志願⋯⋯依此類推。
             </p>
 
             <div class="unified-preferences" id="preferenceContainer">
@@ -558,8 +558,9 @@
                 for (let key in eventData.sessions) {
                     const s = eventData.sessions[key];
                     // 為了前台視覺美觀，組裝名稱
-                    let dispName = s.name;
-                    if (s.date && s.time) dispName += ` (${s.date} ${s.time})`;
+                    const displayName = (s.courseName && s.className) ? `${s.courseName} ${s.className}` : (s.name || '');
+                    let dispName = displayName;
+                    if (s.time) dispName += ` (${s.time})`;
 
                     const label = document.createElement('label');
                     label.style.display = 'flex';
@@ -596,7 +597,14 @@
             // --- 以下為一般模式 (單場次、多梯次、雙科) 的下拉選單渲染 ---
             if (eventData.type === 'single_session') {
                 window.MAX_PREFERENCES = 1;
-                document.querySelector('#form-section p').innerText = "這是一個單場次活動選項，請確認無誤後即可送出。";
+                document.querySelector('#form-section h2:nth-of-type(2)').style.display = 'none'; // 隱藏標題
+                document.querySelector('#form-section p').style.display = 'none'; // 隱藏說明
+                document.getElementById('preferenceContainer').style.display = 'none'; // 隱藏志願區域
+            } else {
+                // 恢復顯示(防呆)
+                document.querySelector('#form-section h2:nth-of-type(2)').style.display = 'block';
+                document.querySelector('#form-section p').style.display = 'block';
+                document.getElementById('preferenceContainer').style.display = 'block';
             }
 
             let optionsHtml = '<option value="">請選擇 🔽</option>';
@@ -632,6 +640,26 @@
                 }
             }
 
+            // 計算所有的合法選項數量 (扣掉「請選擇」)
+            let totalAvailableOptions = 0;
+            if (eventData.type === 'dual_match') {
+                // 雙科有特定的選項，大約是 3(雙科大包牌) + 1(單科數學) + 1(單科自然) + 所有數學場次 + 所有自然場次
+                // 為了不限制死，我們可以計算所有 value 不為空的選項數量
+                totalAvailableOptions = 3 + 2 + Object.keys(eventData.sessions || {}).length; // 3個雙科限定, 2個單科大包牌 + 各場次
+            } else if (eventData.type === 'single_session') {
+                totalAvailableOptions = 1;
+            } else {
+                totalAvailableOptions = Object.keys(eventData.sessions || {}).length;
+            }
+
+            // 動態調整最大志願數
+            if (eventData.type === 'single_session') {
+                window.MAX_PREFERENCES = 1;
+            } else {
+                window.MAX_PREFERENCES = totalAvailableOptions;
+                // 若客戶希望無上限，就直接等於選項總數
+            }
+
             for (let i = 1; i <= window.MAX_PREFERENCES; i++) {
                 const isRequired = i === 1 ? '<span style="color:red">* 必填</span>' : ' <span style="color:#999; font-size:14px;">(選填)</span>';
                 const prefDiv = document.createElement('div');
@@ -643,6 +671,10 @@
                         ${optionsHtml}
                     </select>
                 `;
+                // 預設先隱藏第2志願之後的，只有第一志願或是被 active 才會顯示
+                if (i > 1) {
+                    prefDiv.style.display = 'none';
+                }
                 prefContainer.appendChild(prefDiv);
             }
 
@@ -665,11 +697,34 @@
                         window.clearAndHideSubsequent(level);
                     }
                     else if (val !== '' && level < window.MAX_PREFERENCES) {
-                        const nextBlock = document.getElementById(`pref-block-${level + 1}`);
-                        if (nextBlock) nextBlock.classList.add('active');
+                        // 檢查下一個志願是否還有「可選」的選項
+                        // 如果現在已經把所有的選項都排除了，就不應該顯示下一個
+                        // 這個判斷交給 updatePreferenceOptions 執行後再來決定
                     }
 
                     window.updatePreferenceOptions();
+
+                    // updatePreferenceOptions 跑完後，再來決定要不要顯示下一個
+                    if (val !== '' && val !== 'both_any' && level < window.MAX_PREFERENCES) {
+                        const nextBlock = document.getElementById(`pref-block-${level + 1}`);
+                        const nextSelect = document.getElementById(`pref-${level + 1}`);
+                        if (nextBlock && nextSelect) {
+                            // 算算下一個 select 還有幾個選項是有效 (沒被 disabled 且不是空值) 的
+                            let validOptionsCount = 0;
+                            Array.from(nextSelect.options).forEach(opt => {
+                                if (opt.value !== '' && !opt.disabled) validOptionsCount++;
+                            });
+
+                            if (validOptionsCount > 0) {
+                                nextBlock.classList.add('active');
+                                nextBlock.style.display = 'block';
+                            } else {
+                                // 沒得選了，就不顯示
+                                window.clearAndHideSubsequent(level);
+                            }
+                        }
+                    }
+
                     window.checkFormValidity();
                 });
             });
@@ -683,6 +738,7 @@
                 if (block && dropdown) {
                     dropdown.value = ""; // 清空值
                     block.classList.remove('active'); // 隱藏框框
+                    block.style.display = 'none';
                 }
             }
         };

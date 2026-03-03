@@ -515,6 +515,9 @@
                             id="c_open_time">-</span></div>
                     <div class="info-item" id="c_early_access_row" style="display:none;"><strong>⚡ 提早入場:</strong> <span
                             id="c_early_access">-</span></div>
+                    <div class="info-item" id="c_single_session_row" style="display:none;"><strong>📌 場次資訊:</strong>
+                        <span id="c_single_session_info">-</span>
+                    </div>
                     <div class="info-item"><strong>📍 上課教室:</strong> <span id="c_classroom">-</span></div>
                     <div class="info-item"><strong>📅 開課日期:</strong> <span id="c_start_date">-</span></div>
 
@@ -744,21 +747,46 @@
             let html = '';
 
             if (c.isTrialEvent) {
+                const singleSessionRow = document.getElementById('c_single_session_row');
+                const sessContainer = document.getElementById('trial_sessions_container');
+                sessContainer.innerHTML = '';
+                if (singleSessionRow) singleSessionRow.style.display = 'none';
+
                 if (c.sessions && Object.keys(c.sessions).length > 0) {
-                    const sessContainer = document.getElementById('trial_sessions_container');
-                    let sessHtml = `<div style="margin-bottom:20px; border-top:1px solid #eee; padding-top:15px;">`;
-                    sessHtml += `<h3 style="margin:0 0 12px 0; color:#2c3e50; font-size:16px;">📚 開放梯次/場次</h3>`;
-                    sessHtml += `<div style="display:grid; grid-template-columns: repeat(auto-fill, minmax(260px, 1fr)); gap:10px;">`;
-                    Object.values(c.sessions).forEach(s => {
-                        const roomName = classrooms[s.classroom] ? classrooms[s.classroom].name : (s.classroom || '-');
-                        sessHtml += `<div style="background:#fdf8f0; border:1px solid #f0e0c0; border-radius:8px; padding:10px 14px;">`;
-                        sessHtml += `<div style="font-weight:bold; color:#e67e22; font-size:14px; margin-bottom:4px;">✨ ${s.name || '-'}</div>`;
-                        sessHtml += `<div style="font-size:13px; color:#555;">📅 ${s.date || '-'} &nbsp;⏰ ${s.time || '-'}</div>`;
-                        sessHtml += `<div style="font-size:13px; color:#555;">📍 ${roomName}</div>`;
-                        sessHtml += `</div>`;
-                    });
-                    sessHtml += `</div></div>`;
-                    sessContainer.innerHTML = sessHtml;
+                    if (c.type === 'single_session') {
+                        // 🟢 【單場次秒殺模式】隱藏下方大看板，把唯一的一場資訊往上拉！
+                        if (singleSessionRow) {
+                            const s = Object.values(c.sessions)[0];
+                            const roomName = classrooms[s.classroom] ? classrooms[s.classroom].name : (s.classroom || '-');
+                            document.getElementById('c_single_session_info').innerHTML = `📅 ${s.date || '-'} &nbsp;⏰ ${s.time || '-'} &nbsp;📍 ${roomName}`;
+                            singleSessionRow.style.display = '';
+                        }
+                    } else {
+                        // 🟢 【多梯次、雙科、純候補模式】顯示下方的「開放梯次/場次」大看板
+                        let sessHtml = `<div style="margin-bottom:20px; border-top:1px solid #eee; padding-top:15px;">`;
+                        sessHtml += `<h3 style="margin:0 0 12px 0; color:#2c3e50; font-size:16px;">📚 開放梯次/場次</h3>`;
+                        sessHtml += `<div style="display:grid; grid-template-columns: repeat(auto-fill, minmax(260px, 1fr)); gap:10px;">`;
+
+                        Object.values(c.sessions).forEach(s => {
+                            const roomName = classrooms[s.classroom] ? classrooms[s.classroom].name : (s.classroom || '-');
+                            sessHtml += `<div style="background:#fdf8f0; border:1px solid #f0e0c0; border-radius:8px; padding:10px 14px;">`;
+
+                            if (c.type === 'waitlist_only') {
+                                // ✨ 針對【純候補模式】的客製化排版：顯示課程+班級，隱藏日期，只留時間與教室
+                                const displayName = (s.courseName && s.className) ? `${s.courseName} ${s.className}` : (s.name || '-');
+                                sessHtml += `<div style="font-weight:bold; color:#e67e22; font-size:14px; margin-bottom:4px;">✨ ${displayName}</div>`;
+                                sessHtml += `<div style="font-size:13px; color:#555;">⏰ ${s.time || '-'} &nbsp; 📍 ${roomName}</div>`;
+                            } else {
+                                // ✨ 一般模式排版
+                                sessHtml += `<div style="font-weight:bold; color:#e67e22; font-size:14px; margin-bottom:4px;">✨ ${s.name || '-'}</div>`;
+                                sessHtml += `<div style="font-size:13px; color:#555;">📅 ${s.date || '-'} &nbsp;⏰ ${s.time || '-'}</div>`;
+                                sessHtml += `<div style="font-size:13px; color:#555;">📍 ${roomName}</div>`;
+                            }
+                            sessHtml += `</div>`;
+                        });
+                        sessHtml += `</div></div>`;
+                        sessContainer.innerHTML = sessHtml;
+                    }
                 }
                 timeLabels.innerHTML = ''; // 清空原欄位
             } else {

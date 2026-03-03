@@ -1121,9 +1121,7 @@
             const checkAdminRedirect = async (user) => {
                 try {
                     // ★ 防護：如果是匿名帳號或沒信箱，直接阻斷
-                    if (!user || !user.email) throw new Error("無效的信箱");
-
-                    const safeEmail = user.email.replace(/\./g, ',');
+                    const safeEmail = (user.email || '').replace(/\./g, ',');
                     const snapshot = await get(child(dbRef(db), `admins/${safeEmail}`));
                     if (snapshot.exists()) {
                         window.location.href = "admin_bear2026.html";

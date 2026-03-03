@@ -276,7 +276,7 @@
                     <p style="font-size:12px; color:#7f8c8d; margin-top:5px;">定義這個活動開放的班級。代碼將作為系統唯一識別 (如
                         math_0501_1300)。</p>
                 </div>
-                <button onclick="addEventSessionRow()" class="success"
+                <button onclick="addEventSessionRow()" class="success" id="btnAddSessionBtn"
                     style="font-size:12px; padding:5px 10px; height:fit-content;">➕ 增加場次</button>
             </div>
 
@@ -284,9 +284,9 @@
                 <thead>
                     <tr style="background:#ecf0f1; font-size:14px; border-bottom:2px solid #bdc3c7;">
                         <th style="padding:8px; width:40%;">代碼 / 前台名稱</th>
-                        <th style="padding:8px; width:18%;" class="col-normal">日期 / 時間</th>
+                        <th style="padding:8px; width:18%;" class="col-normal" id="th_capacity_date">日期 / 時間</th>
                         <th style="padding:8px; width:18%;" class="col-normal" id="th_capacity_classroom">教室 / 容量</th>
-                        <th style="padding:8px; width:18%;" class="col-normal">屬性</th>
+                        <th style="padding:8px; width:18%;" class="col-normal" id="th_capacity_subject">屬性</th>
                         <th style="padding:8px; width:15%; display:none; color:white; background:#8e44ad;"
                             class="col-waitlist">起始序號</th>
                         <th style="padding:8px; width:15%; display:none;" class="col-waitlist"

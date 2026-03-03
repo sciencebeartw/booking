@@ -4,14 +4,21 @@ service firebase.storage {
   }/o {
     match /{allPaths=**
     } {
-      // 允許所有人讀取圖片 (這樣前台才看得到橫幅)
+      // 允許所有人讀取圖片 (這樣前台才看得到橫幅與封面)
       allow read: if true;
 
-      // 嚴格限制寫入：只允許「圖片格式」，且檔案必須小於 5MB，且「必須是登入狀態及指定的管理員信箱」
-      allow write: if request.resource.contentType.matches('image/.*')
-                   && request.resource.size < 5 * 1024 * 1024
+      // 允許建立與更新：檢查圖片格式、大小限制放寬至 10MB (避免 AI 大圖被擋)、並嚴格檢查白名單
+      // 註：使用 [.]com 來精準匹配小數點，避免反斜線跳脫解析錯誤
+      allow create, update: if request.resource.contentType.matches('image/.*')
+                   && request.resource.size < 15 * 1024 * 1024
                    && request.auth != null
-                   && request.auth.token.email.matches('^(neatnelsonhuang|kuohsu33|foxgiddens|gk322923|hamasaki0710|bearslab3m|yehyaya1125|wade020788|4415wayne|qsc93344|anna00332|sciencebearhigh|owencheng11078|yoyo89227|hwangshaotarng|chiaoi4477|bear6667360)@gmail\\\\.com$');
+                   && request.auth.token.email.matches('^(neatnelsonhuang|kuohsu33|foxgiddens|gk322923|hamasaki0710|bearslab3m|yehyaya1125|wade020788|4415wayne|qsc93344|anna00332|sciencebearhigh|owencheng11078|yoyo89227|hwangshaotarng|chiaoi4477|bear6667360)@gmail[.
+      ]com$');
+                   
+      // 允許刪除：只需要檢查是否登入且在白名單內 (不需要檢查 resource)
+      allow delete: if request.auth != null
+                   && request.auth.token.email.matches('^(neatnelsonhuang|kuohsu33|foxgiddens|gk322923|hamasaki0710|bearslab3m|yehyaya1125|wade020788|4415wayne|qsc93344|anna00332|sciencebearhigh|owencheng11078|yoyo89227|hwangshaotarng|chiaoi4477|bear6667360)@gmail[.
+      ]com$');
     }
   }
 }

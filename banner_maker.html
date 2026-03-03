@@ -305,7 +305,7 @@
         // 監聽登入狀態
         onAuthStateChanged(auth, async (user) => {
             if (user) {
-                const safeEmail = user.email.replace(/\./g, ',');
+                const safeEmail = (user.email || '').replace(/\./g, ',');
                 try {
                     const snapshot = await get(child(dbRef(db), `admins/${safeEmail}`));
                     if (snapshot.exists()) {

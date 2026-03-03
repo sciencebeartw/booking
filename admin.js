@@ -8,8 +8,8 @@ onAuthStateChanged(auth, async (user) => {
         // 檢查是否在白名單內
         // 修正：因為新版 Rules 已經限制只有白名單內的人可以讀取 admins
         // 我們不能再 get 整個 admins 節點 (會遇到 Permission Denied)
-        // 改為精準查詢自己的信箱節點 (信箱中的 . 需替換為 , 作為 key)
-        const safeEmail = user.email.replace(/\./g, ',');
+        // 改為精準查詢自己的信箱節點 (信箱中的 . 需替換為 , 作為 key)，並加上防呆避免 null 報錯
+        const safeEmail = (user.email || '').replace(/\./g, ',');
         try {
             const snapshot = await get(ref(db, `admins/${safeEmail}`));
             if (snapshot.exists()) {
@@ -49,6 +49,20 @@ window.escapeHTML = function (str) {
         .replace(/>/g, '&gt;')
         .replace(/\"/g, '&quot;')
         .replace(/'/g, '&#039;');
+};
+
+// ★★★ 時間格式化 (含毫秒) ★★★
+window.formatTimeWithMs = function (ms, fallback = '') {
+    if (!ms) return fallback || '-';
+    const d = new Date(ms);
+    const yr = d.getFullYear();
+    const mo = String(d.getMonth() + 1).padStart(2, '0');
+    const da = String(d.getDate()).padStart(2, '0');
+    const hr = String(d.getHours()).padStart(2, '0');
+    const mi = String(d.getMinutes()).padStart(2, '0');
+    const se = String(d.getSeconds()).padStart(2, '0');
+    const mss = String(d.getMilliseconds()).padStart(3, '0');
+    return `${yr}/${mo}/${da} ${hr}:${mi}:${se}.<span style="color:#aaa;font-size:10px;">${mss}</span>`;
 };
 
 // ★★★ 防偷跑與時間校準 ★★★
@@ -711,13 +725,11 @@ function renderTable() {
     });
 
     const nameCounts = {};
-    const phoneCounts = {};
+    // 只計算 sold（已劃位）的紀錄，排除 deleted（已釋出）
     displayList.forEach(b => {
         if (b.status === 'sold') {
             const stuKey = b.courseId + '_' + b.studentName;
-            const phoneKey = b.courseId + '_' + b.parentPhone;
             nameCounts[stuKey] = (nameCounts[stuKey] || 0) + 1;
-            phoneCounts[phoneKey] = (phoneCounts[phoneKey] || 0) + 1;
         }
     });
 
@@ -741,8 +753,7 @@ function renderTable() {
         if (b.status === 'sold') {
             statusBadge = '<span class="badge sold">已劃位</span>';
             const stuKey = b.courseId + '_' + b.studentName;
-            const phoneKey = b.courseId + '_' + b.parentPhone;
-            if (nameCounts[stuKey] > 1 || phoneCounts[phoneKey] > 1) {
+            if (nameCounts[stuKey] > 1) {
                 const rowColor = getColorForName(b.studentName);
                 tr.style.backgroundColor = rowColor;
             }
@@ -756,7 +767,7 @@ function renderTable() {
             recoverBtnHtml = `<button class="success" style="padding:5px 10px; font-size:12px; margin-right:5px;" onclick="window.recoverSeat('${b.courseId}', '${b.seatId}', '${b.studentName}', '${b.archiveKey || ""}')">恢復劃位</button>`;
         }
 
-        tr.innerHTML = `<td>${b.orderId}</td><td class=\"wrap-text\">${b.courseName}</td><td>${b.time}</td><td>${statusBadge}</td><td>${b.seatId}</td><td>${window.escapeHTML(b.studentName)}</td><td>${window.escapeHTML(b.parentPhone)}</td>
+        tr.innerHTML = `<td>${b.orderId}</td><td class=\"wrap-text\">${b.courseName}</td><td>${window.formatTimeWithMs(b.rawTime, b.time)}</td><td>${statusBadge}</td><td>${b.seatId}</td><td>${window.escapeHTML(b.studentName)}</td><td>${window.escapeHTML(b.parentPhone)}</td>
                 <td>
                     ${recoverBtnHtml}
                     <button class="warning" style="padding:5px 10px; font-size:12px;" onclick="window.editOrder('${b.courseId}', '${b.seatId}', '${b.parentPhone}', '${b.orderId}', '${b.studentName}')">編輯</button>
@@ -946,7 +957,7 @@ window.confirmOpSell = function () {
         status: 'sold',
         studentName: name,
         parentPhone: phone,
-        soldTime: new Date().toLocaleString(),
+        soldTime: window.formatTimeWithMs(Date.now()),
         timestamp: Date.now(),
         orderId: orderId
     };
@@ -1108,7 +1119,7 @@ window.exportWaitlistCSV = function () {
     exportList.forEach(w => {
         let seq = rankMap[w.key] || '-';
         let statusText = w.status === 'deleted' ? '已刪除' : '候補中';
-        csv += `${w.courseName},${new Date(w.timestamp).toLocaleString()},${statusText},${seq},${w.studentName},'${w.parentPhone},${w.note || ''}\n`;
+        csv += `${w.courseName},${window.formatTimeWithMs(w.timestamp)},${statusText},${seq},${w.studentName},'${w.parentPhone},${w.note || ''}\n`;
     });
     downloadCSV(csv, "waitlist_data.csv");
 };
@@ -1298,11 +1309,10 @@ window.renderWaitlistTable = function () {
     });
 
     const nameCounts = {};
-    const phoneCounts = {};
+    // 排除 deleted（已刪除），只計算有效候補的重複姓名
     waitlistDisplayList.forEach(w => {
         if (w.status !== 'deleted') {
             nameCounts[w.studentName] = (nameCounts[w.studentName] || 0) + 1;
-            phoneCounts[w.parentPhone] = (phoneCounts[w.parentPhone] || 0) + 1;
         }
     });
 
@@ -1318,7 +1328,7 @@ window.renderWaitlistTable = function () {
 
     waitlistDisplayList.forEach(w => {
         const tr = document.createElement('tr');
-        const time = new Date(w.timestamp).toLocaleString();
+        const time = window.formatTimeWithMs(w.timestamp);
 
         let btnText = '刪除';
         let btnClass = 'danger';
@@ -1333,7 +1343,7 @@ window.renderWaitlistTable = function () {
             statusBadge = '<span class="badge deleted">已刪除</span>';
             recoverBtn = `<button class="success" style="padding:5px 10px; font-size:12px; margin-right:5px;" onclick="window.recoverWaitlist('${w.courseId}', '${w.key}')">復原候補</button>`;
         } else {
-            if (nameCounts[w.studentName] > 1 || phoneCounts[w.parentPhone] > 1) {
+            if (nameCounts[w.studentName] > 1) {
                 const rowColor = getColorForName(w.studentName);
                 tr.style.backgroundColor = rowColor;
             }
@@ -2458,11 +2468,10 @@ window.renderTrialMonitorTable = function () {
     });
 
     const nameCounts = {};
-    const phoneCounts = {};
+    // 排除 deleted（已取消），只計算有效報名的重複姓名
     filteredList.forEach(student => {
         if (student.status !== 'deleted') {
             nameCounts[student.studentName] = (nameCounts[student.studentName] || 0) + 1;
-            phoneCounts[student.parentPhone] = (phoneCounts[student.parentPhone] || 0) + 1;
         }
     });
 
@@ -2478,9 +2487,9 @@ window.renderTrialMonitorTable = function () {
 
     filteredList.forEach(student => {
         const tr = document.createElement('tr');
-        const timeStr = new Date(student.clientTimestampMs).toLocaleString() + `.<span style="color:#aaa;font-size:10px;">${student.clientTimestampMs % 1000}</span>`;
+        const timeStr = window.formatTimeWithMs(student.clientTimestampMs);
 
-        if (student.status !== 'deleted' && (nameCounts[student.studentName] > 1 || phoneCounts[student.parentPhone] > 1)) {
+        if (student.status !== 'deleted' && nameCounts[student.studentName] > 1) {
             const rowColor = getColorForName(student.studentName);
             tr.style.backgroundColor = rowColor;
         }
@@ -2516,7 +2525,7 @@ window.renderTrialMonitorTable = function () {
         }
 
         tr.innerHTML = `
-            <td style="font-family:monospace; ${trStyle}">${timeStr}</td>
+            <td style="${trStyle}">${timeStr}</td>
             <td style="font-weight:bold; ${trStyle}">${window.escapeHTML(student.studentName)}</td>
             <td style="${trStyle}">${window.escapeHTML(student.parentPhone)}</td>
             <td style="max-width:300px; display:flex; flex-wrap:wrap; gap:5px; ${trStyle}">${prefStr}</td>
@@ -2707,6 +2716,11 @@ window.showEventForm = function () {
     document.getElementById('e_image_file').value = "";
 
     document.getElementById('e_sessionsContainer').innerHTML = '';
+
+    // 初始化 UI 狀態與表頭
+    window.handleEventTypeChange('single_session', true);
+    // 新增時，自動提供一筆空白的單場次
+    window.addEventSessionRow("session_1", "單場次預設");
 };
 
 window.hideEventForm = function () {
@@ -2714,13 +2728,10 @@ window.hideEventForm = function () {
     document.getElementById('eventListView').style.display = 'block';
 };
 
-window.addEventSessionRow = function (key = "", name = "", date = "", time = "", classroomId = "c_normal", subject = "math", capacity = "40", isReadOnly = false, startSeq = "1") {
+window.addEventSessionRow = function (key = "", name = "", date = "", time = "", classroomId = "c_normal", subject = "math", capacity = "40", isReadOnly = false, extraData = {}) {
     const container = document.getElementById('e_sessionsContainer');
     const tr = document.createElement('tr');
-
-    // 取得當前的活動類型來決定欄位顯示
-    const currentType = document.getElementById('e_type').value;
-    const isWaitlist = currentType === 'waitlist_only';
+    const type = document.getElementById('e_type').value;
 
     let clsOptions = '<option value="">-- 免選教室 --</option>';
     Object.keys(classrooms).forEach(k => {
@@ -2733,109 +2744,115 @@ window.addEventSessionRow = function (key = "", name = "", date = "", time = "",
         : `<input type="text" class="sess-key" placeholder="如 m_01" value="${key}" style="width:100%; padding:8px; box-sizing:border-box;">`;
 
     const deleteBtnHtml = isReadOnly
-        ? `<span style="color:#95a5a6; font-size:12px;">🔒 鎖定</span>`
+        ? `<span style="color:#aaa; font-size:12px;">🔒鎖定</span>`
         : `<button onclick="this.closest('tr').remove()" style="background:#e74c3c; color:white; border:none; border-radius:4px; padding:6px 10px; cursor:pointer;">✖</button>`;
 
-    tr.innerHTML = `
-        <td style="padding:4px; vertical-align:top;">
-            <div style="display:flex; flex-direction:column; gap:6px; height:100%;">
-                ${keyInputHtml}
-                <input type="text" class="sess-name" placeholder="前台顯示名稱" value="${name}" style="width:100%; padding:8px; box-sizing:border-box;">
-            </div>
-        </td>
-        <td style="padding:4px; display: ${isWaitlist ? 'none' : 'table-cell'}; vertical-align:top;" class="col-normal">
-            <div style="display:flex; flex-direction:column; gap:6px;">
-                <input type="text" class="sess-date" placeholder="日期 (例: 5/1)" value="${date}" style="width:100%; padding:8px; box-sizing:border-box;">
-                <input type="text" class="sess-time" placeholder="時間 (例: 13:00-14:30)" value="${time}" style="width:100%; padding:8px; box-sizing:border-box;">
-            </div>
-        </td>
-        <td style="padding:4px; display: ${isWaitlist ? 'none' : 'table-cell'}; vertical-align:top;" class="col-normal">
-            <div style="display:flex; flex-direction:column; gap:6px;">
-                <select class="sess-classroom" style="width:100%; padding:8px; box-sizing:border-box;">${clsOptions}</select>
-                <input type="number" class="sess-cap" placeholder="容量 (可留空)" value="${capacity == 0 ? '' : capacity}" style="width:100%; padding:8px; box-sizing:border-box;">
-            </div>
-        </td>
-        <td style="padding:4px; display: ${isWaitlist ? 'none' : 'table-cell'}; vertical-align:top;" class="col-normal">
-            <div style="display:flex; height:100%;">
+    if (type === 'waitlist_only') {
+        const courseStr = extraData.courseName || name;
+        const classStr = extraData.className || date;
+        const startSeq = extraData.startSeq || 1;
+
+        tr.innerHTML = `
+            <td style="padding:4px;">${keyInputHtml}</td>
+            <td style="padding:4px;"><input type="text" class="sess-course" placeholder="例如: 中年級科學實驗" value="${courseStr}" style="width:100%; padding:8px; box-sizing:border-box;"></td>
+            <td style="padding:4px;"><input type="text" class="sess-class" placeholder="例如: 週一班" value="${classStr}" style="width:100%; padding:8px; box-sizing:border-box;"></td>
+            <td style="padding:4px;"><input type="text" class="sess-time" placeholder="例如: 19:00-20:30" value="${time}" style="width:100%; padding:8px; box-sizing:border-box;"></td>
+            <td style="padding:4px;"><select class="sess-classroom" style="width:100%; padding:8px; box-sizing:border-box;">${clsOptions}</select></td>
+            <td style="padding:4px;"><input type="number" class="sess-seq" value="${startSeq}" style="width:100%; padding:8px; box-sizing:border-box;"></td>
+            <td style="padding:4px;"><input type="number" class="sess-waitcap" value="${capacity == 0 ? '' : capacity}" placeholder="上限" style="width:100%; padding:8px; box-sizing:border-box;"></td>
+            <td style="padding:4px; text-align:center; vertical-align:middle;">${deleteBtnHtml}</td>
+        `;
+    } else {
+        tr.innerHTML = `
+            <td style="padding:4px;">${keyInputHtml}</td>
+            <td style="padding:4px;"><input type="text" class="sess-name" placeholder="前台顯示名稱" value="${name}" style="width:100%; padding:8px; box-sizing:border-box;"></td>
+            <td style="padding:4px;"><input type="text" class="sess-date" placeholder="日期 (例: 5/1)" value="${date}" style="width:100%; padding:8px; box-sizing:border-box;"></td>
+            <td style="padding:4px;"><input type="text" class="sess-time" placeholder="時間 (例: 13:00-14:30)" value="${time}" style="width:100%; padding:8px; box-sizing:border-box;"></td>
+            <td style="padding:4px;"><select class="sess-classroom" style="width:100%; padding:8px; box-sizing:border-box;">${clsOptions}</select></td>
+            <td style="padding:4px;">
                 <select class="sess-subject" style="width:100%; padding:8px; box-sizing:border-box;">
                     <option value="math" ${subject === 'math' ? 'selected' : ''}>數學</option>
                     <option value="sci" ${subject === 'sci' ? 'selected' : ''}>自然</option>
                     <option value="other" ${subject === 'other' ? 'selected' : ''}>其他/綜合</option>
                 </select>
-            </div>
-        </td>
-        <td style="padding:4px; display: ${isWaitlist ? 'table-cell' : 'none'}; vertical-align:top;" class="col-waitlist">
-            <div style="display:flex; height:100%;"><input type="number" class="sess-seq" value="${startSeq}" style="width:100%; padding:8px; box-sizing:border-box;"></div>
-        </td>
-        <td style="padding:4px; display: ${isWaitlist ? 'table-cell' : 'none'}; vertical-align:top;" class="col-waitlist">
-            <div style="display:flex; height:100%;">
-                <input type="number" class="sess-waitcap" value="${capacity == 0 ? '' : capacity}" placeholder="候補上限" style="width:100%; padding:8px; box-sizing:border-box;">
-            </div>
-        </td>
-        <td style="padding:4px; text-align:center; vertical-align:middle;">
-            <div style="display:flex; height:100%; align-items:center; justify-content:center;">${deleteBtnHtml}</div>
-        </td>
-    `;
+            </td>
+            <td style="padding:4px;"><input type="number" class="sess-cap" placeholder="容量" value="${capacity == 0 ? '' : capacity}" style="width:100%; padding:8px; box-sizing:border-box;"></td>
+            <td style="padding:4px; text-align:center; vertical-align:middle;">${deleteBtnHtml}</td>
+        `;
+    }
     container.appendChild(tr);
 };
 // ★★★ V36.6 新增：切換活動類型時，決定是否顯示雙科快捷區塊與動態文案 ★★★
-window.handleEventTypeChange = function (type) {
+window.handleEventTypeChange = function (type, isInit = false) {
     const quickSet = document.getElementById('dualMatchQuickSet');
     const container = document.getElementById('e_sessionsContainer');
 
-    // 處理純候補模式的專屬欄位顯示
+    // 切換表頭與新增按鈕
+    const thead = document.querySelector('#e_sessionsContainer').closest('table').querySelector('thead');
+    const btnAdd = document.getElementById('btnAddSessionBtn');
     const maxChoicesContainer = document.getElementById('e_maxChoices_container');
-    const colsNormal = document.querySelectorAll('.col-normal');
-    const colsWaitlist = document.querySelectorAll('.col-waitlist');
-    const thCapacity = document.getElementById('th_capacity');
 
-    if (type === 'waitlist_only') {
-        if (maxChoicesContainer) maxChoicesContainer.style.display = 'block';
-        colsNormal.forEach(el => el.style.display = 'none');
-        colsWaitlist.forEach(el => el.style.display = 'table-cell');
-        if (thCapacity) thCapacity.innerText = '候補上限';
+    if (maxChoicesContainer) maxChoicesContainer.style.display = (type === 'waitlist_only') ? 'block' : 'none';
+
+    if (btnAdd) btnAdd.style.display = 'inline-block';
+
+    if (type === 'single_session') {
+        if (btnAdd) btnAdd.style.display = 'none'; // 單場次不給加多筆
+        if (thead) thead.innerHTML = `
+            <tr style="background:#ecf0f1; font-size:14px; border-bottom:2px solid #bdc3c7;">
+                <th style="padding:8px;">後台代碼</th><th style="padding:8px;">前台名稱</th><th style="padding:8px;">試聽日期</th>
+                <th style="padding:8px;">試聽時間</th><th style="padding:8px;">教室</th><th style="padding:8px;">屬性</th><th style="padding:8px; width:70px;">容量</th><th style="padding:8px; width:50px;">操作</th>
+            </tr>`;
+    } else if (type === 'waitlist_only') {
+        if (thead) {
+            thead.innerHTML = `
+            <tr style="background:#fff3cd; font-size:14px; border-bottom:2px solid #e3a008; color:#856404;">
+                <th style="padding:8px;">代碼</th><th style="padding:8px;">課程 (ex: 中年級科學)</th><th style="padding:8px;">上課班級 (ex: 週一班)</th>
+                <th style="padding:8px;">上課時間</th><th style="padding:8px;">上課教室</th><th style="padding:8px; width:80px;">起始序號</th><th style="padding:8px; width:70px;">候補上限</th><th style="padding:8px; width:50px;">操作</th>
+            </tr>`;
+        }
     } else {
-        if (maxChoicesContainer) maxChoicesContainer.style.display = 'none';
-        colsNormal.forEach(el => el.style.display = 'table-cell');
-        colsWaitlist.forEach(el => el.style.display = 'none');
-        if (thCapacity) thCapacity.innerText = '容量';
+        if (thead) thead.innerHTML = `
+            <tr style="background:#ecf0f1; font-size:14px; border-bottom:2px solid #bdc3c7;">
+                <th style="padding:8px;">後台代碼</th><th style="padding:8px;">前台名稱</th><th style="padding:8px;">試聽日期</th>
+                <th style="padding:8px;">試聽時間</th><th style="padding:8px;">教室</th><th style="padding:8px;">屬性</th><th style="padding:8px; width:70px;">容量</th><th style="padding:8px; width:50px;">操作</th>
+            </tr>`;
     }
 
     // 處理雙科快捷鍵顯示與防呆切換
     if (type === 'dual_match') {
         quickSet.style.display = 'block';
-        // 如果底下沒有任何場次，自動幫他生出 8 個
-        if (container.children.length === 0) {
-            window.autoGenerateDualMatchSessions(false);
-        } else {
-            // 如果切換到雙科配課，但底下已經有非雙科的資料，詢問是否重置為 8 個標準場次
-            const hasLockedFields = container.querySelector('.sess-key[readonly]');
-            if (!hasLockedFields) {
-                if (confirm("🔄 您切換到了「雙科配課模式」，但下方已有其他自訂場次。\n是否要清除現有場次，並自動載入雙科專屬的 8 個標準場次？")) {
-                    window.autoGenerateDualMatchSessions(true);
-                }
-            }
-        }
+        if (btnAdd) btnAdd.style.display = 'none'; // 雙科不給加多筆
     } else {
         quickSet.style.display = 'none';
-        // 智慧防呆：如果切換到非雙科模式，且底下卡著被鎖死的雙科場次，詢問是否清空
+    }
+
+    // 如果不是系統初始載入 (也就是使用者手動點擊切換)
+    if (!isInit) {
+        let shouldReset = true;
         if (container.children.length > 0) {
-            const hasLockedFields = container.querySelector('.sess-key[readonly]');
-            if (hasLockedFields) {
-                if (confirm("🔄 您切換到了非「雙科配課」模式。\n是否要自動清空下方為雙科鎖定的場次，以便您手動建立適合此模式的場次？")) {
-                    container.innerHTML = '';
-                }
+            shouldReset = confirm("🔄 切換活動模式會清空下方的場次設定，請問是否繼續？");
+        }
+
+        if (shouldReset) {
+            container.innerHTML = '';
+            if (type === 'single_session') {
+                window.addEventSessionRow("session_1", "單場次預設");
+            } else if (type === 'dual_match') {
+                window.autoGenerateDualMatchSessions(true); // silent = true
             }
         }
     }
 
     // 2. 判斷是否處於「新增模式」(e_id 為空)，如果是，切換對應的文案
-    const eventId = document.getElementById('e_id').value;
-    if (!eventId && tinymce.get('e_desc')) {
-        const currentContent = tinymce.get('e_desc').getContent();
-        if (currentContent === "" || currentContent.includes('🎯 排序與候補規則') || currentContent.includes('🎯 志願分發規則') || currentContent.includes('🎯 雙科分發與保底機制') || currentContent.includes('🎯 意願登記規則')) {
-            const newHtml = HTML_TPL_TRIAL_BASE.replace('<!-- MAGIC_BLOCK -->', TRIAL_LOGIC_BLOCKS[type]);
-            tinymce.get('e_desc').setContent(newHtml);
+    if (!isInit) {
+        const eventId = document.getElementById('e_id').value;
+        if (!eventId && tinymce.get('e_desc')) {
+            const currentContent = tinymce.get('e_desc').getContent();
+            if (currentContent === "" || currentContent.includes('🎯 排序與候補規則') || currentContent.includes('🎯 志願分發規則') || currentContent.includes('🎯 雙科分發與保底機制') || currentContent.includes('🎯 意願登記規則')) {
+                const newHtml = HTML_TPL_TRIAL_BASE.replace('<!-- MAGIC_BLOCK -->', TRIAL_LOGIC_BLOCKS[type]);
+                tinymce.get('e_desc').setContent(newHtml);
+            }
         }
     }
 };
@@ -2939,41 +2956,44 @@ window.saveTrialEvent = async function () {
     let errorMsg = null;
 
     sessionRows.forEach(row => {
+        const type = document.getElementById('e_type').value;
         const key = row.querySelector('.sess-key').value.trim();
-        const name = row.querySelector('.sess-name').value.trim();
-        const date = row.querySelector('.sess-date')?.value.trim() || '';
         const time = row.querySelector('.sess-time')?.value.trim() || '';
         const classroom = row.querySelector('.sess-classroom')?.value || '';
-        const subject = row.querySelector('.sess-subject')?.value || '';
 
-        const isWaitlistMode = document.getElementById('e_type').value === 'waitlist_only';
-        let capacity = 0;
-        if (isWaitlistMode) {
-            capacity = parseInt(row.querySelector('.sess-waitcap')?.value) || 0;
-        } else {
-            capacity = parseInt(row.querySelector('.sess-cap')?.value) || 0;
-        }
+        // 基本資料結構
+        let sessionData = { time, classroom };
 
-        const startSeq = parseInt(row.querySelector('.sess-seq')?.value) || 1; // ★新增起始序號
-
-        if (!key || !name) {
-            errorMsg = "❌ 場次代碼與名稱不可留白";
+        if (!key) {
+            errorMsg = "❌ 場次代碼不可留白";
             return;
         }
+
+        if (type === 'waitlist_only') {
+            sessionData.courseName = row.querySelector('.sess-course')?.value.trim() || '';
+            sessionData.className = row.querySelector('.sess-class')?.value.trim() || '';
+            sessionData.startSeq = parseInt(row.querySelector('.sess-seq')?.value) || 1;
+            sessionData.capacity = parseInt(row.querySelector('.sess-waitcap')?.value) || 0;
+            // 為了相容前台，把 name 設成課程+班級
+            sessionData.name = `${sessionData.courseName} ${sessionData.className}`.trim();
+            if (!sessionData.courseName) errorMsg = "❌ 課程不可留白";
+        } else {
+            sessionData.name = row.querySelector('.sess-name')?.value.trim() || '';
+            sessionData.date = row.querySelector('.sess-date')?.value.trim() || '';
+            sessionData.subject = row.querySelector('.sess-subject')?.value || 'other';
+            sessionData.capacity = parseInt(row.querySelector('.sess-cap')?.value) || 0;
+            // 相容未設定的情況
+            sessionData.startSeq = 1;
+
+            if (!sessionData.name) errorMsg = "❌ 名稱不可留白";
+        }
+
         if (sessions[key]) {
             errorMsg = `❌ 場次代碼重複：${key}`;
             return;
         }
 
-        sessions[key] = {
-            name: name,
-            date: date,
-            time: time,
-            classroom: classroom,
-            subject: subject,
-            capacity: capacity,
-            startSeq: startSeq // ★寫入
-        };
+        sessions[key] = sessionData;
     });
 
     if (errorMsg) return alert(errorMsg);
@@ -3037,8 +3057,8 @@ window.editEvent = function (id) {
             addEventSessionRow(key, s.name, s.date || "", s.time || "", s.classroom || "c_normal", s.subject, s.capacity, isDualMatch, s.startSeq || 1);
         });
 
-        // 載入完畢後，手動觸發一次 UI 切換以確保欄位正確顯示
-        window.handleEventTypeChange(ev.type || 'single_session');
+        // 載入完畢後，手動觸發一次 UI 切換以確保欄位正確顯示 (傳入 true 代表是初始化，不觸發清空防呆)
+        window.handleEventTypeChange(ev.type || 'single_session', true);
     }
 };
 
@@ -3220,10 +3240,9 @@ function runWaitlistOnlyEngine(processingList, waitlist, sessionsMap) {
 }
 
 // ----------------------------------------------------
-// 🧠 Dual Match Engine (無日期抽象化版本)
+// 🧠 Dual Match Engine (動態平衡 + 同天優先 雙層排序終極版)
 // ----------------------------------------------------
 function runDualMatchEngine(processingList, capacities, allocated, waitlist) {
-    // 映射表供內部文字使用
     const prefMap = {
         "math_day1_slotA": "Day 1 時段 A 數學", "math_day1_slotB": "Day 1 時段 B 數學",
         "math_day2_slotA": "Day 2 時段 A 數學", "math_day2_slotB": "Day 2 時段 B 數學",
@@ -3231,17 +3250,36 @@ function runDualMatchEngine(processingList, capacities, allocated, waitlist) {
         "sci_day2_slotA": "Day 2 時段 A 自然", "sci_day2_slotB": "Day 2 時段 B 自然"
     };
 
-    const canFit = (cls) => allocated[cls] && allocated[cls].length < capacities[cls];
+    const getRemain = (cls) => {
+        if (!allocated[cls] || capacities[cls] === undefined) return 0;
+        return capacities[cls] - allocated[cls].length;
+    };
+    const canFit = (cls) => getRemain(cls) > 0;
+
+    const allCombos = [
+        { m: "math_day1_slotA", s: "sci_day1_slotB", c: "both_day1", isSameDay: true },
+        { m: "math_day1_slotB", s: "sci_day1_slotA", c: "both_day1", isSameDay: true },
+        { m: "math_day2_slotA", s: "sci_day2_slotB", c: "both_day2", isSameDay: true },
+        { m: "math_day2_slotB", s: "sci_day2_slotA", c: "both_day2", isSameDay: true },
+        { m: "math_day1_slotA", s: "sci_day2_slotA", c: "both_any", isSameDay: false },
+        { m: "math_day1_slotA", s: "sci_day2_slotB", c: "both_any", isSameDay: false },
+        { m: "math_day1_slotB", s: "sci_day2_slotA", c: "both_any", isSameDay: false },
+        { m: "math_day1_slotB", s: "sci_day2_slotB", c: "both_any", isSameDay: false },
+        { m: "math_day2_slotA", s: "sci_day1_slotA", c: "both_any", isSameDay: false },
+        { m: "math_day2_slotA", s: "sci_day1_slotB", c: "both_any", isSameDay: false },
+        { m: "math_day2_slotB", s: "sci_day1_slotA", c: "both_any", isSameDay: false },
+        { m: "math_day2_slotB", s: "sci_day1_slotB", c: "both_any", isSameDay: false }
+    ];
 
     let optimizationCount = 0;
 
-    // Stage 1: 初步貪婪分發
+    // ===============================================
+    // Stage 1: 初步雙層排序分發
+    // ===============================================
     processingList.forEach(student => {
-        if (student.status === 'deleted') return; // 已取消報名者跳過分發
+        if (student.status === 'deleted') return;
 
         let isPlaced = false;
-
-        // 防護：若資料庫內有舊的測試資料缺乏 preferences 節點，則給予空物件防呆
         if (!student.preferences) student.preferences = {};
 
         for (let i = 1; i <= 6; i++) {
@@ -3249,109 +3287,67 @@ function runDualMatchEngine(processingList, capacities, allocated, waitlist) {
             if (!choice || choice === "none") continue;
 
             if (choice === "both_any" || choice === "both_day1" || choice === "both_day2") {
-                let placedDual = false;
-                let targetMath = null;
-                let targetSci = null;
+                let validCombos = allCombos.filter(combo => choice === "both_any" || choice === combo.c);
+                let availableCombos = validCombos.map(combo => ({ ...combo, bottleneck: Math.min(getRemain(combo.m), getRemain(combo.s)) })).filter(combo => combo.bottleneck > 0);
 
-                const tryCombos = [
-                    { m: "math_day1_slotA", s: "sci_day1_slotB", c: "both_day1" },
-                    { m: "math_day1_slotB", s: "sci_day1_slotA", c: "both_day1" },
-                    { m: "math_day2_slotA", s: "sci_day2_slotB", c: "both_day2" },
-                    { m: "math_day2_slotB", s: "sci_day2_slotA", c: "both_day2" },
-                    // 拆天保底 (僅限 both_any)
-                    { m: "math_day1_slotA", s: "sci_day2_slotA", c: "both_any" },
-                    { m: "math_day1_slotA", s: "sci_day2_slotB", c: "both_any" },
-                    { m: "math_day1_slotB", s: "sci_day2_slotA", c: "both_any" },
-                    { m: "math_day1_slotB", s: "sci_day2_slotB", c: "both_any" },
-                    { m: "math_day2_slotA", s: "sci_day1_slotA", c: "both_any" },
-                    { m: "math_day2_slotA", s: "sci_day1_slotB", c: "both_any" },
-                    { m: "math_day2_slotB", s: "sci_day1_slotA", c: "both_any" },
-                    { m: "math_day2_slotB", s: "sci_day1_slotB", c: "both_any" }
-                ];
+                // ✨ 雙層排序：1. 同天優先  2. 剩餘容量大優先
+                availableCombos.sort((a, b) => {
+                    if (a.isSameDay && !b.isSameDay) return -1;
+                    if (!a.isSameDay && b.isSameDay) return 1;
+                    return b.bottleneck - a.bottleneck;
+                });
 
-                for (let combo of tryCombos) {
-                    if (choice === "both_any" || choice === combo.c) {
-                        if (canFit(combo.m) && canFit(combo.s)) {
-                            targetMath = combo.m;
-                            targetSci = combo.s;
-                            placedDual = true;
-                            break;
-                        }
-                    }
-                }
-
-                if (placedDual) {
+                if (availableCombos.length > 0) {
+                    let bestCombo = availableCombos[0];
                     student.assignedChoiceKey = choice;
                     student.assignedChoiceLevel = i;
-                    student.assignedClasses = [targetMath, targetSci];
-                    student.assignDesc = `志願 ${i} (${prefMap[targetMath] || targetMath} & ${prefMap[targetSci] || targetSci})`;
-                    allocated[targetMath].push({ ...student, isDualChild: true });
-                    allocated[targetSci].push({ ...student, isDualChild: true });
+                    student.assignedClasses = [bestCombo.m, bestCombo.s];
+                    student.assignDesc = `志願 ${i} (${prefMap[bestCombo.m] || bestCombo.m} & ${prefMap[bestCombo.s] || bestCombo.s})`;
+                    allocated[bestCombo.m].push({ ...student, isDualChild: true });
+                    allocated[bestCombo.s].push({ ...student, isDualChild: true });
                     isPlaced = true;
                     break;
                 } else {
-                    // 需求一：雙科皆失敗，啟動「保底單科」邏輯
-                    // 先嘗試找數學空位
-                    for (let combo of tryCombos) {
-                        if (choice === "both_any" || choice === combo.c) {
-                            if (canFit(combo.m)) {
-                                student.assignedChoiceKey = choice;
-                                student.assignedChoiceLevel = i;
-                                student.assignedClasses = [combo.m];
-                                student.assignDesc = `保底單科 (${prefMap[combo.m] || combo.m})`;
-                                allocated[combo.m].push({ ...student, isDualChild: false });
-                                isPlaced = true;
-                                break;
-                            }
-                        }
-                    }
+                    // ✨ 公平保底單科：不偏心數學或自然，誰空位多排誰
+                    let fallbackOptions = [];
+                    validCombos.forEach(combo => {
+                        let mRemain = getRemain(combo.m);
+                        let sRemain = getRemain(combo.s);
+                        if (mRemain > 0 && !fallbackOptions.find(opt => opt.cls === combo.m)) fallbackOptions.push({ cls: combo.m, remain: mRemain });
+                        if (sRemain > 0 && !fallbackOptions.find(opt => opt.cls === combo.s)) fallbackOptions.push({ cls: combo.s, remain: sRemain });
+                    });
 
-                    if (isPlaced) break;
-
-                    // 若數學全滿，再嘗試找自然空位
-                    for (let combo of tryCombos) {
-                        if (choice === "both_any" || choice === combo.c) {
-                            if (canFit(combo.s)) {
-                                student.assignedChoiceKey = choice;
-                                student.assignedChoiceLevel = i;
-                                student.assignedClasses = [combo.s];
-                                student.assignDesc = `保底單科 (${prefMap[combo.s] || combo.s})`;
-                                allocated[combo.s].push({ ...student, isDualChild: false });
-                                isPlaced = true;
-                                break;
-                            }
-                        }
-                    }
-
-                    if (isPlaced) break;
-                }
-            } else if (choice.startsWith("math_any")) {
-                for (let key in allocated) {
-                    if (key.includes("math_") && canFit(key)) {
+                    if (fallbackOptions.length > 0) {
+                        fallbackOptions.sort((a, b) => b.remain - a.remain);
+                        let bestSingle = fallbackOptions[0].cls;
                         student.assignedChoiceKey = choice;
                         student.assignedChoiceLevel = i;
-                        student.assignedClasses = [key];
-                        student.assignDesc = `志願 ${i} (${prefMap[key] || key})`;
-                        allocated[key].push({ ...student, isDualChild: false });
-                        isPlaced = true; break;
+                        student.assignedClasses = [bestSingle];
+                        student.assignDesc = `保底單科 (${prefMap[bestSingle] || bestSingle})`;
+                        allocated[bestSingle].push({ ...student, isDualChild: false });
+                        isPlaced = true;
+                        break;
                     }
                 }
-                if (isPlaced) break;
-            } else if (choice.startsWith("sci_any")) {
-                for (let key in allocated) {
-                    if (key.includes("sci_") && canFit(key)) {
-                        student.assignedChoiceKey = choice;
-                        student.assignedChoiceLevel = i;
-                        student.assignedClasses = [key];
-                        student.assignDesc = `志願 ${i} (${prefMap[key] || key})`;
-                        allocated[key].push({ ...student, isDualChild: false });
-                        isPlaced = true; break;
-                    }
+            } else if (choice.startsWith("math_any") || choice.startsWith("sci_any")) {
+                let prefix = choice.startsWith("math_") ? "math_" : "sci_";
+                let availableClasses = Object.keys(allocated)
+                    .filter(key => key.startsWith(prefix))
+                    .map(key => ({ cls: key, remain: getRemain(key) }))
+                    .filter(item => item.remain > 0)
+                    .sort((a, b) => b.remain - a.remain); // 動態找最空的
+
+                if (availableClasses.length > 0) {
+                    let bestSingle = availableClasses[0].cls;
+                    student.assignedChoiceKey = choice;
+                    student.assignedChoiceLevel = i;
+                    student.assignedClasses = [bestSingle];
+                    student.assignDesc = `志願 ${i} (${prefMap[bestSingle] || bestSingle})`;
+                    allocated[bestSingle].push({ ...student, isDualChild: false });
+                    isPlaced = true; break;
                 }
-                if (isPlaced) break;
             } else {
-                // 單科指定
-                if (allocated[choice] && canFit(choice)) {
+                if (canFit(choice)) {
                     student.assignedChoiceKey = choice;
                     student.assignedChoiceLevel = i;
                     student.assignedClasses = [choice];
@@ -3366,74 +3362,89 @@ function runDualMatchEngine(processingList, capacities, allocated, waitlist) {
             student.assignDesc = "排位失敗 / 候補中";
             waitlist.push(student);
         } else if (student.assignDesc && student.assignDesc.startsWith("保底單科")) {
-            // 他只上了一科，還是很想要兩科，所以同時把他丟進候補名單池
             waitlist.push(student);
         }
     });
 
     // ===============================================
-    // Stage 2: Lossless Optimization (無損挪位最佳化)
+    // Stage 2: Lossless Optimization (動態排序 + 篩選修正版)
     // ===============================================
-
     const forceMakeRoom = (tClass) => {
         if (!allocated[tClass]) return false;
-        if (allocated[tClass].length < capacities[tClass]) return true;
+        if (getRemain(tClass) > 0) return true;
 
         for (let k = 0; k < allocated[tClass].length; k++) {
             let g = allocated[tClass][k];
 
-            if (g.assignedChoiceKey === "both_any") {
-                const tryCombos = [
-                    { m: "math_day1_slotA", s: "sci_day1_slotB" }, { m: "math_day1_slotB", s: "sci_day1_slotA" },
-                    { m: "math_day2_slotA", s: "sci_day2_slotB" }, { m: "math_day2_slotB", s: "sci_day2_slotA" },
-                    { m: "math_day1_slotA", s: "sci_day2_slotA" }, { m: "math_day1_slotA", s: "sci_day2_slotB" },
-                    { m: "math_day1_slotB", s: "sci_day2_slotA" }, { m: "math_day1_slotB", s: "sci_day2_slotB" },
-                    { m: "math_day2_slotA", s: "sci_day1_slotA" }, { m: "math_day2_slotA", s: "sci_day1_slotB" },
-                    { m: "math_day2_slotB", s: "sci_day1_slotA" }, { m: "math_day2_slotB", s: "sci_day1_slotB" }
-                ];
+            // 修正：確保是佔了兩個位子的雙科生，並依照當初志願篩選可搬移的組合
+            if (["both_any", "both_day1", "both_day2"].includes(g.assignedChoiceKey) && g.assignedClasses.length === 2) {
+                let validCombos = allCombos.filter(c => g.assignedChoiceKey === "both_any" || g.assignedChoiceKey === c.c);
 
-                for (let combo of tryCombos) {
-                    let mHasSpace = (combo.m === g.assignedClasses[0] || combo.m === g.assignedClasses[1]) || (allocated[combo.m] && allocated[combo.m].length < capacities[combo.m]);
-                    let sHasSpace = (combo.s === g.assignedClasses[0] || combo.s === g.assignedClasses[1]) || (allocated[combo.s] && allocated[combo.s].length < capacities[combo.s]);
+                let moveOptions = validCombos.map(combo => {
+                    let mRemain = getRemain(combo.m) + (g.assignedClasses.includes(combo.m) ? 1 : 0);
+                    let sRemain = getRemain(combo.s) + (g.assignedClasses.includes(combo.s) ? 1 : 0);
+                    return { ...combo, bottleneck: Math.min(mRemain, sRemain) };
+                }).filter(c => c.bottleneck > 0 && !(c.m === g.assignedClasses[0] && c.s === g.assignedClasses[1]));
 
-                    if (mHasSpace && sHasSpace && !(combo.m === g.assignedClasses[0] && combo.s === g.assignedClasses[1])) {
-                        allocated[g.assignedClasses[0]] = allocated[g.assignedClasses[0]].filter(x => x.id !== g.id);
-                        allocated[g.assignedClasses[1]] = allocated[g.assignedClasses[1]].filter(x => x.id !== g.id);
-                        g.assignedClasses = [combo.m, combo.s];
-                        g.assignDesc = `志願 ${g.assignedChoiceLevel} (${prefMap[combo.m] || combo.m} & ${prefMap[combo.s] || combo.s}) [✨ AI挪位]`;
-                        allocated[combo.m].push(g);
-                        allocated[combo.s].push(g);
-                        optimizationCount++;
-                        return true;
-                    }
+                if (moveOptions.length > 0) {
+                    // 同樣套用雙層排序，確保 AI 挪位不會把人塞去拆天劣等組合
+                    moveOptions.sort((a, b) => {
+                        if (a.isSameDay && !b.isSameDay) return -1;
+                        if (!a.isSameDay && b.isSameDay) return 1;
+                        return b.bottleneck - a.bottleneck;
+                    });
+
+                    let best = moveOptions[0];
+                    allocated[g.assignedClasses[0]] = allocated[g.assignedClasses[0]].filter(x => x.id !== g.id);
+                    allocated[g.assignedClasses[1]] = allocated[g.assignedClasses[1]].filter(x => x.id !== g.id);
+
+                    g.assignedClasses = [best.m, best.s];
+                    g.assignDesc = `志願 ${g.assignedChoiceLevel} (${prefMap[best.m] || best.m} & ${prefMap[best.s] || best.s}) [✨ AI挪位]`;
+                    allocated[best.m].push(g);
+                    allocated[best.s].push(g);
+                    optimizationCount++;
+                    return true;
                 }
             } else if (g.assignedChoiceKey === "math_any" && tClass.startsWith("math_")) {
-                for (let key in allocated) {
-                    if (key.startsWith("math_") && key !== tClass && allocated[key].length < capacities[key]) {
-                        allocated[tClass] = allocated[tClass].filter(x => x.id !== g.id);
-                        g.assignedClasses = [key];
-                        g.assignDesc = `志願 ${g.assignedChoiceLevel} (${prefMap[key] || key}) [✨ AI挪位]`;
-                        allocated[key].push(g);
-                        optimizationCount++;
-                        return true;
-                    }
+                let opts = Object.keys(allocated)
+                    .filter(key => key.startsWith("math_") && key !== tClass)
+                    .map(key => ({ cls: key, remain: getRemain(key) }))
+                    .filter(o => o.remain > 0)
+                    .sort((a, b) => b.remain - a.remain);
+
+                if (opts.length > 0) {
+                    let best = opts[0].cls;
+                    allocated[tClass] = allocated[tClass].filter(x => x.id !== g.id);
+                    g.assignedClasses = [best];
+                    g.assignDesc = `志願 ${g.assignedChoiceLevel} (${prefMap[best] || best}) [✨ AI挪位]`;
+                    allocated[best].push(g);
+                    optimizationCount++;
+                    return true;
                 }
             } else if (g.assignedChoiceKey === "sci_any" && tClass.startsWith("sci_")) {
-                for (let key in allocated) {
-                    if (key.startsWith("sci_") && key !== tClass && allocated[key].length < capacities[key]) {
-                        allocated[tClass] = allocated[tClass].filter(x => x.id !== g.id);
-                        g.assignedClasses = [key];
-                        g.assignDesc = `志願 ${g.assignedChoiceLevel} (${prefMap[key] || key}) [✨ AI挪位]`;
-                        allocated[key].push(g);
-                        optimizationCount++;
-                        return true;
-                    }
+                let opts = Object.keys(allocated)
+                    .filter(key => key.startsWith("sci_") && key !== tClass)
+                    .map(key => ({ cls: key, remain: getRemain(key) }))
+                    .filter(o => o.remain > 0)
+                    .sort((a, b) => b.remain - a.remain);
+
+                if (opts.length > 0) {
+                    let best = opts[0].cls;
+                    allocated[tClass] = allocated[tClass].filter(x => x.id !== g.id);
+                    g.assignedClasses = [best];
+                    g.assignDesc = `志願 ${g.assignedChoiceLevel} (${prefMap[best] || best}) [✨ AI挪位]`;
+                    allocated[best].push(g);
+                    optimizationCount++;
+                    return true;
                 }
             }
         }
         return false;
     };
 
+    // ===============================================
+    // Stage 3: 候補名單嘗試補位
+    // ===============================================
     let finalWaitlist = [];
     waitlist.forEach(student => {
         let isPlaced = false;
@@ -3441,9 +3452,7 @@ function runDualMatchEngine(processingList, capacities, allocated, waitlist) {
         const clearOldSeats = () => {
             if (student.assignedClasses && student.assignedClasses.length > 0) {
                 student.assignedClasses.forEach(oldCls => {
-                    if (allocated[oldCls]) {
-                        allocated[oldCls] = allocated[oldCls].filter(x => x.id !== student.id);
-                    }
+                    if (allocated[oldCls]) allocated[oldCls] = allocated[oldCls].filter(x => x.id !== student.id);
                 });
             }
         };
@@ -3453,82 +3462,110 @@ function runDualMatchEngine(processingList, capacities, allocated, waitlist) {
             if (!choice || choice === "none") continue;
 
             if (choice === "both_any" || choice === "both_day1" || choice === "both_day2") {
-                let placedDual = false;
-                const tryCombos = [
-                    { m: "math_day1_slotA", s: "sci_day1_slotB", c: "both_day1" },
-                    { m: "math_day1_slotB", s: "sci_day1_slotA", c: "both_day1" },
-                    { m: "math_day2_slotA", s: "sci_day2_slotB", c: "both_day2" },
-                    { m: "math_day2_slotB", s: "sci_day2_slotA", c: "both_day2" },
-                    { m: "math_day1_slotA", s: "sci_day2_slotA", c: "both_any" },
-                    { m: "math_day1_slotA", s: "sci_day2_slotB", c: "both_any" },
-                    { m: "math_day1_slotB", s: "sci_day2_slotA", c: "both_any" },
-                    { m: "math_day1_slotB", s: "sci_day2_slotB", c: "both_any" },
-                    { m: "math_day2_slotA", s: "sci_day1_slotA", c: "both_any" },
-                    { m: "math_day2_slotA", s: "sci_day1_slotB", c: "both_any" },
-                    { m: "math_day2_slotB", s: "sci_day1_slotA", c: "both_any" },
-                    { m: "math_day2_slotB", s: "sci_day1_slotB", c: "both_any" }
-                ];
+                let validCombos = allCombos.filter(combo => choice === "both_any" || choice === combo.c);
+                let availableCombos = validCombos.map(combo => ({ ...combo, bottleneck: Math.min(getRemain(combo.m), getRemain(combo.s)) })).filter(c => c.bottleneck > 0);
 
-                for (let combo of tryCombos) {
-                    if (choice === "both_any" || choice === combo.c) {
-                        let mHasSpace = allocated[combo.m] && allocated[combo.m].length < capacities[combo.m];
-                        let sHasSpace = allocated[combo.s] && allocated[combo.s].length < capacities[combo.s];
-
-                        if (mHasSpace && sHasSpace) {
-                            clearOldSeats();
-                            student.assignedChoiceKey = choice;
-                            student.assignedChoiceLevel = i;
-                            student.assignedClasses = [combo.m, combo.s];
-                            student.assignDesc = `志願 ${i} (${prefMap[combo.m] || combo.m} & ${prefMap[combo.s] || combo.s})`;
-                            allocated[combo.m].push({ ...student, isDualChild: true });
-                            allocated[combo.s].push({ ...student, isDualChild: true });
-                            placedDual = true; break;
-                        } else if (mHasSpace && !sHasSpace) {
-                            if (forceMakeRoom(combo.s)) {
-                                clearOldSeats();
-                                student.assignedChoiceKey = choice;
-                                student.assignedChoiceLevel = i;
-                                student.assignedClasses = [combo.m, combo.s];
-                                student.assignDesc = `志願 ${i} (${prefMap[combo.m] || combo.m} & ${prefMap[combo.s] || combo.s})`;
-                                allocated[combo.m].push({ ...student, isDualChild: true });
-                                allocated[combo.s].push({ ...student, isDualChild: true });
-                                placedDual = true; break;
-                            }
-                        } else if (!mHasSpace && sHasSpace) {
-                            if (forceMakeRoom(combo.m)) {
-                                clearOldSeats();
-                                student.assignedChoiceKey = choice;
-                                student.assignedChoiceLevel = i;
-                                student.assignedClasses = [combo.m, combo.s];
-                                student.assignDesc = `志願 ${i} (${prefMap[combo.m] || combo.m} & ${prefMap[combo.s] || combo.s})`;
-                                allocated[combo.m].push({ ...student, isDualChild: true });
-                                allocated[combo.s].push({ ...student, isDualChild: true });
-                                placedDual = true; break;
-                            }
-                        }
-                    }
-                }
-
-                if (placedDual) {
+                // 先試直接空位（雙層排序）
+                if (availableCombos.length > 0) {
+                    availableCombos.sort((a, b) => {
+                        if (a.isSameDay && !b.isSameDay) return -1;
+                        if (!a.isSameDay && b.isSameDay) return 1;
+                        return b.bottleneck - a.bottleneck;
+                    });
+                    let bestCombo = availableCombos[0];
+                    clearOldSeats();
+                    student.assignedChoiceKey = choice;
+                    student.assignedChoiceLevel = i;
+                    student.assignedClasses = [bestCombo.m, bestCombo.s];
+                    student.assignDesc = `志願 ${i} (${prefMap[bestCombo.m] || bestCombo.m} & ${prefMap[bestCombo.s] || bestCombo.s})`;
+                    allocated[bestCombo.m].push({ ...student, isDualChild: true });
+                    allocated[bestCombo.s].push({ ...student, isDualChild: true });
                     isPlaced = true;
                     break;
                 }
-            } else if (choice.startsWith("math_any")) {
-                for (let key in allocated) {
-                    if (key.startsWith("math_") && forceMakeRoom(key)) {
+
+                // 修正：forceMakeRoom 前也套用雙層排序
+                validCombos.sort((a, b) => {
+                    if (a.isSameDay && !b.isSameDay) return -1;
+                    if (!a.isSameDay && b.isSameDay) return 1;
+                    let aCap = Math.min(getRemain(a.m), getRemain(a.s));
+                    let bCap = Math.min(getRemain(b.m), getRemain(b.s));
+                    return bCap - aCap;
+                });
+
+                for (let combo of validCombos) {
+                    let mHasSpace = getRemain(combo.m) > 0;
+                    let sHasSpace = getRemain(combo.s) > 0;
+
+                    if (mHasSpace && !sHasSpace && forceMakeRoom(combo.s)) {
                         clearOldSeats();
                         student.assignedChoiceKey = choice;
                         student.assignedChoiceLevel = i;
-                        student.assignedClasses = [key];
-                        student.assignDesc = `志願 ${i} (${prefMap[key] || key})`;
-                        allocated[key].push({ ...student, isDualChild: false });
+                        student.assignedClasses = [combo.m, combo.s];
+                        student.assignDesc = `志願 ${i} (${prefMap[combo.m] || combo.m} & ${prefMap[combo.s] || combo.s})`;
+                        allocated[combo.m].push({ ...student, isDualChild: true });
+                        allocated[combo.s].push({ ...student, isDualChild: true });
+                        isPlaced = true; break;
+                    } else if (!mHasSpace && sHasSpace && forceMakeRoom(combo.m)) {
+                        clearOldSeats();
+                        student.assignedChoiceKey = choice;
+                        student.assignedChoiceLevel = i;
+                        student.assignedClasses = [combo.m, combo.s];
+                        student.assignDesc = `志願 ${i} (${prefMap[combo.m] || combo.m} & ${prefMap[combo.s] || combo.s})`;
+                        allocated[combo.m].push({ ...student, isDualChild: true });
+                        allocated[combo.s].push({ ...student, isDualChild: true });
                         isPlaced = true; break;
                     }
                 }
                 if (isPlaced) break;
-            } else if (choice.startsWith("sci_any")) {
+
+                // 修正死碼 Bug：Stage 3 保底單科
+                if (!isPlaced && (!student.assignedClasses || student.assignedClasses.length === 0)) {
+                    let fallbackOptions = [];
+                    validCombos.forEach(combo => {
+                        let mRemain = getRemain(combo.m);
+                        let sRemain = getRemain(combo.s);
+                        if (mRemain > 0 && !fallbackOptions.find(opt => opt.cls === combo.m)) fallbackOptions.push({ cls: combo.m, remain: mRemain });
+                        if (sRemain > 0 && !fallbackOptions.find(opt => opt.cls === combo.s)) fallbackOptions.push({ cls: combo.s, remain: sRemain });
+                    });
+
+                    if (fallbackOptions.length > 0) {
+                        fallbackOptions.sort((a, b) => b.remain - a.remain);
+                        let bestSingle = fallbackOptions[0].cls;
+                        student.assignedChoiceKey = choice;
+                        student.assignedChoiceLevel = i;
+                        student.assignedClasses = [bestSingle];
+                        student.assignDesc = `保底單科 (${prefMap[bestSingle] || bestSingle})`;
+                        allocated[bestSingle].push({ ...student, isDualChild: false });
+                        isPlaced = true;
+                        break;
+                    } else {
+                        // 直接空位為 0，改從 validCombos 蒐集所有關聯班級嘗試 forceMakeRoom
+                        let allSingleClasses = [];
+                        validCombos.forEach(combo => {
+                            if (!allSingleClasses.includes(combo.m)) allSingleClasses.push(combo.m);
+                            if (!allSingleClasses.includes(combo.s)) allSingleClasses.push(combo.s);
+                        });
+                        for (let cls of allSingleClasses) {
+                            if (forceMakeRoom(cls)) {
+                                clearOldSeats();
+                                student.assignedChoiceKey = choice;
+                                student.assignedChoiceLevel = i;
+                                student.assignedClasses = [cls];
+                                student.assignDesc = `保底單科 (${prefMap[cls] || cls})`;
+                                allocated[cls].push({ ...student, isDualChild: false });
+                                isPlaced = true;
+                                break;
+                            }
+                        }
+                        if (isPlaced) break;
+                    }
+                }
+
+            } else if (choice.startsWith("math_any") || choice.startsWith("sci_any")) {
+                let prefix = choice.startsWith("math_") ? "math_" : "sci_";
                 for (let key in allocated) {
-                    if (key.startsWith("sci_") && forceMakeRoom(key)) {
+                    if (key.startsWith(prefix) && forceMakeRoom(key)) {
                         clearOldSeats();
                         student.assignedChoiceKey = choice;
                         student.assignedChoiceLevel = i;
@@ -3552,8 +3589,13 @@ function runDualMatchEngine(processingList, capacities, allocated, waitlist) {
             }
         }
 
+        // 防呆：確保原本有單科保底的人，不會在 Stage 3 失敗後被刷掉描述
         if (!isPlaced) {
-            student.assignDesc = "排位失敗 / 候補中";
+            if (!student.assignedClasses || student.assignedClasses.length === 0) {
+                student.assignDesc = "排位失敗 / 候補中";
+            }
+            finalWaitlist.push(student);
+        } else if (student.assignDesc && student.assignDesc.startsWith("保底單科")) {
             finalWaitlist.push(student);
         }
     });
@@ -4140,7 +4182,7 @@ window.populateTrialNotifySelector = function () {
     Object.keys(trialEventsConfig).forEach(id => {
         const ev = trialEventsConfig[id];
         if (ev.lockedAllocation) {
-            const lockedAt = new Date(ev.lockedAllocation.lockedAt).toLocaleString();
+            const lockedAt = window.formatTimeWithMs(ev.lockedAllocation.lockedAt);
             selector.innerHTML += `<option value="${id}">🔒 ${ev.title || id} (鎖死於 ${lockedAt})</option>`;
         }
     });
@@ -4488,7 +4530,7 @@ window.generateCourseTestData = async function () {
                 status: 'sold',
                 studentName: name,
                 parentPhone: phone,
-                soldTime: new Date(timestamp).toLocaleString(),
+                soldTime: window.formatTimeWithMs(timestamp),
                 timestamp: timestamp,
                 orderId: "TEST_" + timestamp
             }));
