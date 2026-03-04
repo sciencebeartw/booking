@@ -207,15 +207,21 @@
             <input type="color" id="colorGreen" value="#025c15" onchange="updateThemeColor('green', this.value)"
                 title="點擊更改綠色">
             <button class="btn-green" onclick="setTheme('theme-green')">國中小部 (切換)</button>
+            <button onclick="resetThemeColor('green', '#025c15')"
+                style="padding: 5px 10px; margin-left: 5px; font-size: 13px; background: #ecf0f1; color: #2c3e50; border: 1px solid #bdc3c7;">還原標準綠</button>
         </div>
 
         <div class="theme-group">
             <input type="color" id="colorBlue" value="#134e70" onchange="updateThemeColor('blue', this.value)"
                 title="點擊更改藍色">
             <button class="btn-blue" onclick="setTheme('theme-blue')">高中部 (切換)</button>
+            <button onclick="resetThemeColor('blue', '#134e70')"
+                style="padding: 5px 10px; margin-left: 5px; font-size: 13px; background: #ecf0f1; color: #2c3e50; border: 1px solid #bdc3c7;">還原標準藍</button>
         </div>
 
         <button class="btn-download" onclick="downloadAllBanners()">📥 批次下載全部圖檔</button>
+        <button class="btn-upload" style="background-color: #f39c12; margin-left: 10px;"
+            onclick="saveTemplatesToCloud()" id="btnSaveTemplate">💾 儲存文字為共用底稿</button>
 
         <div
             style="margin-top: 15px; color: #e74c3c; font-size: 15px; text-align: left; padding-left: 10px; line-height: 1.6;">
@@ -224,7 +230,8 @@
             2. <b>🖼️ 圖片直貼</b>：想加插圖？直接把去背圖 <b>「複製貼上」</b> 橫幅內，可自由拉大小！<br>
             3. <b>🧮 數理符號</b>：點擊 <b>「Ω」</b> 可插入特殊符號，還支援 <b>X² (上標)</b>、<b>H₂O (下標)</b>。<br>
             4. <b>📊 隱形表格</b>：排版對不齊？點擊 <b>「表格圖示」</b> 畫格子，字塞進去絕對切齊！<br>
-            5. <b>☁️ 雲端互通</b>：點擊「存入雲端圖庫」，未來即可在後台直接套用！
+            5. <b>☁️ 雲端互通</b>：點擊「存入雲端圖庫」，未來即可在後台直接套用！<br>
+            6. <b>🎨 滴管取色</b>：想吸取特定顏色？點擊文字上色的箭頭 ➔ 選擇「自訂(Custom)」即可開啟滴管吸取螢幕顏色！
         </div>
     </div>
 
@@ -312,6 +319,7 @@
                         isAdminVerified = true;
                         currentUserEmail = user.email;
                         console.log("✅ 管理員驗證成功：", currentUserEmail);
+                        window.loadTemplatesFromCloud(); // 載入雲端底稿
                     } else {
                         alert("🚨 權限不足：您的帳號不在管理員白名單中！");
                     }
@@ -369,6 +377,72 @@
                 banner.classList.add(themeClass);
             });
         }
+
+        window.resetThemeColor = function (theme, colorHex) {
+            document.getElementById(theme === 'green' ? 'colorGreen' : 'colorBlue').value = colorHex;
+            updateThemeColor(theme, colorHex);
+            setTheme('theme-' + theme);
+        };
+
+        window.loadTemplatesFromCloud = async function () {
+            try {
+                const snapshot = await get(dbRef(db, 'settings/banner_templates'));
+                if (snapshot.exists()) {
+                    const data = snapshot.val();
+                    const editors = tinymce.get();
+
+                    const b1 = document.getElementById('banner1')?.querySelector('.mce-editor-area');
+                    const b2 = document.getElementById('banner2')?.querySelector('.mce-editor-area');
+                    const b3 = document.getElementById('banner3')?.querySelector('.mce-editor-area');
+
+                    editors.forEach(ed => {
+                        if (ed.getElement() === b1 && data.banner1) ed.setContent(data.banner1);
+                        if (ed.getElement() === b2 && data.banner2) ed.setContent(data.banner2);
+                        if (ed.getElement() === b3 && data.banner3) ed.setContent(data.banner3);
+                    });
+                    console.log("✅ 雲端底稿載入完成");
+                }
+            } catch (error) {
+                console.error("載入雲端底稿失敗:", error);
+            }
+        };
+
+        window.saveTemplatesToCloud = async function () {
+            if (!isAdminVerified) {
+                if (confirm("🔒 系統安全鎖：\n您必須以管理員身分登入 Google 才能儲存底稿。\n\n是否現在登入？")) {
+                    window.loginForUpload();
+                }
+                return;
+            }
+
+            const btn = document.getElementById('btnSaveTemplate');
+            const originalText = btn.textContent;
+            btn.textContent = "⏳ 儲存中...";
+            btn.disabled = true;
+
+            try {
+                tinymce.triggerSave();
+                const content1 = document.getElementById('banner1').querySelector('.banner-content').innerHTML;
+                const content2 = document.getElementById('banner2').querySelector('.banner-content').innerHTML;
+                const content3 = document.getElementById('banner3').querySelector('.banner-content').innerHTML;
+
+                const templatesRef = dbRef(db, 'settings/banner_templates');
+                await set(templatesRef, {
+                    banner1: content1,
+                    banner2: content2,
+                    banner3: content3,
+                    updatedAt: Date.now(),
+                    updatedBy: currentUserEmail
+                });
+                alert("✅ 已成功將目前文字儲存為雲端底稿！下次重新整理即會自動套用。");
+            } catch (error) {
+                console.error("儲存底稿失敗:", error);
+                alert("❌ 儲存失敗：" + error.message);
+            } finally {
+                btn.textContent = originalText;
+                btn.disabled = false;
+            }
+        };
 
         window.downloadBanner = function (bannerId, filename) {
             tinymce.triggerSave();

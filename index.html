@@ -856,7 +856,21 @@
                     return;
                 }
 
-                filterContainer.innerHTML = '<button class="filter-btn" id="btn-all" onclick="filterCourses(\'all\')">全部課程</button>';
+                filterContainer.innerHTML = '';
+
+                if (window.currentAppMode !== 'trial') {
+                    filterContainer.innerHTML = '<button class="filter-btn" id="btn-all" onclick="filterCourses(\'all\')">全部課程</button>';
+                } else {
+                    const btnTrial = document.createElement('button');
+                    btnTrial.className = 'filter-btn';
+                    btnTrial.style.color = '#8e44ad';
+                    btnTrial.style.borderColor = '#8e44ad';
+                    btnTrial.style.fontWeight = 'bold';
+                    btnTrial.style.background = '#f4ecf7';
+                    btnTrial.textContent = '✨ 試聽活動';
+                    btnTrial.onclick = () => window.filterCourses('✨ 試聽活動');
+                    filterContainer.appendChild(btnTrial);
+                }
 
                 if (hasTodayCourses) {
                     const btnToday = document.createElement('button');
@@ -876,6 +890,8 @@
                 const sortedCategories = Array.from(categories).sort((a, b) => gradeOrder.indexOf(a) - gradeOrder.indexOf(b));
 
                 sortedCategories.forEach(cat => {
+                    if (window.currentAppMode === 'trial' && cat === '✨ 試聽活動') return;
+
                     const btn = document.createElement('button');
                     btn.className = 'filter-btn';
                     if (cat === "✨ 試聽活動") {
@@ -895,7 +911,7 @@
                     } else if (hasUpcomingCourses) {
                         currentCategory = 'upcoming';
                     } else {
-                        currentCategory = 'all';
+                        currentCategory = window.currentAppMode === 'trial' ? '✨ 試聽活動' : 'all';
                     }
                     isFirstLoad = false;
                 }
