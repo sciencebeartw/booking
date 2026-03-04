@@ -722,6 +722,21 @@
             </div>
         </div>
 
+        <!-- 新增：學費單進度條區塊 -->
+        <div id="billProgressArea"
+            style="display:none; margin:20px auto 0 auto; width: 210mm; background:#fff; padding:15px; border-radius:8px; box-shadow:0 2px 5px rgba(0,0,0,0.1); box-sizing: border-box; text-align:center;">
+            <div style="font-size:16px; font-weight:bold; color:#2c3e50; margin-bottom:10px;">
+                🚀 學費單發送進度：<span id="billProgressText">0 / 0</span>
+            </div>
+            <div style="width:100%; height:20px; background:#eee; border-radius:10px; overflow:hidden;">
+                <div id="billProgressFill" style="width:0%; height:100%; background:#2ecc71; transition:width 0.3s;">
+                </div>
+            </div>
+        </div>
+
+        <!-- 新增：學費單失敗報告區塊 -->
+        <div id="billReportArea" style="display:none; margin:10px auto; width: 210mm; box-sizing: border-box;"></div>
+
         <div class="bill-preview-container">
             <div
                 style="width: 210mm; margin: 0 auto 10px auto; color:#e74c3c; font-weight:bold; font-size:16px; background:#fff3cd; padding:10px; border-radius:8px; box-sizing: border-box; box-shadow: 0 2px 5px rgba(0,0,0,0.1);">
@@ -911,6 +926,12 @@
                     style="background:#00B900; background-color: #00B900; display:none;">🚀 一鍵全數推播 LINE</button>
             </div>
         </div>
+
+        <div id="regularNotifyProgress"
+            style="display:none; max-width:1000px; margin:20px auto 0 auto; text-align:center; background:#fff; padding:15px; border-radius:8px; box-shadow:0 2px 5px rgba(0,0,0,0.1);">
+        </div>
+        <div id="regularNotifyReport" style="display:none; max-width:1000px; margin:10px auto;"></div>
+
         <div id="regularNotifyList"
             style="max-width:1000px; margin:20px auto; display:flex; flex-direction:column; gap:10px;"></div>
 
@@ -927,6 +948,12 @@
                     style="background:#00B900; background-color: #00B900; display:none;">🚀 一鍵全數推播 LINE</button>
             </div>
         </div>
+
+        <div id="trialNotifyProgress"
+            style="display:none; max-width:1000px; margin:20px auto 0 auto; text-align:center; background:#fff; padding:15px; border-radius:8px; box-shadow:0 2px 5px rgba(0,0,0,0.1);">
+        </div>
+        <div id="trialNotifyReport" style="display:none; max-width:1000px; margin:10px auto;"></div>
+
         <div id="trialNotifyList"
             style="max-width:1000px; margin:20px auto; display:flex; flex-direction:column; gap:10px;"></div>
     </div>

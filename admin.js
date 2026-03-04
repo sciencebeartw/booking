@@ -88,7 +88,7 @@ const DEFAULT_TEMPLATES = {
     trial_wait: `✨ 山熊科學 - 試聽候補通知 ✨\n\n{{姓名}} 家長您好：\n本次試聽活動報名熱烈，您目前的候補狀態為：\n\n{{候補名單}}\n\n📌 若有座位釋出，我們將第一時間通知您！`,
     trial_mix: `✨ 山熊科學 - 試聽分發與候補統整 ✨\n\n{{姓名}} 家長您好，為您統整本次試聽分發結果：\n\n✅ 【已錄取班級】\n{{劃位名單}}\n\n⏳ 【目前候補進度】\n{{候補名單}}\n\n📌 錄取班級請保留此訊息作為憑證；候補班級若有釋出將依序通知您！`
 };
-let currentTemplates = { ...DEFAULT_TEMPLATES };
+window.currentTemplates = { ...DEFAULT_TEMPLATES };
 let gasWebhookUrl = ""; // 用於發送 LINE 通知
 
 // ==========================================
@@ -148,7 +148,7 @@ const TRIAL_LOGIC_BLOCKS = {
 
 onValue(ref(db, 'settings/templates'), (snap) => {
     const saved = snap.val() || {};
-    currentTemplates = { ...DEFAULT_TEMPLATES, ...saved };
+    window.currentTemplates = { ...DEFAULT_TEMPLATES, ...saved };
     if (document.getElementById('templateEditorArea') && document.getElementById('tab-notify').classList.contains('active')) {
         renderTemplateEditor();
     }
@@ -1951,13 +1951,31 @@ window.sendAllBillsToLine = async function () {
     }
 
     let successCount = 0;
-    let failCount = 0;
+    let failedList = [];
+
+    const barArea = document.getElementById('billProgressArea');
+    const barText = document.getElementById('billProgressText');
+    const barFill = document.getElementById('billProgressFill');
+    const reportEl = document.getElementById('billReportArea');
+
+    if (barArea) {
+        barArea.style.display = 'block';
+        if (barText) barText.innerText = `0 / ${billStudents.length}`;
+        if (barFill) barFill.style.width = `0%`;
+    }
+    if (reportEl) {
+        reportEl.style.display = 'none';
+        reportEl.innerHTML = '';
+    }
 
     for (let i = 0; i < billStudents.length; i++) {
         // 更新 UI (若 Swal 存在則更新內文進度)
         if (typeof Swal !== 'undefined' && Swal.isVisible()) {
             Swal.update({ html: `正在處理第 <b>${i + 1} / ${billStudents.length}</b> 張學費單 (${billStudents[i].name})...` });
         }
+
+        if (barText) barText.innerText = `${i + 1} / ${billStudents.length} (${billStudents[i].name})`;
+        if (barFill) barFill.style.width = `${((i) / billStudents.length) * 100}%`;
 
         loadBill(i);
         await new Promise(r => setTimeout(r, 600)); // 等待畫面渲染
@@ -1971,7 +1989,7 @@ window.sendAllBillsToLine = async function () {
             const canvas = await html2canvas(element, { scale: 2 });
             const base64Data = canvas.toDataURL("image/png");
 
-            await fetch(scriptUrl, {
+            const resData = await fetch(scriptUrl, {
                 method: 'POST',
                 body: JSON.stringify({
                     'action': 'send_bill_to_line',
@@ -1982,22 +2000,60 @@ window.sendAllBillsToLine = async function () {
                 headers: { 'Content-Type': 'text/plain;charset=utf-8' }
             }).then(r => r.json());
 
-            successCount++;
+            if (resData.success) {
+                successCount++;
+            } else {
+                failedList.push({ name: studentName, reason: resData.msg });
+            }
         } catch (error) {
             console.error(`發送給 ${studentName} 時發生錯誤:`, error);
-            failCount++;
+            failedList.push({ name: studentName, reason: error.message || '網路傳輸錯誤' });
         }
+
+        if (barFill) barFill.style.width = `${((i + 1) / billStudents.length) * 100}%`;
     }
+
+    if (barText) barText.innerText = `✅ 發送完畢 (${billStudents.length} / ${billStudents.length})`;
 
     // 發送完成結果報告
     if (typeof Swal !== 'undefined') {
-        Swal.fire(
-            "批次發送完成！",
-            `共處理 ${billStudents.length} 張學費單，<br>請家長陸續到各自的 LINE 確認收件。`,
-            "success"
-        );
+        if (failedList.length > 0) {
+            Swal.fire(
+                "批次發送完成！",
+                `共成功處理 ${successCount} 張，失敗 <b>${failedList.length}</b> 張。<br>請查看網頁上的失敗清單。`,
+                "warning"
+            );
+        } else {
+            Swal.fire(
+                "大成功！",
+                `共成功處理 ${successCount} 張學費單，<br>請家長陸續到各自的 LINE 確認收件。`,
+                "success"
+            );
+        }
     } else {
-        alert(`批次發送完成！共處理 ${billStudents.length} 張學費單，如果有失敗的會記錄在您的 GAS 後台中。`);
+        alert(`批次發送完成！共成功 ${successCount} 張，失敗 ${failedList.length} 張。`);
+    }
+
+    // Render report onto billReportArea
+    if (reportEl) {
+        if (failedList.length > 0) {
+            reportEl.style.display = 'block';
+            let html = `<div style="background:#fdebd0; border:2px solid #e67e22; border-radius:8px; padding:15px; text-align:left;">
+                <h3 style="color:#d35400; margin-top:0;">⚠️ 傳送失敗名單 (共 ${failedList.length} 筆)</h3>
+                <ul style="color:#c0392b; line-height:1.6; margin-bottom:0; font-weight:bold; font-size:14px;">`;
+            failedList.forEach(f => {
+                html += `<li>${f.name} - 原因：${f.reason}</li>`;
+            });
+            html += `</ul></div>`;
+            reportEl.innerHTML = html;
+        } else if (successCount > 0) {
+            reportEl.style.display = 'block';
+            reportEl.innerHTML = `<div style="background:#d5f5e3; border:2px solid #27ae60; border-radius:8px; padding:15px; color:#1e8449; font-weight:bold; text-align:center;">
+                🎉 太棒了！本次發送 0 失敗，全部推播成功！
+            </div>`;
+        } else {
+            reportEl.style.display = 'none';
+        }
     }
 };
 
@@ -4088,7 +4144,7 @@ window.saveGasWebhook = async function () {
 };
 
 window.saveTemplates = async function () {
-    await set(ref(db, 'settings/templates'), currentTemplates);
+    await set(ref(db, 'settings/templates'), window.currentTemplates);
     alert('✅ 模板已成功儲存至 Firebase！');
 };
 
@@ -4110,7 +4166,7 @@ window.renderTemplateEditor = function () {
         const div = document.createElement('div');
         div.innerHTML = `
             <label style="font-weight:bold; color:#2c3e50; display:block; margin-bottom:5px;">${f.name}</label>
-            <textarea id="tpl_${f.key}" style="width:100%; height:140px; padding:10px; box-sizing:border-box; border-radius:5px; border:1px solid #bdc3c7;" oninput="currentTemplates['${f.key}'] = this.value">${currentTemplates[f.key]}</textarea>
+            <textarea id="tpl_${f.key}" style="width:100%; height:140px; padding:10px; box-sizing:border-box; border-radius:5px; border:1px solid #bdc3c7;" oninput="window.currentTemplates['${f.key}'] = this.value">${window.currentTemplates[f.key]}</textarea>
         `;
         area.appendChild(div);
     });
@@ -4255,7 +4311,7 @@ function renderNotifyCards(containerId, personMap, typePrefix) {
         else tplKey = `${typePrefix}_mix`;
 
         // 使用真正的換行符 \n（注意：不是 \\n）
-        let msg = currentTemplates[tplKey] || '';
+        let msg = window.currentTemplates[tplKey] || '';
         msg = msg.replace(/\{\{姓名\}\}/g, p.name);
         msg = msg.replace(/\{\{劃位名單\}\}/g, p.seats.join('\n'));
         msg = msg.replace(/\{\{候補名單\}\}/g, p.waits.join('\n'));
@@ -4375,6 +4431,7 @@ async function sendNotificationToGAS(payloadList, cardElements) {
                     statusEl.style.color = '#e74c3c';
                 }
             });
+            return result.scan_results;
         } else {
             throw new Error(result.message || '未知 API 錯誤');
         }
@@ -4390,6 +4447,7 @@ async function sendNotificationToGAS(payloadList, cardElements) {
             statusEl.style.color = '#e74c3c';
         });
         alert('🚨 與 LINE API (GAS) 連線失敗，請檢查網址或權限設定！\n' + error.message);
+        return payloadList.map(p => ({ status: 'error', msg: error.message }));
     }
 }
 
@@ -4403,20 +4461,99 @@ window.sendAllTrialNotifications = function () {
     triggerBatchSend('trialNotifyList', 'btn-send-all-trial');
 };
 
-function triggerBatchSend(containerId, buttonId) {
+async function triggerBatchSend(containerId, buttonId) {
     const container = document.getElementById(containerId);
     const cards = Array.from(container.querySelectorAll('.notify-card'));
 
     if (cards.length === 0) return alert('沒有可以推播的名單！');
     if (!confirm(`確定要將這 ${cards.length} 筆通知全部推播至 LINE 嗎？\n(未綁定 LINE 的家長系統會回報錯誤)`)) return;
 
-    const payloadList = cards.map(card => ({
-        name: card.dataset.name,
-        phone: card.dataset.phone,
-        message: card.dataset.message
-    }));
+    const isRegular = containerId === 'regularNotifyList';
+    const barId = isRegular ? 'regularNotifyProgress' : 'trialNotifyProgress';
+    const reportId = isRegular ? 'regularNotifyReport' : 'trialNotifyReport';
+    const btnSendAll = document.getElementById(buttonId);
 
-    sendNotificationToGAS(payloadList, cards);
+    const barEl = document.getElementById(barId);
+    const reportEl = document.getElementById(reportId);
+
+    if (barEl) {
+        barEl.style.display = 'block';
+        barEl.innerHTML = `
+            <div style="font-size:16px; font-weight:bold; color:#2c3e50; margin-bottom:10px;">
+                🚀 發送進度：<span id="${barId}-text">0 / ${cards.length}</span>
+            </div>
+            <div style="width:100%; height:20px; background:#eee; border-radius:10px; overflow:hidden;">
+                <div id="${barId}-fill" style="width:0%; height:100%; background:#2ecc71; transition:width 0.3s;"></div>
+            </div>`;
+    }
+    if (reportEl) {
+        reportEl.style.display = 'none';
+        reportEl.innerHTML = '';
+    }
+    if (btnSendAll) {
+        btnSendAll.disabled = true;
+        btnSendAll.style.opacity = '0.5';
+    }
+
+    let failedList = [];
+
+    // Loop through cards one by one to show progress
+    for (let i = 0; i < cards.length; i++) {
+        const card = cards[i];
+
+        if (barEl) {
+            document.getElementById(`${barId}-text`).innerText = `${i + 1} / ${cards.length} (${card.dataset.name})`;
+            document.getElementById(`${barId}-fill`).style.width = `${((i) / cards.length) * 100}%`;
+        }
+
+        const payload = [{
+            name: card.dataset.name,
+            phone: card.dataset.phone,
+            message: card.dataset.message
+        }];
+
+        const results = await sendNotificationToGAS(payload, [card]);
+
+        if (results && results[0]) {
+            if (results[0].status !== 'success') {
+                failedList.push({ name: card.dataset.name, phone: card.dataset.phone, reason: results[0].msg });
+            }
+        } else {
+            failedList.push({ name: card.dataset.name, phone: card.dataset.phone, reason: '網路傳輸錯誤' });
+        }
+
+        if (barEl) {
+            document.getElementById(`${barId}-fill`).style.width = `${((i + 1) / cards.length) * 100}%`;
+        }
+
+        await new Promise(r => setTimeout(r, 200));
+    }
+
+    if (barEl) {
+        document.getElementById(`${barId}-text`).innerText = `✅ 發送完畢 (${cards.length} / ${cards.length})`;
+    }
+    if (btnSendAll) {
+        btnSendAll.disabled = false;
+        btnSendAll.style.opacity = '1';
+    }
+
+    // Render report
+    if (reportEl && failedList.length > 0) {
+        reportEl.style.display = 'block';
+        let html = `<div style="background:#fdebd0; border:2px solid #e67e22; border-radius:8px; padding:15px; margin-top:20px; text-align:left;">
+            <h3 style="color:#d35400; margin-top:0;">⚠️ 傳送失敗名單 (共 ${failedList.length} 筆)</h3>
+            <ul style="color:#c0392b; line-height:1.6; margin-bottom:0; font-weight:bold; font-size:14px;">`;
+        failedList.forEach(f => {
+            html += `<li>${f.name} (${f.phone}) - 原因：${f.reason}</li>`;
+        });
+        html += `</ul></div>`;
+        reportEl.innerHTML = html;
+    } else if (reportEl && failedList.length === 0) {
+        reportEl.style.display = 'block';
+        reportEl.innerHTML = `<div style="background:#d5f5e3; border:2px solid #27ae60; border-radius:8px; padding:15px; margin-top:20px; color:#1e8449; font-weight:bold; text-align:center;">
+            🎉 太棒了！本次發送 0 失敗，全部推播成功！
+        </div>`;
+    }
 }
 
 // 🧰 任務四：正式候補黑箱 - 手動安插候補
