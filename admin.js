@@ -111,10 +111,10 @@ const HTML_TPL_REGULAR = `
 </ul>
 <div style="background-color: #e8f6f3; padding: 15px; border-radius: 8px; margin-bottom: 20px;">
 <h4 style="color: #16a085; margin-top: 0; font-size: 18px;">💰 繳費與保留座位流程</h4>
-<p style="margin-bottom: 0; color: #333; line-height: 1.6; font-size: 16px;">劃位前請<strong>務必加入官方 LINE 並傳送學生姓名</strong>以完成家長身分綁定。<br>劃位完成後，我們將在整理名單後，透過 LINE 回傳劃位成功確認及繳費通知。<br><br>收到通知後，請於 <strong style="color: #d35400;">3 日內</strong> 完成繳費（可現場現金或轉帳）。<br>⚠️ 若逾期未繳且未主動聯繫，系統將自動釋出您的座位給候補同學。</p>
+<p style="margin-bottom: 0; color: #333; line-height: 1.6; font-size: 16px;">劃位前請<strong>務必點擊畫面右下角圖示，加入官方 LINE 並傳送學生姓名</strong>以完成家長身分綁定。<br>劃位完成後，我們將在整理名單後，透過 LINE 回傳劃位成功確認及繳費通知。<br><br>收到通知後，請於 <strong style="color: #d35400;">3 日內</strong> 完成繳費（可現場現金或轉帳）。<br>⚠️ 若逾期未繳且未主動聯繫，系統將自動釋出您的座位給候補同學。</p>
 </div>
 <h3 style="color: #2c3e50; border-bottom: 2px dashed #bdc3c7; padding-bottom: 8px;">📞 聯絡資訊</h3>
-<p style="color: #555; line-height: 1.8; font-size: 16px;"><strong>山熊科學電話：</strong>03-6662248<br><strong>官方 LINE 帳號：</strong><span style="color: #06c755; font-weight: bold; background:#eafaf1; padding:2px 6px; border-radius:4px;">@bearhigh</span> (請記得加 @ 唷！)</p>
+<p style="color: #555; line-height: 1.8; font-size: 16px;"><strong>國中小山熊科學專線：</strong>03-6667360<br><strong>高中部山熊升大專線：</strong>03-6662248<br><strong>官方 LINE 帳號：</strong>請點擊畫面右下角圖示加入（國中小請點綠色「山熊科學」，高中請點藍色「山熊升大」）</p>
 `;
 
 const HTML_TPL_TRIAL_BASE = `
@@ -133,10 +133,10 @@ const HTML_TPL_TRIAL_BASE = `
 </ul>
 <div style="background-color: #e8f6f3; padding: 15px; border-radius: 8px; margin-bottom: 20px;">
 <h4 style="color: #16a085; margin-top: 0; font-size: 18px;">📩 後續通知與錄取確認</h4>
-<p style="margin-bottom: 0; color: #333; line-height: 1.6; font-size: 16px;">請注意，網頁送出僅代表完成「意願登記」。<br>分發作業完成後，系統將會透過 <strong>山熊科學實驗教室 官方 LINE 帳號</strong> 將【正式錄取通知】或候補進度全自動推播給您。<br><strong style="color: #d35400;">※ 報名前請務必確認已加入官方 LINE 並傳送過學生姓名完成綁定！</strong></p>
+<p style="margin-bottom: 0; color: #333; line-height: 1.6; font-size: 16px;">請注意，網頁送出僅代表完成「意願登記」。<br>分發作業完成後，系統將會透過 <strong>山熊科學實驗教室 官方 LINE 帳號</strong> 將【正式錄取通知】或候補進度全自動推播給您。<br><strong style="color: #d35400;">※ 報名前請務必點擊畫面右下角圖示加入官方 LINE，並傳送學生姓名完成綁定！</strong></p>
 </div>
 <h3 style="color: #2c3e50; border-bottom: 2px dashed #bdc3c7; padding-bottom: 8px;">📞 聯絡資訊</h3>
-<p style="color: #555; line-height: 1.8; font-size: 16px;"><strong>山熊科學電話：</strong>03-6662248<br><strong>官方 LINE 帳號：</strong><span style="color: #06c755; font-weight: bold; background:#eafaf1; padding:2px 6px; border-radius:4px;">@bearhigh</span> (請記得加 @ 唷！)</p>
+<p style="color: #555; line-height: 1.8; font-size: 16px;"><strong>山熊科學專線：</strong>03-6667360<br><strong>官方 LINE 帳號：</strong>請點擊畫面右下角綠色「山熊科學」圖示加入</p>
 `;
 
 const TRIAL_LOGIC_BLOCKS = {
@@ -581,7 +581,15 @@ function renderCourseList() {
 
     const listDiv = document.getElementById('courseList');
     listDiv.innerHTML = "";
-    Object.keys(coursesData).forEach(key => {
+
+    // ★ 依 sortOrder 由小到大排序序️
+    const sortedKeys = Object.keys(coursesData).sort((a, b) => {
+        const soA = coursesData[a].sortOrder !== undefined ? coursesData[a].sortOrder : 999999;
+        const soB = coursesData[b].sortOrder !== undefined ? coursesData[b].sortOrder : 999999;
+        return soA - soB;
+    });
+
+    sortedKeys.forEach(key => {
         const c = coursesData[key];
 
         // 計算課程目前狀態燈號
@@ -605,8 +613,10 @@ function renderCourseList() {
 
         const card = document.createElement('div');
         card.className = 'admin-course-card';
-        card.onclick = (e) => { if (!e.target.classList.contains('btn-delete')) editCourse(key); };
+        card.dataset.id = key;
+        card.onclick = (e) => { if (!e.target.classList.contains('btn-delete') && !e.target.classList.contains('drag-handle')) editCourse(key); };
         card.innerHTML = `
+                    <div class="drag-handle" title="拖曳排序" style="position:absolute; top:8px; left:8px; font-size:18px; color:#bdc3c7; cursor:grab; z-index:10; line-height:1; user-select:none;">☰</div>
                     <div class="card-thumb" style="background-image: url('${c.image}');"></div>
                     <div class="card-content">
                         <h3>[${c.grade}] ${c.subject} ${c.classType || ''}</h3>
@@ -617,6 +627,25 @@ function renderCourseList() {
                 `;
         listDiv.appendChild(card);
     });
+
+    // ★ 初始化 SortableJS（每次重新 render 都重新綁定）
+    if (window.Sortable) {
+        if (listDiv._sortable) listDiv._sortable.destroy();
+        listDiv._sortable = new Sortable(listDiv, {
+            animation: 200,
+            handle: '.drag-handle',
+            onEnd: function () {
+                const updates = {};
+                Array.from(listDiv.children).forEach((el, index) => {
+                    const id = el.dataset.id;
+                    if (id) updates[`courses/${id}/sortOrder`] = index;
+                });
+                update(ref(db), updates).then(() => {
+                    Swal.fire({ icon: 'success', title: '排序已儲存', timer: 1500, showConfirmButton: false });
+                }).catch(err => Swal.fire('錯誤', '儲存排序失敗：' + err.message, 'error'));
+            }
+        });
+    }
 }
 
 window.deleteCourse = async function (courseId, event) {
@@ -1156,6 +1185,35 @@ onValue(bannersRef, (snapshot) => {
         list.appendChild(item);
     });
 });
+
+// ★★★ 新增：取出橫幅秒數設定並更新前端選項 ★★★
+const bannerSettingsRef = ref(db, 'settings/bannerInterval');
+onValue(bannerSettingsRef, (snapshot) => {
+    const val = snapshot.val() || 5000;
+    const intervalSelect = document.getElementById('bannerIntervalSelect');
+    if (intervalSelect) {
+        intervalSelect.value = val;
+    }
+});
+
+window.saveBannerSettings = async function () {
+    const intervalSelect = document.getElementById('bannerIntervalSelect');
+    if (!intervalSelect) return;
+    const val = parseInt(intervalSelect.value, 10);
+
+    try {
+        await set(ref(db, 'settings/bannerInterval'), val);
+        Swal.fire({
+            icon: 'success',
+            title: '儲存成功！',
+            text: `首頁橫幅輪播速度已設定為 ${val / 1000} 秒。`,
+            timer: 2000,
+            showConfirmButton: false
+        });
+    } catch (err) {
+        Swal.fire('錯誤', '儲存設定失敗：' + err.message, 'error');
+    }
+}
 
 onValue(trialBannersRef, (snapshot) => {
     const data = snapshot.val() || {};
@@ -1723,6 +1781,14 @@ window.loadBill = function (index) {
     document.getElementById('billGrade').textContent = s.grade;
     document.getElementById('billSchool').textContent = s.school;
     document.getElementById('billTotal').textContent = s.total.toLocaleString();
+
+    const billType = document.getElementById('billTypeSelector') ? document.getElementById('billTypeSelector').value : 'junior';
+    const billNoteEl = document.getElementById('billNote');
+    if (billType === 'senior') {
+        billNoteEl.classList.add('high-school');
+    } else {
+        billNoteEl.classList.remove('high-school');
+    }
 
     let notes = [];
     s.items.forEach(item => {
@@ -2651,8 +2717,14 @@ window.renderTrialEventsList = function () {
 
     if (selector) {
         const oldVal = selector.value;
-        selector.innerHTML = '<option value="">-- 請選擇試聽活動 --</option>';
-        Object.keys(trialEventsConfig).forEach(id => {
+        // 依 sortOrder 排序下拉選單
+        const sortedIds = Object.keys(trialEventsConfig).sort((a, b) => {
+            const orderA = trialEventsConfig[a].sortOrder !== undefined ? trialEventsConfig[a].sortOrder : 999999;
+            const orderB = trialEventsConfig[b].sortOrder !== undefined ? trialEventsConfig[b].sortOrder : 999999;
+            return orderA - orderB;
+        });
+        selector.innerHTML = '<option value="">―― 請選擇試聽活動 ――</option>';
+        sortedIds.forEach(id => {
             const ev = trialEventsConfig[id];
             selector.innerHTML += `<option value="${id}">${ev.title || id}</option>`;
         });
@@ -2677,14 +2749,23 @@ window.renderTrialEventsList = function () {
         "closed": `<span style="color:#e74c3c; font-weight:bold;">🔴 已結束</span>`
     };
 
-    Object.keys(trialEventsConfig).forEach(eventId => {
+    // ★ 依 sortOrder 排序後再渲染
+    const sortedIds = Object.keys(trialEventsConfig).sort((a, b) => {
+        const orderA = trialEventsConfig[a].sortOrder !== undefined ? trialEventsConfig[a].sortOrder : 999999;
+        const orderB = trialEventsConfig[b].sortOrder !== undefined ? trialEventsConfig[b].sortOrder : 999999;
+        return orderA - orderB;
+    });
+
+    sortedIds.forEach(eventId => {
         const ev = trialEventsConfig[eventId];
         const sessionCount = ev.sessions ? Object.keys(ev.sessions).length : 0;
 
         let div = document.createElement('div');
         div.className = "admin-course-card";
-        div.onclick = (e) => { if (!e.target.classList.contains('btn-delete')) editEvent(eventId); };
+        div.dataset.id = eventId;
+        div.onclick = (e) => { if (!e.target.classList.contains('btn-delete') && !e.target.classList.contains('drag-handle')) editEvent(eventId); };
         div.innerHTML = `
+            <div class="drag-handle" title="拖曳排序" style="position:absolute; top:8px; left:8px; font-size:18px; color:#bdc3c7; cursor:grab; z-index:10; line-height:1; user-select:none;">☰</div>
             <div class="card-thumb" style="background-image: url('${ev.coverImage || ''}'); ${!ev.coverImage ? 'background:#bdc3c7; display:flex; align-items:center; justify-content:center;' : ''}">
                 ${!ev.coverImage ? '<span style="color:white; font-size:30px;">✨</span>' : ''}
             </div>
@@ -2701,6 +2782,25 @@ window.renderTrialEventsList = function () {
 
     if (Object.keys(trialEventsConfig).length === 0) {
         container.innerHTML = "<p style='text-align:center; width:100%; color:#95a5a6;'>目前尚未建立任何試聽活動</p>";
+    }
+
+    // ★ 初始化 SortableJS
+    if (window.Sortable) {
+        if (container._sortable) container._sortable.destroy();
+        container._sortable = new Sortable(container, {
+            animation: 200,
+            handle: '.drag-handle',
+            onEnd: function () {
+                const updates = {};
+                Array.from(container.children).forEach((el, index) => {
+                    const id = el.dataset.id;
+                    if (id) updates[`trial_events_config/${id}/sortOrder`] = index;
+                });
+                update(ref(db), updates).then(() => {
+                    Swal.fire({ icon: 'success', title: '排序已儲存 ✅', timer: 1500, showConfirmButton: false });
+                }).catch(err => Swal.fire('錯誤', '儲存排序失敗：' + err.message, 'error'));
+            }
+        });
     }
 };
 

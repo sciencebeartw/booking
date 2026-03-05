@@ -311,6 +311,22 @@ td {
     min-width: 200px;
 }
 
+/* 改善 SweetAlert2 中文換行孤字問題 */
+.swal2-html-container {
+    word-break: keep-all !important;
+    text-align: center !important;
+    justify-content: center !important;
+}
+
+/* 強制 Swal 標題置中，排除任何偏移假象 */
+.swal2-title {
+    justify-content: center !important;
+    text-align: center !important;
+    width: 100% !important;
+    padding: 0 !important;
+    margin: 0 auto !important;
+}
+
 /* Specific styling for trial sessions table inputs to prevent overflow */
 #e_sessionsContainer input,
 #e_sessionsContainer select {
@@ -793,6 +809,10 @@ tr.duplicate-row {
     background-size: contain;
     opacity: 0.25;
     z-index: -1;
+}
+
+.note-cell.high-school::before {
+    background-image: url('logo2.png') !important;
 }
 
 .row-total {

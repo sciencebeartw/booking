@@ -593,6 +593,77 @@
             display: none;
             /* Hidden until mode is selected */
         }
+
+        /* ★ 入口頁「報名/劃位須知」按鈕 */
+        .entry-rules-btn {
+            margin-top: 30px;
+            display: inline-flex;
+            align-items: center;
+            gap: 8px;
+            background: #fff8e1;
+            color: #d35400;
+            border: 2px solid #e67e22;
+            padding: 14px 32px;
+            font-size: 18px;
+            font-weight: bold;
+            border-radius: 50px;
+            cursor: pointer;
+            text-decoration: none;
+            box-shadow: 0 4px 14px rgba(230, 126, 34, 0.25);
+            transition: 0.2s;
+            animation: rulesGlow 2s ease-in-out infinite;
+        }
+
+        .entry-rules-btn:hover {
+            background: #e67e22;
+            color: white;
+            box-shadow: 0 6px 20px rgba(230, 126, 34, 0.5);
+        }
+
+        @keyframes rulesGlow {
+
+            0%,
+            100% {
+                box-shadow: 0 4px 14px rgba(230, 126, 34, 0.25);
+            }
+
+            50% {
+                box-shadow: 0 6px 22px rgba(230, 126, 34, 0.55);
+            }
+        }
+
+        /* ★ 導覽列「報名/劃位須知」連結強化 */
+        .nav-rules-link {
+            background: linear-gradient(135deg, #e67e22, #d35400);
+            color: white !important;
+            padding: 6px 14px;
+            border-radius: 20px;
+            font-weight: bold;
+            text-decoration: none;
+            font-size: 14px;
+            box-shadow: 0 2px 8px rgba(211, 84, 0, 0.4);
+            transition: 0.2s;
+        }
+
+        .nav-rules-link:hover {
+            background: linear-gradient(135deg, #d35400, #b03a00);
+        }
+
+        /* 改善 SweetAlert2 中文換行孤字問題 */
+        .swal2-html-container {
+            word-break: keep-all !important;
+            text-align: center !important;
+            justify-content: center !important;
+        }
+
+        /* 強制 Swal 標題置中，排除任何偏移假象 */
+        .swal2-title {
+            justify-content: center !important;
+            text-align: center !important;
+            width: 100% !important;
+            padding: 0 !important;
+            margin: 0 auto !important;
+        }
     </style>
 </head>
 
@@ -616,6 +687,10 @@
                 <span>國高中常規課程預約作業</span>
             </button>
         </div>
+        <!-- ★ 顕目設計的報名/劃位須知按鈕 -->
+        <a href="sop.html" target="_blank" class="entry-rules-btn">
+            📖 報名/劃位須知——請先點這裡了解重要規則！
+        </a>
     </div>
 
     <!-- Main Content Wrapped -->
@@ -630,7 +705,7 @@
                 <div class="header-right">
                     <button onclick="checkResetMode()" class="nav-link"
                         style="background:none;border:none;cursor:pointer;font-size:15px;">↩ 返回入口</button>
-                    <a id="navSopLink" href="sop.html" class="nav-link" target="_blank">📖 劃位須知</a>
+                    <a id="navSopLink" href="sop.html" class="nav-link nav-rules-link" target="_blank">📖 報名/劃位須知</a>
                     <a id="navCheckLink" href="check.html" class="nav-link">🔍 查詢結果</a>
                     <button onclick="loginAdminWithGoogle()" class="btn-admin-login" title="管理員登入">
                         <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor"
@@ -715,6 +790,37 @@
             // ★★★ 防閃爍優化：橫幅快照紀錄 ★★★
             let currentBannersStr = "";
             let currentBannerListener = null;
+            let bannerIntervalId = null;
+            let bannerIntervalMs = 5000;
+            let isHoveringCarousel = false;
+
+            // 讀取後台設定的輪播秒數
+            onValue(ref(db, 'settings/bannerInterval'), (snapshot) => {
+                bannerIntervalMs = snapshot.val() || 5000;
+                resetBannerInterval();
+            });
+
+            const carouselContainer = document.querySelector('.carousel');
+
+            // 實作 Hover 暫停
+            carouselContainer.addEventListener('mouseenter', () => {
+                isHoveringCarousel = true;
+                clearInterval(bannerIntervalId);
+            });
+            carouselContainer.addEventListener('mouseleave', () => {
+                isHoveringCarousel = false;
+                resetBannerInterval();
+            });
+
+            function resetBannerInterval() {
+                clearInterval(bannerIntervalId);
+                if (slideCount > 1 && !isHoveringCarousel) {
+                    bannerIntervalId = setInterval(() => {
+                        currentSlide = (currentSlide + 1) % slideCount;
+                        goToSlide(currentSlide);
+                    }, bannerIntervalMs);
+                }
+            }
 
             function loadBanners() {
                 if (currentBannerListener) {
@@ -749,6 +855,8 @@
                         dot.onclick = () => goToSlide(index);
                         nav.appendChild(dot);
                     });
+
+                    resetBannerInterval();
                 });
             }
 
@@ -759,12 +867,6 @@
                     dot.classList.toggle('active', i === index);
                 });
             }
-            setInterval(() => {
-                if (slideCount > 1) {
-                    currentSlide = (currentSlide + 1) % slideCount;
-                    goToSlide(currentSlide);
-                }
-            }, 5000);
 
             const courseContainer = document.getElementById('courseContainer');
             const filterContainer = document.getElementById('filterContainer');
@@ -850,6 +952,13 @@
                         processItem(rawTrialEvents[key], key, true);
                     });
                 }
+
+                // ★★★ 依後台設定的 sortOrder 排序 ★★★
+                allCourses.sort((a, b) => {
+                    const orderA = a.sortOrder !== undefined ? a.sortOrder : 999999;
+                    const orderB = b.sortOrder !== undefined ? b.sortOrder : 999999;
+                    return orderA - orderB;
+                });
 
                 if (allCourses.length === 0) {
                     courseContainer.innerHTML = '<div class="loading">目前沒有開放的課程。</div>';

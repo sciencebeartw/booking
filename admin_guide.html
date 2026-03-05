@@ -331,11 +331,14 @@
                     <li><a href="#ch3-1" class="nav-link">戰情室：劃位監控與熱更新</a></li>
                     <li><a href="#ch3-1-b" class="nav-link">戰情室：顯示姓名版圖</a></li>
                     <li><a href="#ch3-2" class="nav-link">建築師：智慧課程與座位編輯</a></li>
+                    <li><a href="#ch3-2-sort" class="nav-link">✨ NEW! 課程拖曳排序</a></li>
                     <li><a href="#ch3-3" class="nav-link">名單局：候補排序與匯出</a></li>
                     <li><a href="#ch3-4" class="nav-link">財務處：AI 學費單生成引擎</a></li>
                     <li><a href="#ch3-6" class="nav-link">✨ 試聽：活動管理庫</a></li>
                     <li><a href="#ch3-7" class="nav-link">🤖 試聽：AI 分發引擎核心</a></li>
                     <li><a href="#ch3-8" class="nav-link">📢 通知：通知發送中心 (Phase 6)</a></li>
+                    <li><a href="#ch3-8-progress" class="nav-link">✨ NEW! 一鍵發送進度横條</a></li>
+                    <li><a href="#ch3-9" class="nav-link">✨ NEW! 橫幅輪播秒數設定</a></li>
                     <li><a href="#ch3-5" class="nav-link">報表室：A4 自動縮放座位表</a></li>
                 </ul>
             </div>
@@ -343,6 +346,7 @@
                 <div class="nav-title">IV. 前台體驗與防作弊</div>
                 <ul>
                     <li><a href="#ch4-1" class="nav-link">首頁：動態雷達與隱形門</a></li>
+                    <li><a href="#ch4-1-notice" class="nav-link">✨ NEW! 入口須知按鈕變題</a></li>
                     <li><a href="#ch4-2" class="nav-link">戰場：原子鎖與防閃爍技術</a></li>
                     <li><a href="#ch4-3" class="nav-link">查詢：雙重驗證個資堡壘</a></li>
                     <li><a href="#ch4-4" class="nav-link">SOP：正式劃位防禦戰略</a></li>
@@ -598,6 +602,20 @@
                         style="color:red;">不可逆之毀滅性操作</strong>，將一併清除該課程產生的所有座位紀錄、候補名單、封存歷史與圖像連結。</li>
             </ol>
 
+            <h3 id="ch3-2-sort">🔀 ✨ NEW! 課程與試聽活動拖曳自訂順序</h3>
+            <div class="box success">
+                <div class="box-title">🔁 後台排好順序，首頁就會依序顯示！</div>
+                在「課程管理」與「試聽管理」標籤頁，各課程卡片左上角現在有一個
+                <strong>☰ 拖曳指引手柄圖示</strong>。把它拖曳至想要的位置後放手，
+                系統就會自動儲存排序並即時套用至首頁顯示順序。
+            </div>
+            <ul>
+                <li><strong>何時需要用：：</strong> 最新開下期課程想排到首頁最前面、即將開放的劃位課程讓家長一發現就看到、特定推廣活動排於畫面頂端等。</li>
+                <li><strong>操作方式：</strong> 找到要調整順序的卡片，拖曳左上角的 ☰ 圖示，拖到想要的位置後放手，即出現「排序已儲存 ✅」成功提示。</li>
+                <li><strong>新課程的預設順序：</strong> 新建立的課程沒有 sortOrder 時會迫到最後面，拖曳即可放到所需位置。</li>
+                <li><strong>備註：</strong> 此功能僅影響首頁顯示順序，與課程開放時間、劃位狀態完全無關。即便課程尚未開放，仍可現在就拖曳完成預排順序。</li>
+            </ul>
+
             <h3 id="ch3-3">📋 名單局：候補排序與匯出 (Waitlist)</h3>
             <ul>
                 <li><strong>自動排序演算法：</strong> 系統以毫秒級的精度記錄家長送出的時間，並自動計算出絕對公平的「候補序號 (Seq)」。</li>
@@ -725,7 +743,8 @@
             <h3>🔄 決策三：Stage 2 無損挪位也套用雙層排序</h3>
             <p>Stage 2 在嘗試把已分配者移往其他組合時，同樣套用「同天優先 → 瓶頸大優先」的排序，確保 AI
                 挪位不會把人從同天（大紅路線）挪到拆天（跨兩天上課）的劣等組合。挪位者的志願選項（<code>both_any</code> / <code>both_day1</code> /
-                <code>both_day2</code>）也會嚴格限制，絕對不會違反家長原本的意願填寫。</p>
+                <code>both_day2</code>）也會嚴格限制，絕對不會違反家長原本的意願填寫。
+            </p>
 
             <div class="box magic">
                 <div class="box-title">🏆 終極版演算法全景圖</div>
@@ -753,6 +772,29 @@
                 <li><strong>📋 人工複製備用：</strong> 若因家長未綁定而發送失敗，每個名單後方仍保有傳統的「複製」按鈕，行政老師只需在此點一下，切換到一般 LINE 視窗手動貼上即可。</li>
             </ul>
 
+            <h3 id="ch3-8-progress">📊 ✨ NEW! 一鍵發送進度橫條 (Phase 7 升級)</h3>
+            <div class="box tech">
+                <div class="box-title">🚀 不再盲目點下去，進度和失敗名單一目瞭然！</div>
+                點擊「🚀 一鍵全數傳送」後，畫面會顯示一條動態變色的進度條。傳送完成後會自動列出「發送失敗」的家長名單，方便行政小組進行人工追蹤處理。
+            </div>
+            <ul>
+                <li><strong>失敗名單功能：</strong> 發送完成後，畫面自動列出所有「發送失敗」的家長名單。失敗原因可能包含：家長未綁定 LINE、LINE ID 查無此人或家長封鎖等。</li>
+                <li><strong>數字判讀方式：</strong> 進度條的數字計算式為「已完成 / 總人數」，請以<strong>完成後顯示的實際傳送人數</strong>為準。</li>
+                <li><strong>傳送中請勿關閉頁面：</strong> 傳送進行中請勿關閉或重整頁面，否則實際可能已傳出，但畫面進度將無法即時同步更新。</li>
+            </ul>
+
+            <h3 id="ch3-9">⏱️ ✨ NEW! 首頁橫幅輪播秒數設定</h3>
+            <div class="box success">
+                <div class="box-title">🎬 橫幅停太快還是停太慢？自己調！</div>
+                後台「橫幅管理」標籤頁內，新增「⏱️ 首頁橫幅停留秒數設定」區塊，
+                可自行選擇 3 秒 – 10 秒。存入 Firebase 後，首頁<strong>不需重整即可生效</strong>。
+            </div>
+            <ul>
+                <li><strong>滑鼠暫停 (Pause on Hover)：</strong>
+                    家長將滑鼠移到橫幅上方時，輪播會自動暫停；滑鼠從橫幅移開後繼續輪播。有效防止家長因為橫幅自動切換而錯失重要資訊的尷尬情況。</li>
+                <li><strong>建議設定：</strong> 橫幅張數少（2–3 張）時建議用 5–7 秒；張數多（5 張以上）時建議用 4–5 秒，防止家長等待過久或來不及看完。</li>
+            </ul>
+
             <h3 id="ch3-5">🖨️ 報表室：A4 自動縮放座位表 (Print)</h3>
             <p>專為現場印發表單設計的獨立模組，與前台線上劃位資料<strong>絕對隔離</strong>，保障安全。</p>
             <ul>
@@ -776,6 +818,22 @@
                         (Whitelist)</strong>。非名單內的帳號即使有點擊權限也無法進入系統，實現了「看得到、點得到、但絕對進不去」的金融級防護。</li>
                 <li><span class="tag">即時燈號技術</span>六段式精準燈號（尚未開放/開放中/額滿/整理中/候補中/已結束），每秒自動刷新，完全不需按 F5。</li>
             </ul>
+
+            <h3 id="ch4-1-notice">📖 ✨ NEW! 入口頁「報名/劃位須知」顯眼化</h3>
+            <div class="box warning">
+                <div class="box-title">👁️ 發現問題：部分家長會忽略上方導覽列的須知，直接進入劃位......</div>
+                為了解決須知點閱率不足的問題，我們對入口畫面做了兩個重要升級：
+            </div>
+            <ol>
+                <li><strong>預先選擇頁加入「📖 報名/劃位須知」大型按鈕：</strong> 在「選擇正式課程劃位 / 報名試聽活動」兩大按鈕下方，新增一個具備動態發光效果的大型橙色按鈕（連結至
+                    sop.html）。家長在進入劃位系統前會先看到這個醒目的提醒。</li>
+                <li><strong>頂部導覽列按鈕樣式優化：</strong> 進入課程首頁後，右上角導覽列的「📖
+                    報名/劃位須知」已調整為「橘色脈衝膠囊」樣式，更具點擊吸引力，讓家長在劃位過程中隨時能回頭查閱。</li>
+            </ol>
+            <div class="box warning" style="border-left-color:#2ecc71; background:#e8f6f3;">
+                <div class="box-title" style="color:#1a7a4a;">💡 操作提醒：按鈕為引導性質，不具強制跳轉功能</div>
+                須知按鈕為導引性設計，家長仍可正常按原路徑進入劃位。我們不建議將其設為強制完讀，以免增加報名的摩擦力並影響家長的使用體驗。
+            </div>
 
             <h3 id="ch4-2">⚔️ 劃位戰場：原子鎖與防閃爍技術 (booking.html)</h3>
             <div class="box tech">

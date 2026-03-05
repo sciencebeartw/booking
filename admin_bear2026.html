@@ -25,6 +25,10 @@
             document.body.appendChild(errDiv);
         });
     </script>
+    <!-- SortableJS：拖曳排序 -->
+    <script src="https://cdn.jsdelivr.net/npm/sortablejs@1.15.3/Sortable.min.js"></script>
+    <!-- SweetAlert2：彈窗提示 -->
+    <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
 </head>
 
 <body>
@@ -659,6 +663,25 @@
                     style="margin: 0; height: 42px; box-sizing: border-box; display: inline-flex; align-items: center; justify-content: center; padding: 0 20px; font-size: 16px; cursor: pointer; border: none; border-radius: 5px; font-weight: bold; transition: 0.2s; background-color: #3498db; color: white; text-decoration: none;">🎨
                     開啟橫幅產生器</a>
             </div>
+
+            <!-- 新增：進階設定 - 橫幅秒數 -->
+            <div
+                style="margin-top: 20px; background: #fff; padding: 15px; border-radius: 8px; border: 1px solid #eee; display: flex; align-items: center; justify-content: center; gap: 15px;">
+                <label style="font-weight: bold; color: #34495e;">⏱️ 首頁橫幅停留秒數設定：</label>
+                <select id="bannerIntervalSelect" class="swal2-select"
+                    style="margin: 0; padding: 5px 10px; font-size: 14px; border-radius: 5px;">
+                    <option value="3000">3 秒 (偏快)</option>
+                    <option value="4000">4 秒</option>
+                    <option value="5000">5 秒 (系統預設值)</option>
+                    <option value="6000">6 秒</option>
+                    <option value="7000">7 秒</option>
+                    <option value="8000">8 秒 (偏慢)</option>
+                    <option value="10000">10 秒</option>
+                </select>
+                <button onclick="saveBannerSettings()" class="success" style="padding: 5px 15px; margin: 0;">💾
+                    儲存設定</button>
+            </div>
+
             <div id="bannerStatus" style="margin-top: 10px;"></div>
         </div>
         <div id="bannerList" class="banner-list" style="margin-bottom: 40px;"></div>

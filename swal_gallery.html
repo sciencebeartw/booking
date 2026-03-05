@@ -1,0 +1,185 @@
+<!DOCTYPE html>
+<html lang="zh-TW">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Swal 視窗全覽 (真實預覽版)</title>
+    <!-- 引入 SweetAlert2 -->
+    <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
+    <style>
+        body {
+            font-family: "Microsoft JhengHei", sans-serif;
+            background: #f0f2f5;
+            margin: 0;
+            padding: 20px;
+            text-align: center;
+        }
+
+        h1 {
+            color: #333;
+            margin-bottom: 20px;
+        }
+
+        .intro {
+            font-size: 16px;
+            color: #555;
+            margin-bottom: 30px;
+            background: #fff;
+            padding: 15px;
+            border-radius: 8px;
+            display: inline-block;
+            box-shadow: 0 2px 10px rgba(0, 0, 0, 0.05);
+        }
+
+        .btn-group {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 15px;
+            justify-content: center;
+            max-width: 1000px;
+            margin: 0 auto;
+            margin-bottom: 20px;
+        }
+
+        button {
+            background-color: #4a90e2;
+            color: white;
+            border: none;
+            padding: 12px 24px;
+            font-size: 16px;
+            border-radius: 6px;
+            cursor: pointer;
+            transition: all 0.2s;
+            box-shadow: 0 2px 5px rgba(0, 0, 0, 0.1);
+            font-family: "Microsoft JhengHei", sans-serif;
+        }
+
+        button:hover {
+            background-color: #357abd;
+            transform: translateY(-2px);
+            box-shadow: 0 4px 8px rgba(0, 0, 0, 0.15);
+        }
+
+        h2 {
+            margin-top: 40px;
+            color: #444;
+            width: 100%;
+            border-bottom: 2px solid #ddd;
+            padding-bottom: 10px;
+            max-width: 1000px;
+            margin-left: auto;
+            margin-right: auto;
+        }
+
+        .swal2-html-container {
+            word-break: keep-all !important;
+            text-align: center !important;
+            justify-content: center !important;
+        }
+
+        .swal2-title {
+            justify-content: center !important;
+            text-align: center !important;
+            width: 100% !important;
+            padding: 0 !important;
+            margin: 0 auto !important;
+        }
+    </style>
+</head>
+
+<body>
+
+    <h1>✨ Swal 真實動畫視窗預覽室 (終極完整版 v5)</h1>
+
+    <div class="intro">
+        點擊下方的任何一顆按鈕，就會在螢幕正中央彈出真正的「動畫視窗」，這跟家長實際在手機上看到的效果 100% 完全一樣！<br>
+        <strong style="color:#d35400;">(包含全部報名/候補模式、防呆與例外通知，所有的設計均反映您的最新要求)</strong>
+    </div>
+
+    <h2>主要成功與登記視窗 (4種模式)</h2>
+    <div class="btn-group">
+        <button style="background-color:#2ecc71;" onclick="
+            Swal.fire({
+                icon: 'success',
+                title: '劃位成功',
+                html: '<div style=\'text-align:center; background:#f4f6f7; padding:20px; border-radius:10px; margin-top:15px;\'><p style=\'font-size:18px; color:#555; margin-bottom:12px;\'>訂單編號：<strong style=\'color:#2c3e50;\'>123456</strong></p><p style=\'font-size:20px; color:#555; margin-bottom:5px;\'>您的座位：</p><p style=\'font-size:36px; font-weight:bold; color:#e67e22; margin:0 0 15px 0; letter-spacing:2px;\'>A10</p><p style=\'font-size:16px; color:#555; margin-bottom:5px;\'>系統已成功記錄您的報名資料。</p><p style=\'font-size:16px; color:#555; margin-bottom:15px;\'>我們將透過 Line 官方帳號發送「正式通知」。</p><p style=\'font-size:14px; color:#c0392b; font-weight:bold; margin-bottom:15px;\'>若尚未加官方 LINE，請點擊右下角Line圖示加入並建檔。<br>註：國中小點綠色「<span style=\'color:#27ae60;\'>山熊科學</span>」圖示、高中點藍色「<span style=\'color:#2980b9;\'>山熊升大</span>」圖示</p><p style=\'font-size:20px; text-align:center; color:#c0392b; font-weight:bold; margin-bottom:0; background:#fff3cd; padding:8px 12px; border-radius:8px; border:2px dashed #e67e22;\'>📸 請務必「截圖」留存此畫面！</p></div>',
+                confirmButtonText: '✅ 確定關閉並已截圖',
+                confirmButtonColor: '#2ecc71',
+                allowOutsideClick: false
+            })
+        ">1. 正式劃位成功</button>
+
+        <button style="background-color:#27ae60;" onclick="
+            Swal.fire({
+                icon: 'success',
+                title: '報名成功',
+                html: '<div style=\'text-align:center; background:#f4f6f7; padding:15px; border-radius:10px; margin-top:15px;\'><p style=\'font-size:16px; color:#555; margin-bottom:5px;\'>您的報名時間為：</p><p style=\'font-size:20px; font-weight:bold; color:#c0392b; margin-top:0; margin-bottom:15px;\'>2026 / 03 / 06 01:23:45.678</p><p style=\'font-size:16px; color:#555; margin-bottom:15px;\'>系統已成功記錄您的報名資料。</p><p style=\'font-size:16px; color:#555; margin-bottom:15px;\'>報名結果我們將透過 Line 官方帳號發送「正式通知」。</p><p style=\'font-size:14px; color:#c0392b; font-weight:bold; margin-bottom:15px;\'>若尚未加官方 LINE<br>請點擊右下角綠色「<span style=\'color:#27ae60;\'>山熊科學</span>」圖示加入並建檔。</p><p style=\'font-size:20px; text-align:center; color:#c0392b; font-weight:bold; margin-bottom:0; background:#fff3cd; padding:8px 12px; border-radius:8px; border:2px dashed #e67e22;\'>📸 請務必「截圖」留存此畫面！</p></div>',
+                confirmButtonText: '✅ 關閉返回',
+                confirmButtonColor: '#2ecc71',
+                allowOutsideClick: false
+            })
+        ">2. 單場次模式 (報名成功)</button>
+
+        <button style="background-color:#2980b9;" onclick="
+            Swal.fire({
+                icon: 'success',
+                title: '報名成功',
+                html: '<div style=\'text-align:center; background:#f4f6f7; padding:15px; border-radius:10px; margin-top:15px;\'><p style=\'font-size:16px; color:#555; margin-bottom:5px;\'>您的報名時間為：</p><p style=\'font-size:20px; font-weight:bold; color:#c0392b; margin-top:0; margin-bottom:15px;\'>2026 / 03 / 06 01:23:45.678</p><p style=\'font-size:16px; color:#555; margin-bottom:15px;\'>系統已成功記錄您的報名資料。我們將以此進行分發。</p><p style=\'font-size:16px; color:#555; margin-bottom:15px;\'>分發結果我們將透過 Line 官方帳號發送「正式通知」。</p><p style=\'font-size:14px; color:#c0392b; font-weight:bold; margin-bottom:15px;\'>若尚未加官方 LINE<br>請點擊右下角綠色「<span style=\'color:#27ae60;\'>山熊科學</span>」圖示加入並建檔。</p><p style=\'font-size:20px; text-align:center; color:#c0392b; font-weight:bold; margin-bottom:0; background:#fff3cd; padding:8px 12px; border-radius:8px; border:2px dashed #e67e22;\'>📸 請務必「截圖」留存此畫面！</p></div>',
+                confirmButtonText: '✅ 關閉返回',
+                confirmButtonColor: '#2ecc71',
+                allowOutsideClick: false
+            })
+        ">3. 多梯次 / 雙科配課 (報名成功)</button>
+
+        <button id="btnSwalWAIT" style="background-color:#f39c12;">4. 純候補模式 (候補登記成功)</button>
+        <button id="btnSwalWAITPartial" style="background-color:#d35400;">4.5 純候補 (部分成功部分額滿)</button>
+    </div>
+
+    <h2>例外防呆與警告視窗</h2>
+    <div class="btn-group">
+        <button style="background-color:#5bc0de;" onclick="
+            Swal.fire({ icon: 'info', title: '已取消保留。' })
+        ">📌 已取消保留 (Info)</button>
+
+        <button style="background-color:#f39c12;" onclick="
+            Swal.fire({ icon: 'warning', title: '慢了一步！' })
+        ">⏳ 慢了一步 (Warning - 劃位)</button>
+
+        <button style="background-color:#e74c3c;" onclick="
+            Swal.fire({ icon: 'error', title: '慢了一步', html: '<p>您選擇的班級候補名額皆已被搶空！<br>請重新選擇其他班級試試看。</p>', confirmButtonText: '重新選擇' })
+        ">慢了一步 (Error - 純候補)</button>
+
+        <button style="background-color:#c0392b;" onclick="
+            Swal.fire({ icon: 'error', title: '無效的課程連結！' })
+        ">🚫 無效的課程連結</button>
+
+        <button style="background-color:#8e44ad;" onclick="
+            Swal.fire({ icon: 'error', title: '系統偵測到異常操作。' })
+        ">🛡️ 系統偵測到異常操作</button>
+    </div>
+
+    <script>
+        document.addEventListener('DOMContentLoaded', () => {
+            document.getElementById('btnSwalWAIT').addEventListener('click', () => {
+                Swal.fire({
+                    html: '<div style=\'text-align:center; background:#f4f6f7; padding:15px; border-radius:10px; margin-top:15px; font-size:16px;\'><p style=\'font-size:20px; font-weight:bold; color:#e67e22; margin-bottom:15px;\'>候補登記成功</p><p style=\'font-size:16px; color:#555; margin-bottom:5px;\'>您的報名時間為：</p><p style=\'font-size:20px; font-weight:bold; color:#c0392b; margin-top:0; margin-bottom:15px;\'>2026 / 03 / 06 01:23:45.678</p><p style=\'font-size:16px; color:#555; margin-bottom:15px;\'>系統已成功記錄您的報名資料。</p><p style=\'font-size:16px; color:#555; margin-bottom:10px;\'>您本次的候補班級：</p><div style=\'margin-bottom:10px;\'><div style=\'display:inline-block; font-size:18px; font-weight:bold; color:#fff; background:#e67e22; padding:8px 18px; border-radius:25px; margin:4px; box-shadow:0 2px 5px rgba(230,126,34,0.3);\'>國二物理進階班</div></div><div style=\'font-size:14px; color:#7f8c8d; background:#fff; padding:10px; border-radius:8px; display:inline-block; margin-bottom:15px; border:1px solid #e0e0e0; line-height:1.5;\'>注意：候補班級目前皆已額滿有候補。<br>本次會依序加入原候補序列後方。</div><p style=\'font-size:16px; color:#555; margin-bottom:15px;\'>候補序號我們將透過 Line 官方帳號發送「正式通知」。</p><p style=\'font-size:14px; color:#c0392b; font-weight:bold; margin-bottom:15px;\'>若尚未加官方 LINE<br>請點擊右下角綠色「<span style=\'color:#27ae60;\'>山熊科學</span>」圖示加入並建檔。</p><p style=\'font-size:20px; text-align:center; color:#c0392b; font-weight:bold; margin-bottom:0; background:#fff3cd; padding:8px 12px; border-radius:8px; border:2px dashed #e67e22;\'>📸 請務必「截圖」留存此畫面！</p></div>',
+                    confirmButtonText: '✅ 關閉返回',
+                    confirmButtonColor: '#2ecc71',
+                    allowOutsideClick: false
+                })
+            });
+
+            document.getElementById('btnSwalWAITPartial').addEventListener('click', () => {
+                Swal.fire({
+                    html: '<div style=\'text-align:center; background:#f4f6f7; padding:15px; border-radius:10px; margin-top:15px; font-size:16px;\'><p style=\'font-size:20px; font-weight:bold; color:#e67e22; margin-bottom:15px;\'>候補登記成功</p><p style=\'font-size:16px; color:#555; margin-bottom:5px;\'>您的報名時間為：</p><p style=\'font-size:20px; font-weight:bold; color:#c0392b; margin-top:0; margin-bottom:15px;\'>2026 / 03 / 06 01:23:45.678</p><p style=\'font-size:16px; color:#555; margin-bottom:15px;\'>系統已成功記錄您的報名資料。</p><p style=\'font-size:16px; color:#555; margin-bottom:10px;\'>您本次的候補班級：</p><div style=\'margin-bottom:10px;\'><div style=\'display:inline-block; font-size:18px; font-weight:bold; color:#fff; background:#e67e22; padding:8px 18px; border-radius:25px; margin:4px; box-shadow:0 2px 5px rgba(230,126,34,0.3);\'>國二物理進階班</div></div><div style=\'font-size:14px; color:#7f8c8d; background:#fff; padding:10px; border-radius:8px; display:inline-block; margin-bottom:15px; border:1px solid #e0e0e0; line-height:1.5;\'>注意：候補班級目前皆已額滿有候補。<br>本次會依序加入原候補序列後方。</div><div style=\'margin-top:15px; padding-top:20px; border-top:1px dashed #ccc; margin-bottom:15px;\'><p style=\'font-size:15px; font-weight:bold; color:#7f8c8d; margin-bottom:12px;\'>以下班級連候補都已額滿，未能成功排入：</p><div style=\'display:inline-block; font-size:15px; color:#95a5a6; background:#eee; padding:6px 16px; border-radius:25px; margin:4px; text-decoration:line-through;\'>國一生物超修班</div></div><p style=\'font-size:16px; color:#555; margin-bottom:15px;\'>候補序號我們將透過 Line 官方帳號發送「正式通知」。</p><p style=\'font-size:14px; color:#c0392b; font-weight:bold; margin-bottom:15px;\'>若尚未加官方 LINE<br>請點擊右下角綠色「<span style=\'color:#27ae60;\'>山熊科學</span>」圖示加入並建檔。</p><p style=\'font-size:20px; text-align:center; color:#c0392b; font-weight:bold; margin-bottom:0; background:#fff3cd; padding:8px 12px; border-radius:8px; border:2px dashed #e67e22;\'>📸 請務必「截圖」留存此畫面！</p></div>',
+                    confirmButtonText: '✅ 關閉返回',
+                    confirmButtonColor: '#2ecc71',
+                    allowOutsideClick: false
+                })
+            });
+        });
+    </script>
+</body>
+
+</html>
