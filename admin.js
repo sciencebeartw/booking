@@ -96,12 +96,13 @@ let gasWebhookUrl = ""; // 用於發送 LINE 通知
 // ==========================================
 const HTML_TPL_REGULAR = `
 <div style="background-color: #fdf2e9; padding: 20px; border-radius: 10px; border-left: 5px solid #e74c3c; margin-bottom: 20px;">
-<h3 style="color: #c0392b; margin-top: 0; font-size: 20px;">🚨 劃位防護與公平機制 (必讀)</h3>
+<h3 style="color: #c0392b; margin-top: 0; font-size: 20px;">🚨 系統安檢與防禦機制 (必讀)</h3>
 <ul style="color: #333; line-height: 1.8; font-size: 16px;">
 <li><strong>90 秒專屬鎖定</strong>：點擊座位後，系統會為您保留 <strong>90 秒</strong>。尖峰時刻極易觸發 Google 圖片驗證，請保持冷靜作答，90 秒絕對充裕！</li>
-<li><strong style="color: #e74c3c;">降低圖片驗證機率之訣竅</strong>：請關閉「無痕模式」與「廣告攔截器 (AdBlock)」。若身處公司或社區大樓，建議暫時關閉 WiFi，<strong>改用個人 4G/5G 行動網路</strong>，可大幅降低被 Google 判定為機器人的機率。</li>
-<li><strong>嚴禁重複劃位</strong>：同一學生僅能佔用一個座位，系統若偵測到異常重複佔位，將<span style="background-color: #ffcccc; color: red; padding: 2px 5px; border-radius: 3px;">直接取消第二個以上的座位</span>。</li>
-<li><strong style="color: #d35400;">家有多寶必看（物理分流）</strong>：同一裝置同時僅能佔用一席。若需搶兩個班級，請務必<strong>使用不同裝置，由家人分頭進行！</strong></li>
+<li><strong style="color: #e74c3c;">🚫 絕對避開 LINE 內建瀏覽器</strong>：在 LINE 聊天室直接點開網址，極容易被 Google 判定為機器人而瘋狂跳出圖片驗證！請務必點擊選單<strong>「以 Safari 或 Chrome (預設瀏覽器) 開啟」</strong>。</li>
+<li><strong>降低圖片驗證機率之訣竅</strong>：請關閉「無痕模式」與廣告攔截器。劃位時建議暫時關閉 WiFi，<strong>改用個人 4G/5G 行動網路</strong>，可提升順暢度。</li>
+<li><strong>嚴禁重複劃位</strong>：當日若不慎重複劃位，系統將<span style="background-color: #ffcccc; color: red; padding: 2px 5px; border-radius: 3px;">直接無效化第二個以上的座位</span>。</li>
+<li><strong style="color: #d35400;">家有多寶必看（物理分流）</strong>：同一裝置同時僅能保留一席。若需搶兩個班，請務必<strong>使用不同裝置，由家人分頭進行！</strong></li>
 </ul>
 </div>
 <h3 style="color: #2c3e50; border-bottom: 2px dashed #bdc3c7; padding-bottom: 8px;">📝 報名資料填寫規範</h3>
@@ -119,9 +120,10 @@ const HTML_TPL_REGULAR = `
 
 const HTML_TPL_TRIAL_BASE = `
 <div style="background-color: #fdf2e9; padding: 20px; border-radius: 10px; border-left: 5px solid #e74c3c; margin-bottom: 20px;">
-<h3 style="color: #c0392b; margin-top: 0; font-size: 20px;">🚨 系統安檢與防護機制 (必讀)</h3>
+<h3 style="color: #c0392b; margin-top: 0; font-size: 20px;">🚨 系統安檢與防禦機制 (必讀)</h3>
 <ul style="color: #333; line-height: 1.8; font-size: 16px;">
-<li><strong style="color: #e74c3c;">降低驗證卡關訣竅</strong>：尖峰時刻極易觸發 Google 圖片驗證。請關閉「無痕模式」與「廣告攔截器 (AdBlock)」。建議暫時關閉 WiFi，<strong>改用個人 4G/5G 行動網路</strong>，可大幅提升送出速度。</li>
+<li><strong style="color: #e74c3c;">🚫 絕對避開 LINE 內建瀏覽器</strong>：在 LINE 聊天室直接點開網址，極容易被 Google 判定為機器人而瘋狂跳出圖片驗證！請務必點擊選單<strong>「以 Safari 或 Chrome (預設瀏覽器) 開啟」</strong>。</li>
+<li><strong>降低圖片驗證機率之訣竅</strong>：請關閉「無痕模式」與廣告攔截器。劃位時建議暫時關閉 WiFi，<strong>改用個人 4G/5G 行動網路</strong>，可提升順暢度。</li>
 <li><strong>90秒預先入場</strong>：強烈建議在開放前 90 秒先進入網頁填寫基本資料，時間一到直接按下送出。</li>
 </ul>
 </div>
