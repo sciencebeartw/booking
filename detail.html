@@ -146,7 +146,9 @@
             font-weight: bold;
             color: #d35400;
             font-family: monospace;
-            white-space: nowrap;
+            white-space: normal;
+            /* Allow wrap */
+            word-break: break-all;
         }
 
         .btn-action {
@@ -793,12 +795,38 @@
                 }
                 timeLabels.innerHTML = ''; // 清空原欄位
             } else {
-                if (hasStart2) {
-                    html += `<div class="info-item"><strong>🔥 一階開放:</strong> ${start1Obj ? start1Obj.toLocaleString() : '未設定'}</div>`;
-                    html += `<div class="info-item"><strong>🔥 二階開放:</strong> ${start2Obj ? start2Obj.toLocaleString() : '未設定'}</div>`;
-                } else {
-                    html += `<div class="info-item"><strong>🔥 劃位開放:</strong> ${start1Obj ? start1Obj.toLocaleString() : '未設定'}</div>`;
-                }
+                // 顯示梯次時間資訊
+                const fmtDt = (dtStr) => {
+                    if (!dtStr) return null;
+                    let d = new Date(dtStr);
+                    if (isNaN(d.getTime())) d = new Date(dtStr.replace('T', ' ').replace(/-/g, '/'));
+                    if (isNaN(d.getTime())) return null;
+                    return d.toLocaleString('zh-TW', { month: 'numeric', day: 'numeric', hour: '2-digit', minute: '2-digit' });
+                };
+
+                const phases = [
+                    { label: '第一梯次', start1: c.start1, end1: c.end1, start2: c.start2, end2: c.end2, text: null },
+                    { label: '第二梯次', start1: c.t2_start1, end1: c.t2_end1, start2: c.t2_start2, end2: c.t2_end2, text: c.phase2Text || null },
+                    { label: '第三梯次', start1: c.t3_start1, end1: c.t3_end1, start2: c.t3_start2, end2: c.t3_end2, text: c.phase3Text || null }
+                ];
+
+                phases.forEach((p, i) => {
+                    if (i === 0 && !p.start1) return;
+                    if (i > 0 && !p.start1) return;
+
+                    const s1 = fmtDt(p.start1);
+                    const s2 = fmtDt(p.start2);
+                    if (!s1) return;
+
+                    const phaseColor = ['#2980b9', '#e67e22', '#e74c3c'][i];
+                    html += `<div class="info-item" style="margin-bottom:8px;">`;
+                    html += `<strong style="color:${phaseColor}">📅 ${p.label}</strong>`;
+                    if (p.text) html += ` <span style="font-size:12px; color:#888;">(${p.text})</span>`;
+                    html += `<div style="font-size:13px; padding-left:12px; margin-top:3px;">`;
+                    html += `🕖 一階開放：${s1}`;
+                    if (s2) html += ` &nbsp;|&nbsp; 🕖 二階開放：${s2}`;
+                    html += `</div></div>`;
+                });
             }
             timeLabels.innerHTML = html;
 
@@ -874,104 +902,159 @@
                 if (!dateStr) return 9999999999999;
                 let d = new Date(dateStr);
                 if (isNaN(d.getTime())) {
-                    // Try to parse 'YYYY-MM-DDTHH:mm' which some older browsers might struggle with directly
                     d = new Date(dateStr.replace('T', ' ').replace(/-/g, '/'));
                 }
-                return d.getTime();
+                return isNaN(d.getTime()) ? 9999999999999 : d.getTime();
             };
 
-            const start1 = parseDate(c.start1);
-            const effectiveStart1 = c.isTrialEvent ? start1 - (parseInt(c.earlyAccessSec) || 0) * 1000 : start1;
+            // Build array of phases [ {s1,e1,s2,e2,label,isFinal}, ... ]
+            const INF = 9999999999999;
+            const phases = [];
 
-            const end1 = (c.isTrialEvent && c.closeTime) ? parseDate(c.closeTime) : (c.end1 ? parseDate(c.end1) : 9999999999999);
-            const start2 = c.start2 ? parseDate(c.start2) : 9999999999999;
-            const end2 = c.end2 ? parseDate(c.end2) : 9999999999999;
+            if (!c.isTrialEvent) {
+                const p1 = { s1: parseDate(c.start1), e1: parseDate(c.end1), s2: parseDate(c.start2), e2: parseDate(c.end2) };
+                phases.push(p1);
+                if (c.t2_start1) {
+                    const p2 = { s1: parseDate(c.t2_start1), e1: parseDate(c.t2_end1), s2: parseDate(c.t2_start2), e2: parseDate(c.t2_end2) };
+                    if (p2.s1 < INF) phases.push(p2);
+                }
+                if (c.t3_start1) {
+                    const p3 = { s1: parseDate(c.t3_start1), e1: parseDate(c.t3_end1), s2: parseDate(c.t3_start2), e2: parseDate(c.t3_end2) };
+                    if (p3.s1 < INF) phases.push(p3);
+                }
+                // Mark the final phase
+                if (phases.length > 0) phases[phases.length - 1].isFinal = true;
+            }
 
-            const hasStart2 = c.start2 && parseDate(c.start2) < 253402300799999; // < year 9999
+            // For trial events — simple start/end
+            const trialStart = parseDate(c.start1);
+            const trialEarlyStart = c.isTrialEvent ? trialStart - (parseInt(c.earlyAccessSec) || 0) * 1000 : trialStart;
+            const trialEnd = (c.isTrialEvent && c.closeTime) ? parseDate(c.closeTime) : parseDate(c.end1);
+
+            let isWaitlistOnlyFull = false;
 
             function update() {
-                // ★★★ 導入伺服器時間校準 ★★★
+                // ★ Uses live serverTimeOffset from onValue listener
                 const now = Date.now() + serverTimeOffset;
 
-                // For display, always countdown to true start1
-                const displayDiff = start1 - now;
-
-                // ★★★ 純候補模式：檢查是否所有場次都已額滿 ★★★
-                let isWaitlistOnlyFull = false;
-                if (c.isTrialEvent && c.type === 'waitlist_only' && c.sessions) {
-                    let allFull = true;
-                    let hasAny = false;
-                    for (let key in c.sessions) {
-                        hasAny = true;
-                        const s = c.sessions[key];
-                        const cap = s.capacity || 0;
-                        const cur = s.currentWaitlistCount || 0;
-                        if (cur < cap) { allFull = false; break; }
+                // ── Trial events (simple) ──
+                if (c.isTrialEvent) {
+                    // check waitlist_only full
+                    if (c.type === 'waitlist_only' && c.sessions) {
+                        let allFull = true, hasAny = false;
+                        for (let key in c.sessions) {
+                            hasAny = true;
+                            const s = c.sessions[key];
+                            if ((s.currentWaitlistCount || 0) < (s.capacity || 0)) { allFull = false; break; }
+                        }
+                        isWaitlistOnlyFull = hasAny && allFull;
                     }
-                    if (hasAny && allFull) isWaitlistOnlyFull = true;
+
+                    if (now < trialEarlyStart) {
+                        timerLabel.textContent = "距離開放還有";
+                        timerText.textContent = formatTime(trialStart - now);
+                        btn.textContent = "尚未開放"; btn.className = "btn-action btn-disabled";
+                    } else if (now >= trialEarlyStart && now < trialEnd) {
+                        timerLabel.textContent = "🔥 目前狀態";
+                        if (now < trialStart) {
+                            timerText.innerHTML = `即將開放<br><span style="font-size:32px;">${formatTime(trialStart - now)}</span>`;
+                        } else {
+                            timerText.textContent = "開放報名中";
+                        }
+                        if (isWaitlistOnlyFull) {
+                            timerLabel.textContent = "⛔ 目前狀態";
+                            timerText.textContent = "所有班級候補均已額滿";
+                            btn.textContent = "🔴 候補已額滿"; btn.className = "btn-action btn-disabled";
+                            btn.href = '#'; btn.onclick = null;
+                        } else {
+                            btn.textContent = "前往報名 ➜"; btn.className = "btn-action btn-active";
+                            btn.href = '#';
+                            btn.setAttribute('data-trial-id', c.id);
+                            btn.onclick = function (e) {
+                                e.preventDefault();
+                                window._pendingTrialEventId = c.id;
+                                document.getElementById('recaptchaModal').style.display = 'flex';
+                            };
+                        }
+                    } else {
+                        timerLabel.textContent = "⛔ 狀態";
+                        timerText.textContent = "報名已結束";
+                        btn.textContent = "已截止"; btn.className = "btn-action btn-disabled";
+                    }
+                    return;
                 }
 
-                if (now < effectiveStart1) {
+                // ── Regular multi-phase courses ──
+                if (phases.length === 0) {
+                    timerText.textContent = "未設定開放時間"; return;
+                }
+
+                const start1 = phases[0].s1;
+
+                if (now < start1) {
                     timerLabel.textContent = "距離開放還有";
-                    timerText.textContent = formatTime(displayDiff);
-                    btn.textContent = "尚未開放";
-                    btn.className = "btn-action btn-disabled";
+                    timerText.innerHTML = `<span style="font-size:32px;">${formatTime(start1 - now)}</span>`;
+                    btn.textContent = "尚未開放"; btn.className = "btn-action btn-disabled";
+                    return;
                 }
-                else if (now >= effectiveStart1 && now < end1) {
-                    timerLabel.textContent = "🔥 目前狀態";
-                    if (now < start1) {
-                        // Still waiting for true start time, but button is ready
-                        timerText.textContent = `即將${c.isTrialEvent ? '開放報名' : '開放'} (${formatTime(displayDiff)})`;
-                    } else {
-                        timerText.textContent = c.isTrialEvent ? "開放報名中" : "開放劃位中";
+
+                // Find the active phase/stage
+                for (let i = 0; i < phases.length; i++) {
+                    const p = phases[i];
+                    const isLastPhase = !!p.isFinal;
+                    const nextPhase = phases[i + 1] || null;
+
+                    // Stage 1 open
+                    if (now >= p.s1 && now < p.e1) {
+                        timerLabel.textContent = "🔥 目前狀態";
+                        const stageLabel = phases.length > 1 ? `第 ${i + 1} 梯次 一階開放中` : "第一階段開放中";
+                        timerText.textContent = stageLabel;
+                        btn.textContent = "前往劃位 ➜"; btn.className = "btn-action btn-active";
+                        btn.href = `booking.html?class=${c.id}`;
+                        return;
                     }
 
-                    if (c.isTrialEvent && isWaitlistOnlyFull) {
-                        // 純候補但全部滿了
-                        timerLabel.textContent = "⛔ 目前狀態";
-                        timerText.textContent = "所有班級候補均已額滿";
-                        btn.textContent = "🔴 候補已額滿";
-                        btn.className = "btn-action btn-disabled";
-                        btn.href = '#';
-                        btn.onclick = null;
-                    } else if (c.isTrialEvent) {
-                        btn.textContent = "前往報名 ➜";
-                        btn.className = "btn-action btn-active";
-                        // 改為觸發彈窗驗證，不直接跳轉
-                        btn.href = '#';
-                        btn.setAttribute('data-trial-id', c.id);
-                        btn.onclick = function (e) {
-                            e.preventDefault();
-                            window._pendingTrialEventId = c.id;
-                            const modal = document.getElementById('recaptchaModal');
-                            modal.style.display = 'flex';
-                        };
-                    } else {
-                        btn.textContent = "前往劃位 ➜";
-                        btn.className = "btn-action btn-active";
+                    // Between Stage 1 and Stage 2 (system maintenance)
+                    const hasS2 = p.s2 < INF;
+                    if (now >= p.e1 && hasS2 && now < p.s2) {
+                        const diff = p.s2 - now;
+                        timerLabel.textContent = "系統整理中 (暫停開放)";
+                        const stageLabel = phases.length > 1 ? `第 ${i + 1} 梯次二階` : "二階";
+                        timerText.innerHTML = `距離${stageLabel}還有：<br><span style="font-size:32px;">${formatTime(diff)}</span>`;
+                        btn.textContent = "暫停開放"; btn.className = "btn-action btn-disabled";
+                        return;
+                    }
+
+                    // Stage 2 open
+                    if (hasS2 && now >= p.s2 && now < p.e2) {
+                        timerLabel.textContent = "🔥 目前狀態";
+                        let stageLabel;
+                        if (phases.length > 1) {
+                            stageLabel = `第 ${i + 1} 梯次 二階開放中`;
+                        } else {
+                            stageLabel = isLastPhase ? "第二階段開放中（含候補）" : "第二階段開放中";
+                        }
+                        timerText.textContent = stageLabel;
+                        btn.textContent = "前往劃位 ➜"; btn.className = "btn-action btn-active";
                         btn.href = `booking.html?class=${c.id}`;
+                        return;
+                    }
+
+                    // After this phase but before the next phase starts
+                    const phaseEnd = hasS2 ? p.e2 : p.e1;
+                    if (now >= phaseEnd && nextPhase && now < nextPhase.s1) {
+                        const diff = nextPhase.s1 - now;
+                        timerLabel.textContent = `第 ${i + 1} 梯次已結束`;
+                        timerText.innerHTML = `距離第 ${i + 2} 梯次開放還有：<br><span style="font-size:32px;">${formatTime(diff)}</span>`;
+                        btn.textContent = "等待下一梯次"; btn.className = "btn-action btn-disabled";
+                        return;
                     }
                 }
-                else if (now >= end1 && now < start2 && hasStart2) {
-                    const diff = start2 - now;
-                    timerLabel.textContent = "系統整理中 (暫停開放)";
-                    timerText.textContent = `距離二階還有：${formatTime(diff)}`;
-                    btn.textContent = "暫停開放";
-                    btn.className = "btn-action btn-disabled";
-                }
-                else if (hasStart2 && now >= start2 && now < end2) {
-                    timerLabel.textContent = "🔥 目前狀態";
-                    timerText.textContent = "第二階段開放中 (含候補)";
-                    btn.textContent = "前往劃位 ➜";
-                    btn.className = "btn-action btn-active";
-                    btn.href = `booking.html?class=${c.id}`;
-                }
-                else {
-                    timerLabel.textContent = "⛔ 狀態";
-                    timerText.textContent = c.isTrialEvent ? "報名已結束" : "劃位已結束";
-                    btn.textContent = "已截止";
-                    btn.className = "btn-action btn-disabled";
-                }
+
+                // All phases done
+                timerLabel.textContent = "⛔ 狀態";
+                timerText.textContent = "劃位已結束";
+                btn.textContent = "已截止"; btn.className = "btn-action btn-disabled";
             }
 
             timerInterval = setInterval(update, 1000);

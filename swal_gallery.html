@@ -159,6 +159,44 @@
         ">🛡️ 系統偵測到異常操作</button>
     </div>
 
+    <h2>管理專屬視窗 (特殊操作與保留設定)</h2>
+    <div class="btn-group">
+        <button style="background-color:#34495e;" onclick="
+            Swal.fire({
+                title: '🏷️ 設定空位 [A01]',
+                icon: 'question',
+                html: `
+                  <div style='display:flex; flex-direction:column; gap:10px; margin-top:10px;'>
+                    <label style='display:flex; align-items:center; gap:10px; padding:12px 16px; border:2px solid #ddd; border-radius:10px; cursor:pointer; transition:0.2s; white-space:nowrap;' id='rb_lbl_res'>
+                      <input type='radio' name='reserveOpt' value='admin_reserved' style='width:18px;height:18px; accent-color:#8e44ad;'>
+                      <span>🔒 一般保留（前台橘色暫留）</span>
+                    </label>
+                    <label style='display:flex; align-items:center; gap:10px; padding:12px 16px; border:2px solid #ddd; border-radius:10px; cursor:pointer; transition:0.2s; white-space:nowrap;' id='rb_lbl_p2'>
+                      <input type='radio' name='reserveOpt' value='admin_phase2' style='width:18px;height:18px; accent-color:#7f8c8d;'>
+                      <span>📅 保留至第二梯次（前台靛色不可點）</span>
+                    </label>
+                    <label style='display:flex; align-items:center; gap:10px; padding:12px 16px; border:2px solid #ddd; border-radius:10px; cursor:pointer; transition:0.2s; white-space:nowrap;' id='rb_lbl_p3'>
+                      <input type='radio' name='reserveOpt' value='admin_phase3' style='width:18px;height:18px; accent-color:#95a5a6;'>
+                      <span>📅 保留至第三梯次（前台靛色不可點）</span>
+                    </label>
+                  </div>
+                `,
+                didOpen: () => {
+                    document.querySelectorAll('input[name=\'reserveOpt\']').forEach(radio => {
+                        radio.addEventListener('change', () => {
+                            document.querySelectorAll('label[id^=\'rb_lbl\']').forEach(lbl => lbl.style.borderColor = '#ddd');
+                            radio.closest('label').style.borderColor = '#3498db';
+                        });
+                    });
+                },
+                showCancelButton: true,
+                confirmButtonText: '✅ 確定保留',
+                confirmButtonColor: '#8e44ad',
+                cancelButtonText: '取消'
+            })
+        ">🏷️ 管理員設定空位 (跨梯次保留)</button>
+    </div>
+
     <script>
         document.addEventListener('DOMContentLoaded', () => {
             document.getElementById('btnSwalWAIT').addEventListener('click', () => {

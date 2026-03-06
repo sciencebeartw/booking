@@ -395,6 +395,17 @@ function toggleSeatType(r, c) {
     renderEditorGrid();
 }
 
+window.autoFillPhaseTimes = function (phase) {
+    const dateStr = document.getElementById(`c_phase${phase}_date`).value;
+    if (!dateStr) return;
+    const prefix = phase === '1' ? 'c_' : `c_t${phase}_`;
+    document.getElementById(`${prefix}start1`).value = `${dateStr}T19:00`;
+    document.getElementById(`${prefix}end1`).value = `${dateStr}T20:00`;
+    document.getElementById(`${prefix}start2`).value = `${dateStr}T21:00`;
+    document.getElementById(`${prefix}end2`).value = `${dateStr}T22:00`;
+};
+
+
 window.saveCourse = async function () {
     const btn = document.getElementById('btnSave');
     btn.disabled = true;
@@ -409,10 +420,28 @@ window.saveCourse = async function () {
         const classType = document.getElementById('c_class_type').value;
         const teacher = document.getElementById('c_teacher').value;
         const classroom = document.getElementById('c_classroom').value;
+
+        const phase1Date = document.getElementById('c_phase1_date').value;
+        const phase1Text = document.getElementById('c_phase1_text') ? document.getElementById('c_phase1_text').value : '';
         const start1 = document.getElementById('c_start1').value;
         const end1 = document.getElementById('c_end1').value;
         const start2 = document.getElementById('c_start2').value;
         const end2 = document.getElementById('c_end2').value;
+
+        const phase2Date = document.getElementById('c_phase2_date').value;
+        const phase2Text = document.getElementById('c_phase2_text').value;
+        const t2_start1 = document.getElementById('c_t2_start1').value;
+        const t2_end1 = document.getElementById('c_t2_end1').value;
+        const t2_start2 = document.getElementById('c_t2_start2').value;
+        const t2_end2 = document.getElementById('c_t2_end2').value;
+
+        const phase3Date = document.getElementById('c_phase3_date').value;
+        const phase3Text = document.getElementById('c_phase3_text').value;
+        const t3_start1 = document.getElementById('c_t3_start1').value;
+        const t3_end1 = document.getElementById('c_t3_end1').value;
+        const t3_start2 = document.getElementById('c_t3_start2').value;
+        const t3_end2 = document.getElementById('c_t3_end2').value;
+
         const price = document.getElementById('c_price').value;
         const lessons = document.getElementById('c_lessons').value;
         const timeDesc = document.getElementById('c_time_desc').value;
@@ -449,7 +478,10 @@ window.saveCourse = async function () {
 
         const courseData = {
             grade, subject, classType, teacher, classroom,
-            start1, end1, start2, end2, price, lessons,
+            phase1Date, phase1Text, start1, end1, start2, end2,
+            phase2Date, phase2Text, t2_start1, t2_end1, t2_start2, t2_end2,
+            phase3Date, phase3Text, t3_start1, t3_end1, t3_start2, t3_end2,
+            price, lessons,
             timeDescription: timeDesc, startDate: startDate,
             displayStart, displayEnd, desc: descContent,
             image: imageUrl, updatedAt: Date.now(),
@@ -471,16 +503,25 @@ window.saveCourse = async function () {
             alert("✅ 課程新增成功！座位表已建立。");
         }
 
-        const start1Time = new Date(start1).getTime();
+        const start1Time = start1 ? new Date(start1).getTime() : 9999999999999;
         const end1Time = end1 ? new Date(end1).getTime() : 9999999999999;
         const start2Time = start2 ? new Date(start2).getTime() : 9999999999999;
         const end2Time = end2 ? new Date(end2).getTime() : 9999999999999;
 
+        const t2_start1Time = t2_start1 ? new Date(t2_start1).getTime() : 9999999999999;
+        const t2_end1Time = t2_end1 ? new Date(t2_end1).getTime() : 9999999999999;
+        const t2_start2Time = t2_start2 ? new Date(t2_start2).getTime() : 9999999999999;
+        const t2_end2Time = t2_end2 ? new Date(t2_end2).getTime() : 9999999999999;
+
+        const t3_start1Time = t3_start1 ? new Date(t3_start1).getTime() : 9999999999999;
+        const t3_end1Time = t3_end1 ? new Date(t3_end1).getTime() : 9999999999999;
+        const t3_start2Time = t3_start2 ? new Date(t3_start2).getTime() : 9999999999999;
+        const t3_end2Time = t3_end2 ? new Date(t3_end2).getTime() : 9999999999999;
+
         await set(ref(db, `seats/${courseId}/_settings`), {
-            start1: start1Time,
-            end1: end1Time,
-            start2: start2Time,
-            end2: end2Time
+            start1: start1Time, end1: end1Time, start2: start2Time, end2: end2Time,
+            t2_start1: t2_start1Time, t2_end1: t2_end1Time, t2_start2: t2_start2Time, t2_end2: t2_end2Time,
+            t3_start1: t3_start1Time, t3_end1: t3_end1Time, t3_start2: t3_start2Time, t3_end2: t3_end2Time
         });
 
         hideCourseForm();
@@ -506,10 +547,28 @@ window.editCourse = function (key) {
     document.getElementById('c_class_type').value = c.classType || "";
     document.getElementById('c_teacher').value = c.teacher;
     document.getElementById('c_classroom').value = c.classroom;
-    document.getElementById('c_start1').value = c.start1;
+
+    document.getElementById('c_phase1_date').value = c.phase1Date || "";
+    if (document.getElementById('c_phase1_text')) document.getElementById('c_phase1_text').value = c.phase1Text || "";
+    document.getElementById('c_start1').value = c.start1 || "";
     document.getElementById('c_end1').value = c.end1 || "";
     document.getElementById('c_start2').value = c.start2 || "";
     document.getElementById('c_end2').value = c.end2 || "";
+
+    document.getElementById('c_phase2_date').value = c.phase2Date || "";
+    document.getElementById('c_phase2_text').value = c.phase2Text || "";
+    document.getElementById('c_t2_start1').value = c.t2_start1 || "";
+    document.getElementById('c_t2_end1').value = c.t2_end1 || "";
+    document.getElementById('c_t2_start2').value = c.t2_start2 || "";
+    document.getElementById('c_t2_end2').value = c.t2_end2 || "";
+
+    document.getElementById('c_phase3_date').value = c.phase3Date || "";
+    document.getElementById('c_phase3_text').value = c.phase3Text || "";
+    document.getElementById('c_t3_start1').value = c.t3_start1 || "";
+    document.getElementById('c_t3_end1').value = c.t3_end1 || "";
+    document.getElementById('c_t3_start2').value = c.t3_start2 || "";
+    document.getElementById('c_t3_end2').value = c.t3_end2 || "";
+
     document.getElementById('c_price').value = c.price;
     document.getElementById('c_lessons').value = c.lessons || "12";
     document.getElementById('c_time_desc').value = c.timeDescription || "";
@@ -596,21 +655,50 @@ function renderCourseList() {
 
         // 計算課程目前狀態燈號
         const now = Date.now() + serverTimeOffset;
-        const start1 = c.start1 ? new Date(c.start1).getTime() : null;
-        const end1 = c.end1 ? new Date(c.end1).getTime() : null;
-        const start2 = c.start2 ? new Date(c.start2).getTime() : null;
-        const end2 = c.end2 ? new Date(c.end2).getTime() : null;
         let statusLight = '';
-        if (!start1 || now < start1) {
-            statusLight = `<span style="color:#95a5a6; font-weight:bold;">⚪ 尚未開放</span>`;
-        } else if (now >= start1 && (!end1 || now < end1)) {
-            statusLight = `<span style="color:#2ecc71; font-weight:bold;">🟢 開放劃位中</span>`;
-        } else if (end1 && start2 && now >= end1 && now < start2) {
-            statusLight = `<span style="color:#f39c12; font-weight:bold;">🟡 座位整理中</span>`;
-        } else if (start2 && now >= start2 && (!end2 || now < end2)) {
-            statusLight = `<span style="color:#2ecc71; font-weight:bold;">🟢 開放劃位中</span>`;
+
+        if (c.isTrialEvent) {
+            // --- 試聽活動邏輯 (同步自 index.html) ---
+            const trialStart = c.start1 ? new Date(c.start1).getTime() : 0;
+            const trialEarlyStart = trialStart - (parseInt(c.earlyAccessSec) || 0) * 1000;
+            const trialEnd = c.closeTime ? new Date(c.closeTime).getTime() : 9999999999999;
+
+            if (c.forceClosed || now >= trialEnd) {
+                statusLight = `<span style="color:#e74c3c; font-weight:bold;">🔴 報名已結束</span>`;
+            } else if (now < trialEarlyStart) {
+                statusLight = `<span style="color:#95a5a6; font-weight:bold;">⚪ 尚未開放</span>`;
+            } else if (now >= trialEarlyStart && now < trialEnd) {
+                statusLight = now < trialStart ? `<span style="color:#2ecc71; font-weight:bold;">🟢 即將開放</span>` : `<span style="color:#2ecc71; font-weight:bold;">🟢 開放報名中</span>`;
+            } else {
+                statusLight = `<span style="color:#95a5a6; font-weight:bold;">⚪ 尚未開放</span>`;
+            }
         } else {
-            statusLight = `<span style="color:#e74c3c; font-weight:bold;">🔴 劃位已結束</span>`;
+            // --- 常規課程邏輯 (使用 seats/_settings 數字時間戳) ---
+            const st = (seatsData[key] && seatsData[key]['_settings']) || {};
+            const pT = (v, str) => v || (str ? new Date(str).getTime() : null);
+            const allPhases = [
+                { s1: pT(st.start1, c.start1), e1: pT(st.end1, c.end1), s2: pT(st.start2, c.start2), e2: pT(st.end2, c.end2) },
+                { s1: pT(st.t2_start1, c.t2_start1), e1: pT(st.t2_end1, c.t2_end1), s2: pT(st.t2_start2, c.t2_start2), e2: pT(st.t2_end2, c.t2_end2) },
+                { s1: pT(st.t3_start1, c.t3_start1), e1: pT(st.t3_end1, c.t3_end1), s2: pT(st.t3_start2, c.t3_start2), e2: pT(st.t3_end2, c.t3_end2) }
+            ].filter(p => p.s1);
+
+            let foundActive = false;
+            let latestEnd = 0;
+            for (let i = 0; i < allPhases.length; i++) {
+                const p = allPhases[i];
+                const hasS2 = p.s2 && p.s2 < 9999999999999;
+                const phaseEnd = hasS2 ? (p.e2 || 9999999999999) : (p.e1 || 9999999999999);
+                if (phaseEnd > latestEnd) latestEnd = phaseEnd;
+                if (now >= p.s1 && (!p.e1 || now < p.e1)) { statusLight = `<span style="color:#2ecc71; font-weight:bold;">🟢 開放劃位中</span>`; foundActive = true; break; }
+                if (hasS2 && now >= p.e1 && now < p.s2) { statusLight = `<span style="color:#f39c12; font-weight:bold;">🟡 座位整理中</span>`; foundActive = true; break; }
+                if (hasS2 && now >= p.s2 && (!p.e2 || now < p.e2)) { statusLight = `<span style="color:#2ecc71; font-weight:bold;">🟢 開放劃位中</span>`; foundActive = true; break; }
+                if (i < allPhases.length - 1 && allPhases[i + 1].s1 && now >= phaseEnd && now < allPhases[i + 1].s1) { statusLight = `<span style="color:#95a5a6; font-weight:bold;">⚪ 等待下一梯次</span>`; foundActive = true; break; }
+            }
+            if (!foundActive) {
+                const firstStart = allPhases.length > 0 ? allPhases[0].s1 : null;
+                if (!firstStart || now < firstStart) statusLight = `<span style="color:#95a5a6; font-weight:bold;">⚪ 尚未開放</span>`;
+                else statusLight = `<span style="color:#e74c3c; font-weight:bold;">🔴 劃位已結束</span>`;
+            }
         }
 
         const card = document.createElement('div');
@@ -881,6 +969,16 @@ window.loadVisualMap = function () {
                                 seat.classList.add('reserved');
                                 nameSpan.textContent = '暫留';
                                 seat.innerHTML += `<div class="seat-tooltip">暫留位</div>`;
+                            } else if (info.user === 'admin_phase2') {
+                                seat.classList.add('reserved');
+                                seat.classList.add('phase2');
+                                nameSpan.innerHTML = '<span style="display:block;font-size:11px;line-height:1.1;">下梯開放</span>';
+                                seat.innerHTML += `<div class="seat-tooltip">跨梯次保留 (第二梯次)</div>`;
+                            } else if (info.user === 'admin_phase3') {
+                                seat.classList.add('reserved');
+                                seat.classList.add('phase3');
+                                nameSpan.innerHTML = '<span style="display:block;font-size:11px;line-height:1.1;">下梯開放</span>';
+                                seat.innerHTML += `<div class="seat-tooltip">跨梯次保留 (第三梯次)</div>`;
                             } else {
                                 nameSpan.textContent = '填寫中';
                                 seat.innerHTML += `<div class="seat-tooltip">填寫中...</div>`;
@@ -930,7 +1028,7 @@ window.toggleReserve = async function (courseId, seatId, info) {
                 status: 'deleted'
             });
         }
-    } else if (info && info.status === 'locked' && info.user === 'admin_reserved') {
+    } else if (info && info.status === 'locked' && (info.user === 'admin_reserved' || info.user === 'admin_phase2' || info.user === 'admin_phase3')) {
         openOpModal(courseId, seatId);
     } else if (!info || (info && info.status === 'deleted')) {
         const snap = await get(ref(db, `seats/${courseId}/${seatId}`));
@@ -938,18 +1036,62 @@ window.toggleReserve = async function (courseId, seatId, info) {
             const currentSeat = snap.val();
             if (currentSeat.status === 'sold') {
                 if (!confirm(`⚠️ 警告：這個位子剛剛被學生 [${currentSeat.studentName}] 搶走了！確定要強制踢除並覆蓋為保留位嗎？`)) return;
-            } else if (currentSeat.status === 'locked' && currentSeat.user !== 'admin_reserved') {
+            } else if (currentSeat.status === 'locked' && !['admin_reserved', 'admin_phase2', 'admin_phase3'].includes(currentSeat.user)) {
                 if (!confirm("⚠️ 警告：目前正有【前台家長】在填寫此座位！確定要無情地踢除他並設為保留位嗎？")) return;
             }
         }
 
-        if (confirm(`要將 ${seatId} 設為保留位嗎？(前台顯示為填寫中)`)) {
-            set(ref(db, `seats/${courseId}/${seatId}`), {
+        const { value: reserveChoice } = await Swal.fire({
+            title: `🏷️ 設定空位 [${seatId}]`,
+            icon: 'question',
+            html: `
+              <div style="display:flex; flex-direction:column; gap:10px; margin-top:10px;">
+                <label style="display:flex; align-items:center; gap:10px; padding:12px 16px; border:2px solid #ddd; border-radius:10px; cursor:pointer; transition:0.2s; white-space:nowrap;" id="rb_lbl_res">
+                  <input type="radio" name="reserveOpt" value="admin_reserved" style="width:18px;height:18px; accent-color:#8e44ad;">
+                  <span>🔒 一般保留（前台橘色暫留）</span>
+                </label>
+                <label style="display:flex; align-items:center; gap:10px; padding:12px 16px; border:2px solid #ddd; border-radius:10px; cursor:pointer; transition:0.2s; white-space:nowrap;" id="rb_lbl_p2">
+                  <input type="radio" name="reserveOpt" value="admin_phase2" style="width:18px;height:18px; accent-color:#7f8c8d;">
+                  <span>📅 保留至第二梯次（前台靛色不可點）</span>
+                </label>
+                <label style="display:flex; align-items:center; gap:10px; padding:12px 16px; border:2px solid #ddd; border-radius:10px; cursor:pointer; transition:0.2s; white-space:nowrap;" id="rb_lbl_p3">
+                  <input type="radio" name="reserveOpt" value="admin_phase3" style="width:18px;height:18px; accent-color:#95a5a6;">
+                  <span>📅 保留至第三梯次（前台靛色不可點）</span>
+                </label>
+              </div>
+            `,
+            didOpen: () => {
+                document.querySelectorAll('input[name="reserveOpt"]').forEach(radio => {
+                    radio.addEventListener('change', () => {
+                        document.querySelectorAll('label[id^="rb_lbl"]').forEach(lbl => lbl.style.borderColor = '#ddd');
+                        radio.closest('label').style.borderColor = '#3498db';
+                    });
+                });
+            },
+            preConfirm: () => {
+                const sel = document.querySelector('input[name="reserveOpt"]:checked');
+                if (!sel) { Swal.showValidationMessage('請選擇一種保留方式！'); return false; }
+                return sel.value;
+            },
+            showCancelButton: true,
+            confirmButtonText: '✅ 確定保留',
+            cancelButtonText: '取消',
+            confirmButtonColor: '#8e44ad'
+        });
+
+        if (reserveChoice) {
+            const seatPayload = {
                 status: 'locked',
-                user: 'admin_reserved',
-                timestamp: Date.now()
-            }).catch(err => {
-                alert("保留失敗：密碼錯誤或權限不足！");
+                user: reserveChoice,
+            };
+            // ★ admin_phase2/admin_phase3 不儲存 timestamp，
+            //   確保殭屍清除器永遠不會誤清這些「保留至下梯次」座位。
+            // ★ admin_reserved 仍保留 timestamp，讓清除器可以清掉它（保留時間過長時）。
+            if (reserveChoice === 'admin_reserved') {
+                seatPayload.timestamp = Date.now();
+            }
+            set(ref(db, `seats/${courseId}/${seatId}`), seatPayload).catch(err => {
+                alert("保留失敗：權限不足！");
             });
         }
     }
@@ -1059,9 +1201,13 @@ window.recoverSeat = async function (courseId, seatId, studentName, archiveKey) 
                 alert(`⚠️ 復原失敗！\n原本的座位 [${seatId}] 已經被其他人 (${currentSeat.studentName || '新學生'}) 劃走了。\n請引導 ${studentName} 重新劃位，或先將目前的人強制釋出。`);
                 return;
             } else if (currentSeat.status === 'locked') {
-                const lockUser = currentSeat.user === 'admin_reserved' ? '管理員' : '前台家長';
-                alert(`⚠️ 復原失敗！\n原本的座位 [${seatId}] 目前正被【${lockUser}】鎖定 / 填寫中！\n請稍候再試，或先強制將該座位釋出。`);
-                return;
+                const isAdminLock = ['admin_reserved', 'admin_phase2', 'admin_phase3'].includes(currentSeat.user);
+                const lockUser = isAdminLock ? '管理員' : '前台家長';
+                let msg = `確定要強制釋出目前被 [${lockUser}] 鎖定中的座位 ${seatId} 嗎？`;
+                if (!isAdminLock) {
+                    msg += `\n⚠️ 警告：這會中斷該名家長的劃位流程！`;
+                }
+                if (!confirm(msg)) return;
             }
         }
 
@@ -1512,7 +1658,7 @@ window.closePreview = function () {
 
 renderClassroomPreview();
 
-const ZOMBIE_TIMEOUT = 2.5 * 60 * 1000;
+const ZOMBIE_TIMEOUT = 2 * 60 * 1000;
 const SWEEP_INTERVAL = 10 * 1000;
 
 function startZombieSweeper() {
@@ -1528,7 +1674,12 @@ function startZombieSweeper() {
                 if (seatId === '_settings') return;
                 const info = seats[seatId];
 
-                if (info.status === 'locked' && info.user !== 'admin_reserved') {
+                // ★ 三道防線確保管理員保留位不被清除：
+                // 1. 只清除 locked 狀態
+                // 2. 不清除任何 admin_* 保留座位
+                // 3. 必須有 timestamp 欄位才計算過期（admin_phase2/3 刻意不存 timestamp）
+                const isAdminSeat = ['admin_reserved', 'admin_phase2', 'admin_phase3'].includes(info.user);
+                if (info.status === 'locked' && !isAdminSeat && info.timestamp) {
                     if (now - info.timestamp > ZOMBIE_TIMEOUT) {
                         set(ref(db, `seats/${courseId}/${seatId}`), null);
                         clearedCount++;
@@ -3772,16 +3923,133 @@ window.renderTrialResults = function (allocated, waitlist, sessionsMap) {
     grid.innerHTML = "";
 
     // 建立拖曳相關函數 (God Mode 拖曳調整)
-    window.allowDrop = function (ev) { ev.preventDefault(); }
-    window.drag = function (ev) {
-        ev.dataTransfer.setData("stu_id", ev.target.id);
-        ev.dataTransfer.setData("source_class", ev.target.getAttribute('data-class'));
+
+    // ✨ 拖曳占位符動畫系統
+    let _dragPlaceholder = null;
+    let _dragSourceId = null;
+    let _dragSourceEl = null;   // 被拖曳的元素參照
+    let _hideTimeout = null;    // 防止 setTimeout race condition
+    let _isDragging = false;    // ✨ 是否正在拖曳中（用來擋掉 drop 後的殘留 rAF）
+    let _rafPending = false;
+    let _rafId = null;          // ✨ 記錄 rAF ID，可以隨時 cancel
+
+    function _getOrCreatePlaceholder(sourceHeight) {
+        if (!_dragPlaceholder) {
+            _dragPlaceholder = document.createElement('div');
+            _dragPlaceholder.className = 'wl-drag-placeholder';
+            _dragPlaceholder.style.cssText = `
+                height: ${sourceHeight ? sourceHeight + 'px' : '36px'};
+                background: rgba(0, 0, 0, 0.05);
+                border: 2px dashed #bdc3c7;
+                border-radius: 4px;
+                margin: 4px 0;
+                transition: height 0.2s ease, opacity 0.2s ease;
+                pointer-events: none;
+            `;
+        } else if (sourceHeight) {
+            _dragPlaceholder.style.height = sourceHeight + 'px';
+        }
+        return _dragPlaceholder;
     }
 
-    // ✨ 重算候補序號 (每次拖曳後呼叫)
+    function _removePlaceholder() {
+        if (_dragPlaceholder && _dragPlaceholder.parentNode) {
+            _dragPlaceholder.remove();
+        }
+        _dragPlaceholder = null;
+    }
+
+    window.allowDrop = function (ev) {
+        ev.preventDefault();
+        ev.dataTransfer.dropEffect = 'move';
+
+        const clientY = ev.clientY;
+        const target = ev.target;
+
+        if (_rafPending) return;
+        _rafPending = true;
+
+        _rafId = requestAnimationFrame(() => {
+            _rafId = null;
+            _rafPending = false;
+
+            // ✨ 關鍵防護：如果 drop/dragEnd 已經結束拖曳，立刻退出，絕對不插入 placeholder
+            if (!_isDragging) return;
+
+            const container = target.closest('.class-list-container');
+            if (!container) return;
+
+            const placeholder = _getOrCreatePlaceholder(window._dragSourceHeight);
+
+            const visibleCards = Array.from(container.querySelectorAll('div[data-original-id]'))
+                .filter(c => c.id !== _dragSourceId); // ✨ 排除正在被拖曳的來源卡片
+
+            let insertBeforeCard = null;
+            for (const card of visibleCards) {
+                const rect = card.getBoundingClientRect();
+                const midY = rect.top + rect.height / 2;
+                if (clientY < midY) {
+                    insertBeforeCard = card;
+                    break;
+                }
+            }
+
+            if (insertBeforeCard === null) {
+                if (container.lastChild !== placeholder) container.appendChild(placeholder);
+            } else {
+                if (placeholder.nextSibling !== insertBeforeCard) container.insertBefore(placeholder, insertBeforeCard);
+            }
+        });
+    }
+
+    function _restoreDragSource() {
+        // ✨ 立刻停止拖曳狀態，讓 rAF 回調知道不要再插入 placeholder
+        _isDragging = false;
+        // ✨ 取消任何尚未執行的 rAF，直接在 js event loop 層面消除殘留
+        if (_rafId) { cancelAnimationFrame(_rafId); _rafId = null; }
+        _rafPending = false;
+        if (_hideTimeout) { clearTimeout(_hideTimeout); _hideTimeout = null; }
+        if (_dragSourceEl) {
+            _dragSourceEl.style.opacity = '';
+            _dragSourceEl.style.pointerEvents = '';
+            _dragSourceEl = null;
+        }
+    }
+
+    window.drag = function (ev) {
+        const el = ev.target.closest('div[data-original-id]') || ev.target;
+        ev.dataTransfer.setData("stu_id", el.id);
+        ev.dataTransfer.setData("source_class", el.getAttribute('data-class'));
+        ev.dataTransfer.effectAllowed = 'move';
+        _dragSourceId = el.id;
+        _dragSourceEl = el;
+        _isDragging = true; // ✨ 標記開始拖曳
+
+        // 紀錄高度給 placeholder 使用
+        const rect = el.getBoundingClientRect();
+        window._dragSourceHeight = rect.height;
+
+        // ✨ 拖曳開始：只改透明度，不隱藏卡片，保持 list 高度穩定避免 layout 跳動
+        requestAnimationFrame(() => {
+            if (_dragSourceEl === el) {
+                el.style.opacity = '0.25';
+                el.style.pointerEvents = 'none';
+            }
+        });
+    }
+
+    // ✨ 拖曳結束：還原外觀、移除占位符（drop 不成功時的保底還原）
+    window.dragEnd = function (ev) {
+        _restoreDragSource();
+        _removePlaceholder();
+        _dragSourceId = null;
+        window._dragSourceHeight = null;
+    }
+
+    // ✨ 重算候補序號 (每次拖曳後呼叫) - 改用 data-is-waitlist 屬性辨別
     window.renumberWaitlist = function (container) {
         if (!container) return;
-        const cards = container.querySelectorAll('div[id*="_wl_"]');
+        const cards = container.querySelectorAll('div[data-is-waitlist="true"]');
         cards.forEach((card, idx) => {
             const seqSpan = card.querySelector('.wl-seq');
             if (seqSpan) seqSpan.textContent = `#${idx + 1}`;
@@ -3790,18 +4058,46 @@ window.renderTrialResults = function (allocated, waitlist, sessionsMap) {
 
     window.drop = function (ev) {
         ev.preventDefault();
+
+        // ✨ 先記住 placeholder 目前在哪（nextSibling 就是插入參考點），再移除它
+        const placeholderNext = _dragPlaceholder ? _dragPlaceholder.nextSibling : null;
+        const placeholderParent = _dragPlaceholder ? _dragPlaceholder.parentNode : null;
+        _removePlaceholder(); // 清除占位符
+
         const data = ev.dataTransfer.getData("stu_id");      // 元素的 ID (例如 stu_12345)
         const source_class = ev.dataTransfer.getData("source_class"); // 來源班級
         const targetContainer = ev.target.closest('.class-list-container');
         if (!targetContainer) return;
 
         const targetClass = targetContainer.getAttribute('data-cls');
-        if (source_class === targetClass) return; // 同班不動
+        const isSameContainer = source_class === targetClass;
 
+        // ✨ 找到拖曳目標、被拖曳元素、判斷是否為插隊模式
         const el = document.getElementById(data);
         if (!el) return;
+        _restoreDragSource();
 
-        const isSourceWl = el.id.includes('_wl_') || el.id.startsWith('wl_stu_');
+        let isInsertMode = true;
+        let insertRef = null;
+
+        // ✨ 優先用 placeholder 最後所在的位置（最準確，就是使用者看到的那個細縫）
+        if (placeholderParent && placeholderParent === targetContainer) {
+            insertRef = placeholderNext; // insert before this node (null = append to end)
+        } else {
+            // 萬一 placeholder 沒出現在 targetContainer（拖太快），fallback 到 ev.target
+            const dropTarget = ev.target.closest('div[data-original-id]');
+            if (dropTarget && dropTarget !== el && targetContainer.contains(dropTarget)) {
+                const rect = dropTarget.getBoundingClientRect();
+                const midY = rect.top + rect.height / 2;
+                insertRef = (ev.clientY < midY) ? dropTarget : dropTarget.nextSibling;
+            }
+        }
+
+        // 防呆：同容器且插入點就是元素本身，代表沒有真正移動
+        if (isSameContainer && insertRef === el) return;
+        if (isSameContainer && !placeholderParent && insertRef === null) return;
+
+        const isSourceWl = el.getAttribute('data-is-waitlist') === 'true';
         const isTargetWl = targetClass === 'waitlist';
 
         // ✨ 防呆：禁止跨科拖曳（僅在正取區之間）
@@ -3833,14 +4129,16 @@ window.renderTrialResults = function (allocated, waitlist, sessionsMap) {
 
         el.setAttribute('data-class', targetClass);
 
-        // ✨ 智慧插入: 若拖到某張「學生卡」上方，則安插在那個學生前面（候補排序功能）
-        const dropTarget = ev.target.closest('div[data-original-id]');
-        const isInsertMode = dropTarget && dropTarget !== el && targetContainer.contains(dropTarget);
-
-        if (el.id.includes('_wl_') || el.id.startsWith('wl_stu_')) {
-            el.id = `stu_${studentId}_${targetClass}`;
-            // 移除候補特有的序號 span (若從候補區拉到正取區)
-            if (!isTargetWl) {
+        // ✨ 更新 ID 功能：候補區內拖曳排序時保留 _wl_ 標記；拉入正取區才椎改 ID
+        const wasWaitlist = el.getAttribute('data-is-waitlist') === 'true';
+        if (wasWaitlist) {
+            if (isTargetWl || isSameContainer) {
+                // 各候補區內拖曳：保留候補標記，只更新 data-class
+                // ID 保留 _wl_ 不改
+            } else {
+                // 候補拉入正取區：移除候補標記、更新 ID、移除序號
+                el.setAttribute('data-is-waitlist', 'false');
+                el.id = `stu_${studentId}_${targetClass}`;
                 const seqSpan = el.querySelector('.wl-seq');
                 if (seqSpan) seqSpan.remove();
             }
@@ -3848,43 +4146,54 @@ window.renderTrialResults = function (allocated, waitlist, sessionsMap) {
             el.id = `stu_${studentId}_${targetClass}`;
         }
 
-        if (isInsertMode) {
-            targetContainer.insertBefore(el, dropTarget);
+        if (isInsertMode && insertRef) {
+            targetContainer.insertBefore(el, insertRef);
+        } else if (isInsertMode) {
+            targetContainer.appendChild(el); // insertRef 為 null 代表放在尾端
         } else {
             targetContainer.appendChild(el);
         }
 
-        // ✨ 重算候補名單序號
-        if (isTargetWl || el.id.includes('_wl_')) {
+        // ✨ 重算候補名單序號 (目標容器)
+        if (isTargetWl || wasWaitlist) {
             window.renumberWaitlist(targetContainer);
         }
-        // 也重算來源容器
-        const sourceContainer = document.querySelector(`.class-list-container[data-cls="${source_class}"]`);
-        if (sourceContainer && (source_class === 'waitlist' || source_class.includes('_wl'))) {
-            window.renumberWaitlist(sourceContainer);
+        // 也重算來源容器（如果不是同容器）
+        if (!isSameContainer) {
+            const sourceContainer = document.querySelector(`.class-list-container[data-cls="${source_class}"]`);
+            if (sourceContainer) {
+                window.renumberWaitlist(sourceContainer);
+            }
         }
 
         // --- 需求二：同科影分身消除機制 ---
-        // 判斷目標班級是數學還是自然
-        const isTargetMath = targetClass.startsWith('math_');
-        const isTargetSci = targetClass.startsWith('sci_');
+        // ✨ 只有從候補拉入正取時才觸發，同容器排序不消除
+        if (!isSameContainer && wasWaitlist && !isTargetWl) {
+            // 判斷目標班級是數學還是自然
+            const isTargetMath = targetClass.startsWith('math_');
+            const isTargetSci = targetClass.startsWith('sci_');
 
-        // 尋找畫面上所有屬於這名學生的候補影分身 (id 包含 _wl_ 或是 wl_stu_ 開頭)
-        const shadowClones = document.querySelectorAll(`div[data-original-id="${studentId}"]`);
+            // 尋找畫面上所有屬於這名學生的候補影分身
+            const shadowClones = document.querySelectorAll(`div[data-original-id="${studentId}"]`);
 
-        shadowClones.forEach(clone => {
-            // 只處理候補名單中的影分身
-            if (!clone.id.includes('_wl_') && !clone.id.startsWith('wl_stu_')) return;
+            shadowClones.forEach(clone => {
+                if (clone === el) return; // 不要刪自己
+                // 只處理候補名單中的影分身
+                if (clone.getAttribute('data-is-waitlist') !== 'true') return;
 
-            const cloneClass = clone.getAttribute('data-class');
-            const isCloneMath = cloneClass.startsWith('math_');
-            const isCloneSci = cloneClass.startsWith('sci_');
+                const cloneClass = clone.getAttribute('data-class');
+                const isCloneMath = cloneClass.startsWith('math_');
+                const isCloneSci = cloneClass.startsWith('sci_');
 
-            // 如果影分身跟目標班級是「同科目」，就把它消除
-            if ((isTargetMath && isCloneMath) || (isTargetSci && isCloneSci)) {
-                clone.remove();
-            }
-        });
+                // 如果影分身跟目標班級是「同科目」，就把它消除
+                if ((isTargetMath && isCloneMath) || (isTargetSci && isCloneSci)) {
+                    // 消除前先重算該容器的序號
+                    const cloneContainer = clone.closest('.class-list-container');
+                    clone.remove();
+                    if (cloneContainer) window.renumberWaitlist(cloneContainer);
+                }
+            });
+        }
 
         // 這裡我們不處理正取名單的互斥（考量到雙科生本來就會在兩個正取班），只處理把候補的冗餘卡片刪掉
         // 更新標題人數
@@ -4043,14 +4352,19 @@ window.renderTrialResults = function (allocated, waitlist, sessionsMap) {
         listContainer.style.padding = "5px";
         listContainer.ondrop = window.drop;
         listContainer.ondragover = window.allowDrop;
+        listContainer.ondragleave = function (ev) {
+            if (!ev.currentTarget.contains(ev.relatedTarget)) _removePlaceholder();
+        };
 
         waitlistByClass[cls].forEach((stu, wIndex) => {
             let stuItem = document.createElement('div');
             stuItem.id = `stu_${stu.id}_wl_${cls}`;
             stuItem.setAttribute('data-class', cls);
             stuItem.setAttribute('data-original-id', stu.id);
+            stuItem.setAttribute('data-is-waitlist', 'true'); // ✨ 候補卡片標記
             stuItem.draggable = true;
             stuItem.ondragstart = window.drag;
+            stuItem.ondragend = window.dragEnd; // ✨ 拖曳結束還原
             stuItem.style.background = "#e74c3c";
             stuItem.style.color = "white";
             stuItem.style.padding = "6px";
@@ -4058,6 +4372,7 @@ window.renderTrialResults = function (allocated, waitlist, sessionsMap) {
             stuItem.style.borderRadius = "4px";
             stuItem.style.fontSize = "12px";
             stuItem.style.cursor = "grab";
+            stuItem.style.transition = "opacity 0.2s, transform 0.2s"; // ✨ 動畫過渡
 
             // ★ 如果引擎已經賦予了絕對 rank，就用它的，否則按順序排
             let displayRank = stu.rank ? stu.rank : (wIndex + 1);

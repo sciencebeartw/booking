@@ -475,25 +475,111 @@
                     style="font-size:12px; padding:5px 10px;">↺ 重置為預設範本</button>
             </div>
 
-            <div class="form-row">
-                <div class="form-group">
-                    <label style="color:#e74c3c;">★ 一階劃位 (開始)</label>
-                    <input type="datetime-local" id="c_start1">
+            <!-- 第一梯次 -->
+            <div
+                style="background:#eef7f9; padding:15px; border-radius:8px; margin-bottom:15px; border-left:4px solid #3498db;">
+                <h4 style="margin-top:0; color:#2980b9;">👑 第一梯次設定 (必填)</h4>
+                <div class="form-row" style="margin-bottom:10px;">
+                    <div class="form-group">
+                        <label style="color:#e74c3c;">★ 選擇第一梯次日期</label>
+                        <input type="date" id="c_phase1_date" onchange="autoFillPhaseTimes('1')">
+                    </div>
+                    <div class="form-group">
+                        <label>前台提示 (如：班內生梯次)</label>
+                        <input type="text" id="c_phase1_text" placeholder="選填，例：班內生優先開放">
+                    </div>
                 </div>
-                <div class="form-group">
-                    <label>一階劃位 (結束)</label>
-                    <input type="datetime-local" id="c_end1">
+                <div class="form-row">
+                    <div class="form-group">
+                        <label>一階劃位 (開始)</label>
+                        <input type="datetime-local" id="c_start1">
+                    </div>
+                    <div class="form-group">
+                        <label>一階劃位 (結束)</label>
+                        <input type="datetime-local" id="c_end1">
+                    </div>
+                </div>
+                <div class="form-row">
+                    <div class="form-group">
+                        <label>二階劃位 (開始)</label>
+                        <input type="datetime-local" id="c_start2">
+                    </div>
+                    <div class="form-group">
+                        <label>二階劃位 (結束)</label>
+                        <input type="datetime-local" id="c_end2">
+                    </div>
                 </div>
             </div>
 
-            <div class="form-row">
-                <div class="form-group">
-                    <label>二階劃位 (開始)</label>
-                    <input type="datetime-local" id="c_start2">
+            <!-- 第二梯次 -->
+            <div
+                style="background:#fef9e7; padding:15px; border-radius:8px; margin-bottom:15px; border-left:4px solid #f1c40f;">
+                <h4 style="margin-top:0; color:#d4ac0d;">👑 第二梯次設定 (選填)</h4>
+                <div class="form-row" style="margin-bottom:10px;">
+                    <div class="form-group">
+                        <label>選擇第二梯次日期</label>
+                        <input type="date" id="c_phase2_date" onchange="autoFillPhaseTimes('2')">
+                    </div>
+                    <div class="form-group">
+                        <label>前台提示 (如：12/05班外生開放)</label>
+                        <input type="text" id="c_phase2_text" placeholder="留空預設為：下一梯次開放">
+                    </div>
                 </div>
-                <div class="form-group">
-                    <label>二階劃位 (結束)</label>
-                    <input type="datetime-local" id="c_end2">
+                <div class="form-row">
+                    <div class="form-group">
+                        <label>一階劃位 (開始)</label>
+                        <input type="datetime-local" id="c_t2_start1">
+                    </div>
+                    <div class="form-group">
+                        <label>一階劃位 (結束)</label>
+                        <input type="datetime-local" id="c_t2_end1">
+                    </div>
+                </div>
+                <div class="form-row">
+                    <div class="form-group">
+                        <label>二階劃位 (開始)</label>
+                        <input type="datetime-local" id="c_t2_start2">
+                    </div>
+                    <div class="form-group">
+                        <label>二階劃位 (結束)</label>
+                        <input type="datetime-local" id="c_t2_end2">
+                    </div>
+                </div>
+            </div>
+
+            <!-- 第三梯次 -->
+            <div
+                style="background:#fdedec; padding:15px; border-radius:8px; margin-bottom:15px; border-left:4px solid #e74c3c;">
+                <h4 style="margin-top:0; color:#c0392b;">👑 第三梯次設定 (選填)</h4>
+                <div class="form-row" style="margin-bottom:10px;">
+                    <div class="form-group">
+                        <label>選擇第三梯次日期</label>
+                        <input type="date" id="c_phase3_date" onchange="autoFillPhaseTimes('3')">
+                    </div>
+                    <div class="form-group">
+                        <label>前台提示 (如：12/10全面開放)</label>
+                        <input type="text" id="c_phase3_text" placeholder="留空預設為：下一梯次開放">
+                    </div>
+                </div>
+                <div class="form-row">
+                    <div class="form-group">
+                        <label>一階劃位 (開始)</label>
+                        <input type="datetime-local" id="c_t3_start1">
+                    </div>
+                    <div class="form-group">
+                        <label>一階劃位 (結束)</label>
+                        <input type="datetime-local" id="c_t3_end1">
+                    </div>
+                </div>
+                <div class="form-row">
+                    <div class="form-group">
+                        <label>二階劃位 (開始)</label>
+                        <input type="datetime-local" id="c_t3_start2">
+                    </div>
+                    <div class="form-group">
+                        <label>二階劃位 (結束)</label>
+                        <input type="datetime-local" id="c_t3_end2">
+                    </div>
                 </div>
             </div>
 
@@ -508,7 +594,7 @@
                 </div>
             </div>
 
-            <div class="form-row" style="background:#fff3e0; padding:10px; border-radius:5px; margin-bottom:20px;">
+            <div class="form-row" style="background:#fff3e0; padding:10px; border-radius:5px; margin-bottom:5px;">
                 <div class="form-group" style="display:flex; align-items:center; gap:10px;">
                     <input type="checkbox" id="c_waitlist_enabled" style="width:auto; transform:scale(1.5);">
                     <label for="c_waitlist_enabled" style="margin:0; cursor:pointer;">啟用候補功能</label>
@@ -518,6 +604,11 @@
                     <input type="number" id="c_waitlist_limit" placeholder="例如：10" value="0">
                 </div>
             </div>
+            <p
+                style="font-size:12px; color:#e67e22; margin-bottom:18px; padding:6px 10px; background:#fff8ee; border-radius:4px;">
+                ⚠️ 候補按鈕僅在<strong>最後一個梯次的第二階段</strong>全部座位售罄後才會出現。<br>
+                建議於一階結束後再勾選此功能，避免候補按鈕提早出現在一階期間。
+            </p>
 
             <div class="form-group">
                 <label>課程介紹 / 注意事項</label>
@@ -1007,7 +1098,7 @@
         </div>
     </div>
 
-    <script type="module" src="admin.js"></script>
+    <script type="module" src="admin.js?v=202603061922"></script>
 </body>
 
 </html>

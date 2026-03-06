@@ -521,6 +521,16 @@ tr.duplicate-row {
     color: white;
 }
 
+.seat.phase2 {
+    background: #6c5ce7;
+    color: white;
+}
+
+.seat.phase3 {
+    background: #6c5ce7;
+    color: white;
+}
+
 .seat.aisle {
     background: transparent;
     cursor: default;

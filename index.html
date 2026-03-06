@@ -748,7 +748,7 @@
         </div>
 
         <script type="module">
-            import { db, ref, auth, signInWithRedirect, getRedirectResult, GoogleAuthProvider, get, child, ref as dbRef, onAuthStateChanged } from './firebase-config.js';
+            import { db, ref, auth, signInWithRedirect, getRedirectResult, GoogleAuthProvider, get, child, ref as dbRef, onAuthStateChanged } from './firebase-config.js?v=202603061922';
             import { onValue } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-database.js";
 
             // Firebase modules imported successfully
@@ -1039,20 +1039,9 @@
             });
 
 
+            let allSeatsData = {};
             onValue(ref(db, 'seats'), (snapshot) => {
-                const data = snapshot.val() || {};
-                seatsStatus = {};
-                Object.keys(data).forEach(courseId => {
-                    const seats = data[courseId];
-                    let soldCount = 0;
-                    Object.keys(seats).forEach(seatId => {
-                        if (seatId === '_settings') return;
-                        if (seats[seatId].status === 'sold') {
-                            soldCount++;
-                        }
-                    });
-                    seatsStatus[courseId] = { sold: soldCount };
-                });
+                allSeatsData = snapshot.val() || {};
                 refreshDisplay();
             });
 
@@ -1097,97 +1086,166 @@
             setInterval(refreshDisplay, 1000);
 
             function getStatusBadge(c, now) {
-                const start1 = new Date(c.start1).getTime();
-                // 試聽活動可提早開放
-                const effectiveStart1 = c.isTrialEvent ? start1 - (parseInt(c.earlyAccessSec) || 0) * 1000 : start1;
+                // =============== 試聽活動邏輯 ===============
+                if (c.isTrialEvent) {
+                    const start1 = new Date(c.start1).getTime();
+                    const effectiveStart1 = start1 - (parseInt(c.earlyAccessSec) || 0) * 1000;
+                    const end1 = c.closeTime ? new Date(c.closeTime).getTime() : 9999999999999;
 
-                const end1 = (c.isTrialEvent && c.closeTime) ? new Date(c.closeTime).getTime() : (c.end1 ? new Date(c.end1).getTime() : 9999999999999);
-                const start2 = c.start2 ? new Date(c.start2).getTime() : 9999999999999;
-                const end2 = c.end2 ? new Date(c.end2).getTime() : 9999999999999;
+                    let isWaitlistOnlyFull = false;
+                    let isFull = false;
 
-                const hasEnd1 = c.end1 && new Date(c.end1).getFullYear() < 3000;
-                const hasStart2 = c.start2 && new Date(c.start2).getFullYear() < 3000;
-                const hasEnd2 = c.end2 && new Date(c.end2).getFullYear() < 3000;
+                    const soldCount = (allSeatsData[c.id] && Object.values(allSeatsData[c.id]).filter(s => s.status === 'sold').length) || 0;
+                    if (soldCount >= (c.totalSeats || 999)) isFull = true;
 
-                const soldCount = (seatsStatus[c.id] && seatsStatus[c.id].sold) || 0;
-                const totalSeats = c.totalSeats || 999;
-                let isFull = soldCount >= totalSeats;
-
-                const waitlistCount = waitlistStatus[c.id] || 0;
-                const waitlistLimit = c.waitlistLimit || 0;
-                const isWaitlistFull = (waitlistLimit > 0 && waitlistCount >= waitlistLimit);
-
-                // 特別處理純候補模式 (waitlist_only)
-                let isWaitlistOnlyFull = false;
-                if (c.isTrialEvent && c.type === 'waitlist_only' && c.sessions) {
-                    let allSessionsFull = true;
-                    let hasAnySession = false;
-                    for (let key in c.sessions) {
-                        hasAnySession = true;
-                        const s = c.sessions[key];
-                        const cap = s.capacity || 0;
-                        const curCount = s.currentWaitlistCount || 0;
-                        if (curCount < cap) {
-                            allSessionsFull = false;
-                            break;
+                    if (c.type === 'waitlist_only' && c.sessions) {
+                        let allSessionsFull = true;
+                        let hasAnySession = false;
+                        for (let key in c.sessions) {
+                            hasAnySession = true;
+                            const s = c.sessions[key];
+                            const cap = s.capacity || 0;
+                            const curCount = s.currentWaitlistCount || 0;
+                            if (curCount < cap) {
+                                allSessionsFull = false;
+                                break;
+                            }
                         }
+                        if (hasAnySession && allSessionsFull) !!(isFull = true);
                     }
-                    if (hasAnySession && allSessionsFull) {
-                        isWaitlistOnlyFull = true;
-                    }
-                }
 
-                if (isWaitlistOnlyFull) {
-                    isFull = true;
-                }
+                    const waitlistCount = waitlistStatus[c.id] || 0;
+                    const isWaitlistFull = (c.waitlistLimit > 0 && waitlistCount >= c.waitlistLimit);
 
-                // 已經被後台手動關閉，或是試聽活動已過結束時間
-                if (c.forceClosed || (c.isTrialEvent && now >= end1)) {
-                    return '<div class="status-badge status-full">🔴 報名已結束</div>';
-                }
+                    if (c.forceClosed || now >= end1) return '<div class="status-badge status-full">🔴 報名已結束</div>';
+                    if (now < effectiveStart1) return '<div class="status-badge status-closed">尚未開放</div>';
 
-                if (now < effectiveStart1) return '<div class="status-badge status-closed">尚未開放</div>';
-
-                if (now >= effectiveStart1 && now < end1) {
-                    if (isFull) {
-                        if (hasStart2) {
-                            return '<div class="status-badge status-full">🔴 此階段已額滿</div>';
-                        } else {
+                    if (now >= effectiveStart1 && now < end1) {
+                        if (isFull) {
                             if (c.waitlistEnabled) {
-                                if (isWaitlistFull) return '<div class="status-badge status-full">🔴 候補已額滿</div>';
-                                return '<div class="status-badge status-wait">🟡 開放候補中</div>';
+                                return isWaitlistFull ? '<div class="status-badge status-full">🔴 候補已額滿</div>' : '<div class="status-badge status-wait">🟡 開放候補中</div>';
                             }
                             return '<div class="status-badge status-full">🔴 此階段已額滿</div>';
                         }
+                        return now < start1 ? '<div class="status-badge status-open">🟢 即將開放</div>' : '<div class="status-badge status-open">🟢 開放報名中</div>';
                     }
-                    if (c.isTrialEvent && now < start1) return '<div class="status-badge status-open">🟢 即將開放</div>';
-                    return c.isTrialEvent
-                        ? '<div class="status-badge status-open">🟢 開放報名中</div>'
-                        : '<div class="status-badge status-open">🟢 開放劃位中</div>';
+                    return '<div class="status-badge status-closed">尚未開放</div>';
                 }
 
-                if (hasEnd1 && hasStart2 && now >= end1 && now < start2) {
-                    return '<div class="status-badge status-closed">⛔ 座位整理中</div>';
+                // =============== 常規課程 (支援跨梯次) ===============
+                if (c.forceClosed) return '<div class="status-badge status-full">🔴 劃位已結束</div>';
+
+                const waitlistCount = waitlistStatus[c.id] || 0;
+                const isWaitlistFull = (c.waitlistLimit > 0 && waitlistCount >= c.waitlistLimit);
+
+                // ✅ 使用 seats/_settings 的數字時間戳記（與 booking.html 完全一致）
+                const seatSettings = (allSeatsData[c.id] && allSeatsData[c.id]['_settings']) || {};
+                const pStr = (t) => t ? new Date(t).getTime() : 9999999999999;
+                const p1s1 = seatSettings.start1 || pStr(c.start1);
+                const p1e1 = seatSettings.end1 || pStr(c.end1);
+                const p1s2 = seatSettings.start2 || pStr(c.start2);
+                const p1e2 = seatSettings.end2 || pStr(c.end2);
+                const p2s1 = seatSettings.t2_start1 || pStr(c.t2_start1);
+                const p2e1 = seatSettings.t2_end1 || pStr(c.t2_end1);
+                const p2s2 = seatSettings.t2_start2 || pStr(c.t2_start2);
+                const p2e2 = seatSettings.t2_end2 || pStr(c.t2_end2);
+                const p3s1 = seatSettings.t3_start1 || pStr(c.t3_start1);
+                const p3e1 = seatSettings.t3_end1 || pStr(c.t3_end1);
+                const p3s2 = seatSettings.t3_start2 || pStr(c.t3_start2);
+                const p3e2 = seatSettings.t3_end2 || pStr(c.t3_end2);
+                const phases = [
+                    { s1: p1s1, e1: p1e1, s2: p1s2, e2: p1e2 },
+                    { s1: p2s1, e1: p2e1, s2: p2s2, e2: p2e2 },
+                    { s1: p3s1, e1: p3e1, s2: p3s2, e2: p3e2 }
+                ];
+
+                let finalEndTime = 0;
+                let activePhaseIdx = -1;
+                let activeStage = 0;
+                let isPreparing = false;
+                let isFinalConfiguredStage = false;
+
+                // 尋找出「最後一個有設定的階段」以判斷是否該出現候補按鈕
+                let lastPhaseIdx = -1;
+                let lastStageNum = 1;
+                for (let i = 0; i < phases.length; i++) {
+                    if (phases[i].s1 && phases[i].s1 < 9999999999999) {
+                        lastPhaseIdx = i;
+                        lastStageNum = (phases[i].s2 && phases[i].s2 < 9999999999999) ? 2 : 1;
+                    }
                 }
 
-                if (hasStart2 && now >= start2 && now < end2) {
-                    if (isFull) {
-                        if (c.waitlistEnabled) {
-                            if (isWaitlistFull) return '<div class="status-badge status-full">🔴 候補已額滿</div>';
-                            return '<div class="status-badge status-wait">🟡 開放候補中</div>';
+                // 判斷目前狀態
+                for (let i = 0; i < phases.length; i++) {
+                    const p = phases[i];
+                    if (!p.s1 || p.s1 >= 9999999999999) continue;
+
+                    const s1 = p.s1;
+                    const e1 = p.e1 || 9999999999999;
+                    const s2 = p.s2 || 9999999999999;
+                    const e2 = p.e2 || 9999999999999;
+                    const hasS2 = s2 < 9999999999999;
+
+                    finalEndTime = Math.max(finalEndTime, hasS2 ? e2 : e1);
+
+                    if (now >= s1 && now < e1) {
+                        activePhaseIdx = i;
+                        activeStage = 1;
+                        if (i === lastPhaseIdx && lastStageNum === 1) isFinalConfiguredStage = true;
+                    } else if (hasS2 && now >= s2 && now < e2) {
+                        activePhaseIdx = i;
+                        activeStage = 2;
+                        if (i === lastPhaseIdx && lastStageNum === 2) isFinalConfiguredStage = true;
+                    } else if (hasS2 && now >= e1 && now < s2) {
+                        isPreparing = true; // 階段一結束但階段二還沒開始
+                    }
+                }
+
+                if (now < phases[0].s1) return '<div class="status-badge status-closed">尚未開放</div>';
+                if (finalEndTime > 0 && now >= finalEndTime) return '<div class="status-badge status-full">🔴 劃位已結束</div>';
+
+                if (activePhaseIdx === -1) {
+                    if (isPreparing) return '<div class="status-badge status-closed">⛔ 座位整理中</div>';
+                    // 不在上述期間，但也不是第一梯次開始前，也不是最後結束後 (也就是在梯次之間的空白期間)
+                    return '<div class="status-badge status-closed">⛔ 未開放</div>';
+                }
+
+                // 計算座位數
+                let isP1 = true; let isP2 = false; let isP3 = false;
+                if (p3s1 < 9999999999999 && now >= p3s1) { isP3 = true; isP1 = false; }
+                else if (p2s1 < 9999999999999 && now >= p2s1) { isP2 = true; isP1 = false; }
+
+                let soldCount = 0;
+                let currentPhaseLockedCount = 0;
+                const seatsInfo = allSeatsData[c.id] || {};
+
+                Object.keys(seatsInfo).forEach(seatId => {
+                    if (seatId === '_settings') return;
+                    const info = seatsInfo[seatId];
+                    if (info.status === 'sold') {
+                        soldCount++;
+                    } else if (info.status === 'locked') {
+                        if (info.user === 'admin_reserved') {
+                            currentPhaseLockedCount++;
+                        } else if (info.user === 'admin_phase2') {
+                            if (isP1) currentPhaseLockedCount++;
+                        } else if (info.user === 'admin_phase3') {
+                            if (isP1 || isP2) currentPhaseLockedCount++;
                         }
-                        return '<div class="status-badge status-full">🔴 此階段已額滿</div>';
                     }
-                    return c.isTrialEvent
-                        ? '<div class="status-badge status-open">🟢 開放報名中</div>'
-                        : '<div class="status-badge status-open">🟢 開放劃位中</div>';
+                });
+
+                const effectiveSoldCount = soldCount + currentPhaseLockedCount;
+                let isFull = effectiveSoldCount >= (c.totalSeats || 999);
+
+                if (isFull) {
+                    if (isFinalConfiguredStage && c.waitlistEnabled) {
+                        return isWaitlistFull ? '<div class="status-badge status-full">🔴 候補已額滿</div>' : '<div class="status-badge status-wait">🟡 開放候補中</div>';
+                    }
+                    return '<div class="status-badge status-full">🔴 此階段已額滿</div>';
                 }
 
-                if ((hasEnd2 && now >= end2) || (!hasStart2 && hasEnd1 && now >= end1)) {
-                    return '<div class="status-badge status-full">🔴 劃位已結束</div>';
-                }
-
-                return '<div class="status-badge status-closed">尚未開放</div>';
+                return '<div class="status-badge status-open">🟢 開放劃位中</div>';
             }
 
             function renderCourses(courses) {
@@ -1267,6 +1325,16 @@
                 if (!noRefresh) refreshDisplay();
             };
 
+            // ★★★ 關鍵：頁面初始化時預先載入 signInWithPopup & signOut，
+            //   這樣點擊登入按鈕時可以直接同步呼叫，不需要 await import()。
+            //   任何在點擊事件中的 await 都會打斷「使用者手勢鏈」，導致 popup 被封鎖。
+            let _signInWithPopup = null;
+            let _signOut = null;
+            import('./firebase-config.js').then(mod => {
+                _signInWithPopup = mod.signInWithPopup;
+                _signOut = mod.signOut;
+            });
+
             const checkAdminRedirect = async (user) => {
                 try {
                     // ★ 防護：如果是匿名帳號或沒信箱，直接阻斷
@@ -1278,40 +1346,37 @@
                         const errMsg = "權限不足！此帳號（" + user.email + "）非系統管理員。";
                         if (typeof Swal !== 'undefined') Swal.fire(errMsg);
                         else alert(errMsg);
-                        const { signOut } = await import('./firebase-config.js');
-                        await signOut(auth);
+                        if (_signOut) await _signOut(auth);
                     }
                 } catch (error) {
                     console.error("驗證管理員身分失敗:", error);
                 }
             };
 
-            // ★★★ 管理員 Google 登入（重新採用彈出視窗模式，並加強提示）★★★
-            window.loginAdminWithGoogle = async function () {
+            // ★★★ 管理員 Google 登入 ★★★
+            window.loginAdminWithGoogle = function () {
                 // ★ 核心修正：必須確認「有登入」且「不是匿名訪客」
                 if (auth.currentUser && !auth.currentUser.isAnonymous) {
-                    await checkAdminRedirect(auth.currentUser);
+                    checkAdminRedirect(auth.currentUser);
+                    return;
+                }
+
+                // ★★★ 關鍵：signInWithPopup 必須在同步的點擊事件函數內直接呼叫，
+                //   任何 await（包含 await import()）都會打斷「使用者手勢鏈」，
+                //   導致瀏覽器封鎖彈出視窗（popup-blocked）。
+                //   _signInWithPopup 已在頁面初始化時預先載入完畢。
+                if (!_signInWithPopup) {
+                    alert('系統尚未初始化完成，請稍後再試！');
                     return;
                 }
 
                 const provider = new GoogleAuthProvider();
 
-                if (typeof Swal !== 'undefined') {
-                    Swal.fire({
-                        title: '登入中...',
-                        allowOutsideClick: false,
-                        didOpen: () => { Swal.showLoading(); }
-                    });
-                }
-
-                try {
-                    const { signInWithPopup } = await import('./firebase-config.js');
-                    const signResult = await signInWithPopup(auth, provider);
-                    if (typeof Swal !== 'undefined') Swal.close();
+                _signInWithPopup(auth, provider).then(signResult => {
                     if (signResult && signResult.user) {
-                        await checkAdminRedirect(signResult.user);
+                        return checkAdminRedirect(signResult.user);
                     }
-                } catch (error) {
+                }).catch(error => {
                     console.error("登入失敗:", error);
                     let errorMsg = "登入發生錯誤：" + error.message;
                     if (error.code === 'auth/popup-blocked' || error.message.includes('popup')) {
@@ -1327,7 +1392,7 @@
                     } else {
                         alert("登入取消或失敗\n\n" + errorMsg);
                     }
-                }
+                });
             };
 
             // ★★★ Check URL ?mode= Parameter to auto enter mode ★★★

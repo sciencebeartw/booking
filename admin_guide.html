@@ -291,7 +291,7 @@
     <header>
         <img src="logo1.png" alt="山熊科學">
         <h1>行政團隊系統操作白皮書</h1>
-        <span class="version-badge">V36.5 智能分發版 (Phase 7)</span>
+        <span class="version-badge">V36.6 梯次保留版 (Phase 8)</span>
         <span class="author-badge">總架構設計：阿喵老師</span>
         <button id="navLoginBtn" onclick="loginAdminWithGoogle()"
             style="margin-left: auto; background: #3498db; color: white; border: none; padding: 10px 20px; border-radius: 20px; font-size: 14px; font-weight: bold; cursor: pointer; transition: 0.2s; box-shadow: 0 2px 5px rgba(0,0,0,0.2);">
@@ -499,8 +499,19 @@
             <p>在戰火猛烈的劃位當下，難免會有家長「點了座位卻斷線」或是「猶豫不決直接關掉網頁」，導致座位被「假性佔用」。</p>
             <ul>
                 <li><strong>運作機制：</strong> 後台左下角的黑色浮動小框是一隻自動機器人。它每 10 秒會巡視一次龐大的資料庫。</li>
-                <li><strong>超渡殭屍：</strong> 如果發現有家長點了位置卻斷線、關閉視窗超過 <span class="highlight">2.5 分鐘</span>
-                    未送出，機器人會判定為「殭屍鎖」，並自動將該座位釋出（後台預設緩衝期約 150 秒，以補償家長圖片驗證時間）。</li>
+                <li><strong>超渡殭屍：</strong> 如果發現有家長點了位置卻斷線、關閉視窗超過 <span class="highlight">2 分鐘（120 秒）</span>
+                    未送出，機器人會判定為「殭屍鎖」，並自動將該座位釋出（加上 10 秒掃描間隔，實際最長約 130 秒）。</li>
+                <li><strong>🛡️ 管理員保留座位永不清除：</strong> 殭屍機器人只清除一般家長的「卡位」，<strong>三種管理員手動保留類型均在保護名單內，永遠不會被自動清除</strong>：
+                    <ul style="margin-top:8px;">
+                        <li>🟠 <strong>一般暫留（admin_reserved）</strong>：後台點空位選「一般保留」。前台顯示橘色，代表「填表中/暫留」。永不自動清除。</li>
+                        <li>🔵
+                            <strong>跨梯次保留第二梯（admin_phase2）</strong>：後台選「跨梯次保留（第二梯次）」。前台顯示藍灰色「下梯開放」字樣。永不自動清除，需等第二梯次到來後管理員手動釋放。
+                        </li>
+                        <li>🟣
+                            <strong>跨梯次保留第三梯（admin_phase3）</strong>：後台選「跨梯次保留（第三梯次）」。前台顯示深灰色「下梯開放」字樣。永不自動清除，需等第三梯次到來後管理員手動釋放。
+                        </li>
+                    </ul>
+                </li>
                 <li><strong>⚠️ 行政指令：</strong> 劃位當晚，請務必指派一台電腦<strong>「開啟後台並放置不理」</strong>，機器人必須依賴開啟的後台才能持續運作！</li>
             </ul>
 
@@ -867,6 +878,83 @@
                 吻合才能調閱個人訂單。這是目前業界最高標準的 PII (個人可識別資訊) 防護機制，讓惡意人士絕對無法透過窮舉法撈取其他家長的劃位資料。</p>
 
             <h3 id="ch4-4">📜 SOP：正式劃位防禦戰略 (Regular Courses)</h3>
+            <div class="box success" style="margin-bottom:20px;">
+                <div class="box-title">🗓️ 多梯次（Phase）＆ 多階段（Stage）劃位完整流程說明</div>
+                <p>本系統支援最多 <strong>3 個梯次</strong>，每個梯次代表不同日期（或不同開放對象）。每梯次固定分兩個階段在同一天進行：</p>
+                <ul>
+                    <li><strong>一階（Stage 1）</strong>：預設 19:00 開放</li>
+                    <li><strong>二階（Stage 2）</strong>：預設 21:00 開放</li>
+                </ul>
+                <p>設定時只需在後台「課程管理」選擇梯次日期，系統會自動填入 19:00 / 20:00 / 21:00。若有特殊需求可手動修改。</p>
+            </div>
+
+            <div class="box warning" style="margin-bottom:20px;">
+                <div class="box-title">📋 情境一：不分梯次（單梯次）</div>
+                <ol>
+                    <li>設定「第一梯次」日期，系統自動填入一階 19:00、二階 21:00。</li>
+                    <li>19:00 開放（一階）→ 家長搶位 → 快速售出。<strong>此階段不開啟候補</strong>。</li>
+                    <li>20:00 暫停（整理重複名單，釋出座位）。</li>
+                    <li>21:00 再次開放（二階）。</li>
+                    <li>待二階座位<strong>完全售罄</strong>後，若已勾選「啟用候補」且為<strong>最後一梯次的二階</strong>，候補按鈕才會出現。</li>
+                </ol>
+                <p>⚠️ 重要：「啟用候補」核取方塊建議等到<strong>一階結束後</strong>才勾選，防止候補按鈕提早出現。</p>
+            </div>
+
+            <div class="box warning" style="margin-bottom:20px; border-left-color:#e67e22;">
+                <div class="box-title">📋 情境二：兩梯次（班內生 + 班外生）</div>
+                <ol>
+                    <li>在後台設定「第一梯次」（班內生日期）與「第二梯次」（班外生日期）。</li>
+                    <li>管理員在第一梯次時，可在座位監控點擊空位，選擇「跨梯次保留（第二梯次）」，這些位置會以灰色顯示在前台，家長無法點擊。</li>
+                    <li>第一梯次（一階+二階）進行班內生劃位，<strong>不開啟候補</strong>。</li>
+                    <li>第二梯次到來時，被設定為「第二梯次保留」的座位自動解鎖（變為可劃），班外生可開始搶位。</li>
+                    <li>只有在<strong>第二梯次（最後一梯次）二階全數售罄後</strong>，候補按鈕才會出現。</li>
+                </ol>
+            </div>
+
+            <div class="box warning" style="margin-bottom:20px; border-left-color:#e74c3c;">
+                <div class="box-title">📋 情境三：三梯次（如：國二理化分三批開放）</div>
+                <ol>
+                    <li>設定第一、第二、第三梯次的日期，依情況設定各梯次前台提示文字（如：「12/05 班外生開放」）。</li>
+                    <li>第一梯次時，管理員可將座位設定為「跨梯次保留（第二梯次）」或「跨梯次保留（第三梯次）」。</li>
+                    <li>各梯次依序進行，第三梯次（最終梯次）二階全數售罄才開放候補。</li>
+                </ol>
+            </div>
+
+            <div class="box tech" style="margin-bottom:20px;">
+                <div class="box-title">⚙️ 跨梯次座位保留操作指南</div>
+                <ul>
+                    <li><strong>第一步：設定梯次與提示</strong> 在建立或編輯課程時，設定後續梯次的日期，並輸入「開放提示文字」（例：`12/25 班外生才開放`）。</li>
+                    <li><strong>第二步：鎖定座位</strong> 在後台「劃位監控 (戰情室)」點擊任意<strong>空位</strong>，系統會跳出選單供選擇：
+                        <ul>
+                            <li>🔒 <strong>一般保留</strong>（暫留，前台顯示對應顏色「填寫中」或「保留」）</li>
+                            <li>📅 <strong>跨梯次保留（第二梯次）</strong>（指派給下一個梯次）</li>
+                            <li>📅 <strong>跨梯次保留（第三梯次）</strong>（指派給最終梯次）</li>
+                        </ul>
+                    </li>
+                    <li><strong>前台顯示效果：</strong>
+                        跨梯次保留的座位在前台圖例會顯示您的「提示文字」，座位本體以<strong>不顯眼的灰色</strong>呈現。看得到座位號碼，但<strong>無法點擊</strong>、無 Hover
+                        效果。</li>
+                    <li><strong>座位額滿判定：</strong>
+                        這些保留座位在計算「現有座位數」與「是否額滿」時會被自動扣除。因此，即使還有這些灰色座位，只要一般可選位沒了，系統也能精準判斷為「本梯次額滿」。</li>
+                    <li><strong style="color:#e74c3c;">⚠️ 第三步：手動釋放 (極重要)</strong>
+                        當時間推進到這些保留座位的專屬梯次時，系統<strong>不會自動解鎖</strong>。管理員必須在戰情室針對這些藍灰色／深灰色「下梯開放」座位<strong>點擊並選擇「刪除
+                            (釋放座位)」</strong>。釋出後，前台的保留座位會瞬間轉為可劃位的綠色！
+                        <br><span style="color:#2ecc71; font-weight:bold;">✅ 無需擔心誤清除：</span>
+                        殭屍機器人<strong>永遠不會</strong>自動清除任何管理員保留的座位（admin_phase2 / admin_phase3），您可以放心讓它們靜靜等待到下個梯次。
+                    </li>
+                </ul>
+            </div>
+
+            <div class="box success" style="margin-bottom:20px;">
+                <div class="box-title">✅ 候補（Waitlist）出現條件 — 精準規則</div>
+                <p>以下<strong>三個條件必須同時成立</strong>，候補按鈕才會在前台出現：</p>
+                <ol>
+                    <li>課程管理已勾選「啟用候補」</li>
+                    <li>目前時間為<strong>最後一個已設定梯次的最後一個已設定階段</strong>（例：三梯次時，必須在第三梯次的 21:00 之後）</li>
+                    <li>所有本梯次可劃座位（不含跨梯次保留的座位）<strong>全數售罄</strong></li>
+                </ol>
+            </div>
+
             <p>這是一份精心設計的「戰略文件」，我們導入了高階的<strong>「期望值管理」</strong>：</p>
             <ul>
                 <li><strong>破解九宮格客訴 (免責聲明)：</strong> 明白告知家長遇到九宮格是因為「流量洪峰、共用IP、擋廣告套件、非自然手勢」等四個不可抗力因素。並宣導「我們已為此提供 90

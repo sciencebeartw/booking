@@ -94,10 +94,14 @@
               newData.exists() &&
               $seatId !== '_settings' &&
               
-              // 條件一：必須在合法開放時間內
+              // 條件一：必須在合法開放時間內 (涵蓋所有梯次)
               (
                 (now >= root.child('seats').child($courseId).child('_settings').child('start1').val() && now < root.child('seats').child($courseId).child('_settings').child('end1').val()) ||
-                (now >= root.child('seats').child($courseId).child('_settings').child('start2').val() && now < root.child('seats').child($courseId).child('_settings').child('end2').val())
+                (now >= root.child('seats').child($courseId).child('_settings').child('start2').val() && now < root.child('seats').child($courseId).child('_settings').child('end2').val()) ||
+                (now >= root.child('seats').child($courseId).child('_settings').child('t2_start1').val() && now < root.child('seats').child($courseId).child('_settings').child('t2_end1').val()) ||
+                (now >= root.child('seats').child($courseId).child('_settings').child('t2_start2').val() && now < root.child('seats').child($courseId).child('_settings').child('t2_end2').val()) ||
+                (now >= root.child('seats').child($courseId).child('_settings').child('t3_start1').val() && now < root.child('seats').child($courseId).child('_settings').child('t3_end1').val()) ||
+                (now >= root.child('seats').child($courseId).child('_settings').child('t3_start2').val() && now < root.child('seats').child($courseId).child('_settings').child('t3_end2').val())
               ) &&
               
               // 條件二：嚴格的狀態轉換限制 (防截胡機制)

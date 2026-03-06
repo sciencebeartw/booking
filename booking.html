@@ -179,6 +179,44 @@
             pointer-events: none;
         }
 
+        .seat.phase2,
+        .seat.phase3 {
+            background-color: #6c5ce7 !important;
+            /* Indigo */
+            color: rgba(255, 255, 255, 0.95) !important;
+            cursor: not-allowed;
+            pointer-events: none;
+            transform: none;
+            line-height: 1.1;
+            display: flex;
+            flex-direction: column;
+            justify-content: center;
+            align-items: center;
+            padding: 2px 0;
+            box-sizing: border-box;
+        }
+
+        .seat.phase2 span,
+        .seat.phase3 span {
+            display: block;
+            pointer-events: none;
+        }
+
+        .seat.phase2 .seat-tag,
+        .seat.phase3 .seat-tag {
+            font-size: 9px;
+            opacity: 1;
+            font-weight: bold;
+        }
+
+        .seat.phase2 .seat-id,
+        .seat.phase3 .seat-id {
+            font-size: 13px;
+            /* Default seat size */
+            font-weight: bold;
+            margin-bottom: 1px;
+        }
+
         .seat.mylocked {
             background-color: #3498db;
             border: 2px solid #2980b9;
@@ -661,6 +699,7 @@
             <span class="status-group">
                 <span class="dot" style="background:#3498db;"></span>您的座位
                 <span class="dot" style="background:#95a5a6;"></span>不開放
+                <span class="dot" style="background:#6c5ce7;"></span>保留至下一梯次
             </span>
         </div>
 
@@ -906,40 +945,48 @@
             });
         }
 
-        function checkTimeAndRender(now, settings, classroomType) {
-            const { start1, end1, start2, end2 } = settings;
-            const isOpen1 = (now >= start1 && now < end1);
-            const isOpen2 = (now >= start2 && (!end2 || now < end2));
+        let isFinalConfiguredStage = false;
 
-            if (!isOpen1 && !isOpen2) {
+        function checkTimeAndRender(now, settings, classroomType) {
+            const { start1, end1, start2, end2, t2_start1, t2_end1, t2_start2, t2_end2, t3_start1, t3_end1, t3_start2, t3_end2 } = settings;
+
+            const isOpen1_1 = (now >= start1 && now < end1);
+            const isOpen1_2 = (now >= start2 && (!end2 || now < end2));
+            const isP1 = isOpen1_1 || isOpen1_2;
+
+            const hasP2 = (t2_start1 && t2_start1 < 9999999999999);
+            const isOpen2_1 = hasP2 && (now >= t2_start1 && now < t2_end1);
+            const isOpen2_2 = hasP2 && (now >= t2_start2 && (!t2_end2 || now < t2_end2));
+            const isP2 = isOpen2_1 || isOpen2_2;
+
+            const hasP3 = (t3_start1 && t3_start1 < 9999999999999);
+            const isOpen3_1 = hasP3 && (now >= t3_start1 && now < t3_end1);
+            const isOpen3_2 = hasP3 && (now >= t3_start2 && (!t3_end2 || now < t3_end2));
+            const isP3 = isOpen3_1 || isOpen3_2;
+
+            if (!isP1 && !isP2 && !isP3) {
                 let msg = "⛔ 目前非開放劃位時間！";
                 if (now < start1) msg = "⛔ 劃位尚未開始！請勿偷跑！";
-                if (now >= end1 && now < start2) msg = "⛔ 系統整理中，暫停開放！";
-                Swal.fire(msg);
-                window.location.href = "index.html";
+                else msg = "⛔ 系統整理中，暫停開放！";
+                Swal.fire(msg).then(() => {
+                    window.location.href = "index.html";
+                });
                 return;
             }
 
-            const hasPhase2 = (start2 && start2 < 9999999999999);
-            const isPhase2 = (now >= start2);
-
-            if (currentCourseData && currentCourseData.waitlistEnabled && soldCount >= totalSeats) {
-                if (!hasPhase2 || (hasPhase2 && isPhase2)) {
-                    waitlistArea.style.display = "block";
-                    updateWaitlistButton();
-                } else {
-                    waitlistArea.style.display = "none";
-                }
-            } else {
-                waitlistArea.style.display = "none";
-            }
+            let maxStartTime = 0;
+            const allStarts = [start1, start2, t2_start1, t2_start2, t3_start1, t3_start2];
+            allStarts.forEach(t => { if (t && t < 9999999999999 && t > maxStartTime) maxStartTime = t; });
+            isFinalConfiguredStage = (now >= maxStartTime);
 
             let targetTime = null;
-            if (isOpen1) {
-                if (end1 < 9999999999999) targetTime = end1;
-            } else if (isOpen2) {
-                if (end2 && end2 < 9999999999999) targetTime = end2;
-            }
+            if (isOpen1_1) targetTime = end1;
+            else if (isOpen1_2) targetTime = end2;
+            else if (isOpen2_1) targetTime = t2_end1;
+            else if (isOpen2_2) targetTime = t2_end2;
+            else if (isOpen3_1) targetTime = t3_end1;
+            else if (isOpen3_2) targetTime = t3_end2;
+            if (targetTime && targetTime >= 9999999999999) targetTime = null;
 
             if (targetTime) {
                 deadlineTimer.style.display = "block";
@@ -989,15 +1036,53 @@
 
         function checkExpiration(settings) {
             const now = Date.now() + serverTimeOffset;
-            const { start1, end1, start2, end2 } = settings;
 
-            if (now >= end1 && now < start2) {
-                Swal.fire({ icon: 'warning', title: '第一階段劃位時間已結束！', html: '系統整理中，請稍後再回來。' });
-                window.location.href = "index.html";
+            // Gather all active periods
+            const periods = [];
+            const addPeriod = (s1, e1, s2, e2) => {
+                if (s1 && s1 < 9999999999999) {
+                    periods.push({ start: s1, end: e1 || 9999999999999, isStage2: false });
+                }
+                if (s2 && s2 < 9999999999999) {
+                    periods.push({ start: s2, end: e2 || 9999999999999, isStage2: true });
+                }
+            };
+
+            addPeriod(settings.start1, settings.end1, settings.start2, settings.end2);
+            addPeriod(settings.t2_start1, settings.t2_end1, settings.t2_start2, settings.t2_end2);
+            addPeriod(settings.t3_start1, settings.t3_end1, settings.t3_start2, settings.t3_end2);
+
+            if (periods.length === 0) return;
+
+            // Sort periods by start time
+            periods.sort((a, b) => a.start - b.start);
+
+            let isCurrentlyInSystemMaintenance = false;
+            let isAllFinished = true;
+
+            for (let i = 0; i < periods.length; i++) {
+                const p = periods[i];
+                const nextP = periods[i + 1] || null;
+
+                // We haven't reached the end of this period yet
+                if (now < p.end) {
+                    isAllFinished = false;
+                }
+
+                // If we are strictly between this period and the next period
+                if (now >= p.end && nextP && now < nextP.start) {
+                    isCurrentlyInSystemMaintenance = true;
+                }
             }
-            if (end2 && end2 < 9999999999999 && now >= end2) {
-                Swal.fire({ icon: 'warning', title: '劃位時間已全部結束！' });
-                window.location.href = "index.html";
+
+            if (isCurrentlyInSystemMaintenance) {
+                Swal.fire({ icon: 'warning', title: '劃位階段已結束！', html: '系統整理中，請等待下一階段開放。' }).then(() => {
+                    window.location.href = "index.html";
+                });
+            } else if (isAllFinished) {
+                Swal.fire({ icon: 'warning', title: '劃位時間已全部結束！' }).then(() => {
+                    window.location.href = "index.html";
+                });
             }
         }
 
@@ -1043,8 +1128,10 @@
                         seat.textContent = code;
                         seat.dataset.id = code;
                         seat.id = `seat-${code}`;
-                        if (isBlocked) seat.classList.add('blocked');
-                        else {
+                        if (isBlocked) {
+                            seat.classList.add('blocked');
+                            seat.textContent = ''; // blocked seats show blank
+                        } else {
                             seat.addEventListener('click', () => tryLockSeat(code));
                             totalSeats++;
                         }
@@ -1076,21 +1163,34 @@
                     }
                 }
 
+                const now = Date.now() + serverTimeOffset;
+                let currentPhaseLockedCount = 0;
+                let isP1 = true;
+                let isP2 = false;
+                let isP3 = false;
+
+                if (courseSettings) {
+                    const { t2_start1, t3_start1 } = courseSettings;
+                    const hasP2 = (t2_start1 && t2_start1 < 9999999999999);
+                    const hasP3 = (t3_start1 && t3_start1 < 9999999999999);
+                    if (hasP3 && now >= t3_start1) { isP3 = true; isP1 = false; }
+                    else if (hasP2 && now >= t2_start1) { isP2 = true; isP1 = false; }
+                }
+
                 document.querySelectorAll('.seat').forEach(seatEl => {
                     const seatId = seatEl.dataset.id;
                     if (!seatId || seatEl.classList.contains('blocked')) return;
 
                     const seatInfo = data[seatId];
-                    seatEl.classList.remove('sold', 'locked', 'mylocked');
+                    seatEl.classList.remove('sold', 'locked', 'mylocked', 'phase2', 'phase3');
                     seatEl.style.backgroundColor = "";
+                    seatEl.textContent = seatId; // Reset name
+                    seatEl.style.cursor = 'pointer';
 
                     if (seatInfo) {
                         if (seatInfo.status === 'sold') {
-                            if (seatInfo.user === myUserId) {
-                                seatEl.classList.add('mylocked');
-                            } else {
-                                seatEl.classList.add('sold');
-                            }
+                            if (seatInfo.user === myUserId) seatEl.classList.add('mylocked');
+                            else seatEl.classList.add('sold');
                             soldCount++;
                         } else if (seatInfo.status === 'locked') {
                             if (seatInfo.user === myUserId) {
@@ -1098,6 +1198,15 @@
                                 checkAndRestoreSession(seatId, seatInfo.timestamp);
                             } else if (seatInfo.user === 'admin_reserved') {
                                 seatEl.classList.add('locked');
+                                currentPhaseLockedCount++;
+                            } else if (seatInfo.user === 'admin_phase2') {
+                                seatEl.classList.add('phase2');
+                                seatEl.innerHTML = `<span class="seat-id">${seatId}</span><span class="seat-tag">下梯開放</span>`;
+                                if (isP1) currentPhaseLockedCount++;
+                            } else if (seatInfo.user === 'admin_phase3') {
+                                seatEl.classList.add('phase3');
+                                seatEl.innerHTML = `<span class="seat-id">${seatId}</span><span class="seat-tag">下梯開放</span>`;
+                                if (isP1 || isP2) currentPhaseLockedCount++;
                             } else {
                                 seatEl.classList.add('locked');
                             }
@@ -1105,14 +1214,10 @@
                     }
                 });
 
-                const now = Date.now() + serverTimeOffset;
                 if (courseSettings) {
-                    const { start2 } = courseSettings;
-                    const hasPhase2 = (start2 && start2 < 9999999999999);
-                    const isPhase2 = (now >= start2);
-
-                    if (currentCourseData && currentCourseData.waitlistEnabled && soldCount >= totalSeats) {
-                        if (!hasPhase2 || (hasPhase2 && isPhase2)) {
+                    const effectiveSoldCount = soldCount + currentPhaseLockedCount;
+                    if (currentCourseData && currentCourseData.waitlistEnabled && effectiveSoldCount >= totalSeats) {
+                        if (isFinalConfiguredStage) {
                             waitlistArea.style.display = "block";
                             updateWaitlistButton();
                         } else {
@@ -1326,12 +1431,14 @@
 
             const orderId = Date.now().toString().slice(-6) + Math.floor(Math.random() * 100);
             const timestamp = new Date().toLocaleString();
+            const timestampMs = Date.now(); // ★ 數字毫秒，供後台 formatTimeWithMs 使用
 
             const seatData = {
                 status: 'sold',
                 studentName: name,
                 parentPhone: phone,
                 soldTime: timestamp,
+                timestamp: timestampMs, // ★ 修復：後台時間顯示需要數字 timestamp
                 orderId: orderId,
                 user: myUserId
             };
