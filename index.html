@@ -1111,11 +1111,35 @@
 
                 const soldCount = (seatsStatus[c.id] && seatsStatus[c.id].sold) || 0;
                 const totalSeats = c.totalSeats || 999;
-                const isFull = soldCount >= totalSeats;
+                let isFull = soldCount >= totalSeats;
 
                 const waitlistCount = waitlistStatus[c.id] || 0;
                 const waitlistLimit = c.waitlistLimit || 0;
                 const isWaitlistFull = (waitlistLimit > 0 && waitlistCount >= waitlistLimit);
+
+                // 特別處理純候補模式 (waitlist_only)
+                let isWaitlistOnlyFull = false;
+                if (c.isTrialEvent && c.type === 'waitlist_only' && c.sessions) {
+                    let allSessionsFull = true;
+                    let hasAnySession = false;
+                    for (let key in c.sessions) {
+                        hasAnySession = true;
+                        const s = c.sessions[key];
+                        const cap = s.capacity || 0;
+                        const curCount = s.currentWaitlistCount || 0;
+                        if (curCount < cap) {
+                            allSessionsFull = false;
+                            break;
+                        }
+                    }
+                    if (hasAnySession && allSessionsFull) {
+                        isWaitlistOnlyFull = true;
+                    }
+                }
+
+                if (isWaitlistOnlyFull) {
+                    isFull = true;
+                }
 
                 // 已經被後台手動關閉，或是試聽活動已過結束時間
                 if (c.forceClosed || (c.isTrialEvent && now >= end1)) {

@@ -3777,6 +3777,17 @@ window.renderTrialResults = function (allocated, waitlist, sessionsMap) {
         ev.dataTransfer.setData("stu_id", ev.target.id);
         ev.dataTransfer.setData("source_class", ev.target.getAttribute('data-class'));
     }
+
+    // ✨ 重算候補序號 (每次拖曳後呼叫)
+    window.renumberWaitlist = function (container) {
+        if (!container) return;
+        const cards = container.querySelectorAll('div[id*="_wl_"]');
+        cards.forEach((card, idx) => {
+            const seqSpan = card.querySelector('.wl-seq');
+            if (seqSpan) seqSpan.textContent = `#${idx + 1}`;
+        });
+    }
+
     window.drop = function (ev) {
         ev.preventDefault();
         const data = ev.dataTransfer.getData("stu_id");      // 元素的 ID (例如 stu_12345)
@@ -3790,20 +3801,68 @@ window.renderTrialResults = function (allocated, waitlist, sessionsMap) {
         const el = document.getElementById(data);
         if (!el) return;
 
+        const isSourceWl = el.id.includes('_wl_') || el.id.startsWith('wl_stu_');
+        const isTargetWl = targetClass === 'waitlist';
+
+        // ✨ 防呆：禁止跨科拖曳（僅在正取區之間）
+        // 只有當來源是正取區、目標也是正取區時才進行科目比對
+        if (!isSourceWl && !isTargetWl) {
+            const srcSubj = source_class.startsWith('math_') ? 'math' : source_class.startsWith('sci_') ? 'sci' : null;
+            const tgtSubj = targetClass.startsWith('math_') ? 'math' : targetClass.startsWith('sci_') ? 'sci' : null;
+            if (srcSubj && tgtSubj && srcSubj !== tgtSubj) {
+                // 彈跳提示 (輕量)
+                el.style.outline = '3px solid #e74c3c';
+                setTimeout(() => el.style.outline = '', 800);
+                return; // 阻擋跨科拖曳
+            }
+        }
+
+        // ✨ 防呆：禁止從候補區跨科拖入正取班（數學候補不能拉進自然班，反之亦然）
+        if (isSourceWl && !isTargetWl && targetClass !== 'waitlist') {
+            const srcSubj = source_class.startsWith('math_') ? 'math' : source_class.startsWith('sci_') ? 'sci' : null;
+            const tgtSubj = targetClass.startsWith('math_') ? 'math' : targetClass.startsWith('sci_') ? 'sci' : null;
+            if (srcSubj && tgtSubj && srcSubj !== tgtSubj) {
+                el.style.outline = '3px solid #e74c3c';
+                setTimeout(() => el.style.outline = '', 800);
+                return;
+            }
+        }
+
         // 抓出學生的唯一原始 ID (用來找影分身)
         const studentId = el.getAttribute('data-original-id') || data.replace('stu_', '').split('_')[0];
 
         el.setAttribute('data-class', targetClass);
-        // 如果原本是候補名單的節點，拖進去後要把 ID 改成正取格式，外觀也可以微調
+
+        // ✨ 智慧插入: 若拖到某張「學生卡」上方，則安插在那個學生前面（候補排序功能）
+        const dropTarget = ev.target.closest('div[data-original-id]');
+        const isInsertMode = dropTarget && dropTarget !== el && targetContainer.contains(dropTarget);
+
         if (el.id.includes('_wl_') || el.id.startsWith('wl_stu_')) {
             el.id = `stu_${studentId}_${targetClass}`;
-            // 移除候補特有的序號 span
-            const seqSpan = el.querySelector('span');
-            if (seqSpan) seqSpan.remove();
+            // 移除候補特有的序號 span (若從候補區拉到正取區)
+            if (!isTargetWl) {
+                const seqSpan = el.querySelector('.wl-seq');
+                if (seqSpan) seqSpan.remove();
+            }
         } else {
             el.id = `stu_${studentId}_${targetClass}`;
         }
-        targetContainer.appendChild(el);
+
+        if (isInsertMode) {
+            targetContainer.insertBefore(el, dropTarget);
+        } else {
+            targetContainer.appendChild(el);
+        }
+
+        // ✨ 重算候補名單序號
+        if (isTargetWl || el.id.includes('_wl_')) {
+            window.renumberWaitlist(targetContainer);
+        }
+        // 也重算來源容器
+        const sourceContainer = document.querySelector(`.class-list-container[data-cls="${source_class}"]`);
+        if (sourceContainer && (source_class === 'waitlist' || source_class.includes('_wl'))) {
+            window.renumberWaitlist(sourceContainer);
+        }
 
         // --- 需求二：同科影分身消除機制 ---
         // 判斷目標班級是數學還是自然
@@ -4003,7 +4062,19 @@ window.renderTrialResults = function (allocated, waitlist, sessionsMap) {
             // ★ 如果引擎已經賦予了絕對 rank，就用它的，否則按順序排
             let displayRank = stu.rank ? stu.rank : (wIndex + 1);
 
-            stuItem.innerHTML = `<span style=\"background:rgba(0,0,0,0.2); padding:2px 4px; border-radius:3px; margin-right:4px;\">#${displayRank}</span> <strong>${window.escapeHTML(stu.studentName)}</strong> (${window.escapeHTML(stu.parentPhone)})`;
+            // ✨ 顯示報名送單時間
+            let timeStr = '';
+            if (stu.clientTimestampMs) {
+                const d = new Date(stu.clientTimestampMs);
+                const mm = String(d.getMonth() + 1).padStart(2, '0');
+                const dd = String(d.getDate()).padStart(2, '0');
+                const hh = String(d.getHours()).padStart(2, '0');
+                const min = String(d.getMinutes()).padStart(2, '0');
+                const ss = String(d.getSeconds()).padStart(2, '0');
+                timeStr = `<span style="opacity:0.75; font-size:10px; margin-left:6px;">⏱ ${mm}/${dd} ${hh}:${min}:${ss}</span>`;
+            }
+
+            stuItem.innerHTML = `<span class="wl-seq" style="background:rgba(0,0,0,0.2); padding:2px 4px; border-radius:3px; margin-right:4px;">#${displayRank}</span> <strong>${window.escapeHTML(stu.studentName)}</strong> (${window.escapeHTML(stu.parentPhone)})${timeStr}`;
             listContainer.appendChild(stuItem);
         });
 
@@ -4862,9 +4933,9 @@ window.generateTrialTestData = async function () {
             parentName: lastName + "爸爸",
             parentPhone: `09${Math.floor(Math.random() * 90000000 + 10000000)}`,
             preferences: {
-                choice1: shuffledChoices[0],
-                choice2: shuffledChoices[1],
-                choice3: shuffledChoices[2]
+                choice1: shuffledChoices[0] || "",
+                choice2: shuffledChoices[1] || "",
+                choice3: shuffledChoices[2] || ""
             },
             clientTimestampMs: baseTime + Math.floor(Math.random() * 5000), // 隨機加上 0~5秒
             status: 'pending'

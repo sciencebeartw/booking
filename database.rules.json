@@ -147,8 +147,9 @@
             ".read": "auth != null && auth.token.email != null && root.child('admins').child(auth.token.email.replace('.', ',').replace('.', ',').replace('.', ',')).exists()",
             "registrations": {
                 "$eventId": {
+                    ".write": "auth != null && auth.token.email != null && root.child('admins').child(auth.token.email.replace('.', ',').replace('.', ',').replace('.', ',')).exists()",
                     "$uid": {
-                        ".write": "(auth != null && auth.token.email != null && root.child('admins').child(auth.token.email.replace('.', ',').replace('.', ',').replace('.', ',')).exists()) || (newData.exists() && auth != null && auth.uid === $uid)"
+                        ".write": "newData.exists() && auth != null && auth.uid === $uid"
                     }
                 }
             }

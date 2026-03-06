@@ -896,6 +896,21 @@
                 // For display, always countdown to true start1
                 const displayDiff = start1 - now;
 
+                // ★★★ 純候補模式：檢查是否所有場次都已額滿 ★★★
+                let isWaitlistOnlyFull = false;
+                if (c.isTrialEvent && c.type === 'waitlist_only' && c.sessions) {
+                    let allFull = true;
+                    let hasAny = false;
+                    for (let key in c.sessions) {
+                        hasAny = true;
+                        const s = c.sessions[key];
+                        const cap = s.capacity || 0;
+                        const cur = s.currentWaitlistCount || 0;
+                        if (cur < cap) { allFull = false; break; }
+                    }
+                    if (hasAny && allFull) isWaitlistOnlyFull = true;
+                }
+
                 if (now < effectiveStart1) {
                     timerLabel.textContent = "距離開放還有";
                     timerText.textContent = formatTime(displayDiff);
@@ -911,7 +926,15 @@
                         timerText.textContent = c.isTrialEvent ? "開放報名中" : "開放劃位中";
                     }
 
-                    if (c.isTrialEvent) {
+                    if (c.isTrialEvent && isWaitlistOnlyFull) {
+                        // 純候補但全部滿了
+                        timerLabel.textContent = "⛔ 目前狀態";
+                        timerText.textContent = "所有班級候補均已額滿";
+                        btn.textContent = "🔴 候補已額滿";
+                        btn.className = "btn-action btn-disabled";
+                        btn.href = '#';
+                        btn.onclick = null;
+                    } else if (c.isTrialEvent) {
                         btn.textContent = "前往報名 ➜";
                         btn.className = "btn-action btn-active";
                         // 改為觸發彈窗驗證，不直接跳轉

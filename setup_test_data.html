@@ -1,0 +1,357 @@
+<!DOCTYPE html>
+<html lang="zh-Hant">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>一鍵建置測試環境</title>
+    <style>
+        body {
+            font-family: sans-serif;
+            padding: 20px;
+            background: #f0f2f5;
+        }
+
+        .container {
+            max-width: 800px;
+            margin: 0 auto;
+            background: white;
+            padding: 30px;
+            border-radius: 8px;
+            box-shadow: 0 2px 10px rgba(0, 0, 0, 0.1);
+        }
+
+        h1 {
+            color: #2c3e50;
+            text-align: center;
+        }
+
+        .btn {
+            display: block;
+            width: 100%;
+            padding: 15px;
+            font-size: 18px;
+            color: white;
+            background-color: #3498db;
+            border: none;
+            border-radius: 5px;
+            cursor: pointer;
+            transition: 0.3s;
+            margin-bottom: 20px;
+        }
+
+        .btn:hover {
+            background-color: #2980b9;
+        }
+
+        .log {
+            background: #1e1e1e;
+            color: #00ff00;
+            padding: 15px;
+            border-radius: 5px;
+            height: 300px;
+            overflow-y: auto;
+            font-family: monospace;
+            white-space: pre-wrap;
+        }
+
+        .success {
+            color: #00ff00;
+        }
+
+        .error {
+            color: #ff3333;
+        }
+
+        .info {
+            color: #3498db;
+        }
+
+        .warning {
+            color: #f39c12;
+        }
+    </style>
+</head>
+
+<body>
+    <div class="container">
+        <h1>✨ 試聽報名系統 - 測試資料建置工具</h1>
+        <p>此工具將自動建立 4 個測試用試聽活動，並預先填入測試用的報名名單（包含重複姓名與排序模擬），以便演示不同模式下的報名、查核與候補邏輯。</p>
+        <button id="btnStart" class="btn">🚀 一鍵生成所有測試資料</button>
+        <div id="logArea" class="log">準備就緒...\n</div>
+    </div>
+
+    <script type="module">
+        import { db, ref, set, push, auth, signInWithPopup, GoogleAuthProvider, onAuthStateChanged } from './firebase-config.js';
+
+        const logArea = document.getElementById('logArea');
+        const btnStart = document.getElementById('btnStart');
+
+        function log(msg, type = 'info') {
+            const span = document.createElement('span');
+            span.className = type;
+            span.textContent = `[${new Date().toLocaleTimeString()}] ${msg}\n`;
+            logArea.appendChild(span);
+            logArea.scrollTop = logArea.scrollHeight;
+        }
+
+        async function createTestData() {
+            btnStart.disabled = true;
+            btnStart.textContent = '生成中... 請稍候';
+            log('開始執行建置腳本...', 'info');
+
+            try {
+                // 1. 管理員 Google 登入 (以取得寫入權限)
+                log('請在彈出視窗中使用管理員帳號登入...', 'warning');
+                const provider = new GoogleAuthProvider();
+                await signInWithPopup(auth, provider);
+                log(`登入成功！(使用者: ${auth.currentUser.email})`, 'success');
+
+                const now = Date.now();
+                // 設定一小時後開放，確保是「籌備中」或「報名中」狀態，這裡設定過去時間讓它直接開放
+                const openTimeStr = new Date(now - 3600000).toISOString().slice(0, 16);
+                const closeTimeStr = new Date(now + 86400000 * 7).toISOString().slice(0, 16); // 7天後關閉
+
+                // ==========================================
+                // 1. 單場次秒殺模式測試
+                // ==========================================
+                log('建立 [Admin Test] 單場次秒殺模式測試...', 'info');
+                const event1Ref = push(ref(db, 'trial_events_config'));
+                const event1Id = event1Ref.key;
+
+                const session1Key = "sess_" + Date.now();
+                await set(event1Ref, {
+                    title: "[Admin Test] 單場次秒殺模式測試",
+                    type: "single_session",
+                    status: "active",
+                    openTime: openTimeStr,
+                    closeTime: closeTimeStr,
+                    earlyAccessSec: 0,
+                    maxChoices: 1,
+                    desc: "<p>測試容量=3，刻意塞入 10 人形成滿額與候補。包含重複姓名標示測試。</p>",
+                    sessions: {
+                        [session1Key]: { name: "單一挑戰場", capacity: 3 }
+                    },
+                    createdAt: now,
+                    updatedAt: now
+                });
+
+                log('填寫單場次報名名單 (10人)...', 'info');
+                const singleSessionNames = [
+                    { name: '王大明', phone: '0911111111' }, // 1
+                    { name: '陳小華', phone: '0922222222' }, // 2
+                    { name: '林小志', phone: '0933333333' }, // 3 (滿)
+                    { name: '王大明', phone: '0911111111' }, // 4 (重複1)
+                    { name: '張雅婷', phone: '0944444444' }, // 5
+                    { name: '李大衛', phone: '0955555555' }, // 6
+                    { name: '陳小華', phone: '0922222222' }, // 7 (重複2)
+                    { name: '吳宇森', phone: '0966666666' }, // 8
+                    { name: '張雅婷', phone: '0944444444' }, // 9 (重複3)
+                    { name: '周杰倫', phone: '0977777777' }  // 10
+                ];
+
+                let baseMs = now - 100000;
+                for (let i = 0; i < singleSessionNames.length; i++) {
+                    const student = singleSessionNames[i];
+                    await push(ref(db, `trial_events/registrations/${event1Id}`), {
+                        studentName: student.name,
+                        parentName: "測試家長",
+                        parentPhone: student.phone,
+                        preferences: { choice1: session1Key },
+                        clientTimestampMs: baseMs + (i * 1000), // 確保依序
+                        status: 'pending'
+                    });
+                }
+                log('單場次建置完成！', 'success');
+
+                // ==========================================
+                // 2. 多梯次志願模式測試
+                // ==========================================
+                log('建立 [Admin Test] 多梯次志願模式測試...', 'info');
+                const event2Ref = push(ref(db, 'trial_events_config'));
+                const event2Id = event2Ref.key;
+
+                const sessA = "sess_A_" + Date.now();
+                const sessB = "sess_B_" + Date.now();
+                const sessC = "sess_C_" + Date.now();
+
+                await set(event2Ref, {
+                    title: "[Admin Test] 多梯次志願模式測試",
+                    type: "multi_choice",
+                    status: "active",
+                    openTime: openTimeStr,
+                    closeTime: closeTimeStr,
+                    earlyAccessSec: 0,
+                    maxChoices: 2,
+                    desc: "<p>測試容量=A(2),B(2),C(2)。填入 12 人進行志願分發測試。</p>",
+                    sessions: {
+                        [sessA]: { name: "梯次A (10:00)", capacity: 2 },
+                        [sessB]: { name: "梯次B (13:00)", capacity: 2 },
+                        [sessC]: { name: "梯次C (15:00)", capacity: 2 }
+                    },
+                    createdAt: now,
+                    updatedAt: now
+                });
+
+                log('填寫多梯次報名名單 (12人)...', 'info');
+                const multiChoiceData = [
+                    { name: '林小志', phone: '0911000001', c1: sessA, c2: sessB },
+                    { name: '張雅婷', phone: '0911000002', c1: sessA, c2: sessB },
+                    { name: '李大衛', phone: '0911000003', c1: sessB, c2: sessC },
+                    { name: '林小志', phone: '0911000001', c1: sessC, c2: null }, // 重複1
+                    { name: '吳宇森', phone: '0911000004', c1: sessA, c2: null },
+                    { name: '陳柏宇', phone: '0911000005', c1: sessB, c2: sessC },
+                    { name: '謝依純', phone: '0911000006', c1: sessC, c2: sessA },
+                    { name: '張雅婷', phone: '0911000002', c1: sessC, c2: null }, // 重複2
+                    { name: '黃子軒', phone: '0911000007', c1: sessA, c2: sessC },
+                    { name: '趙心如', phone: '0911000008', c1: sessB, c2: sessA },
+                    { name: '王大明', phone: '0911000009', c1: sessA, c2: sessB },
+                    { name: '吳宇森', phone: '0911000004', c1: sessC, c2: null }, // 重複3
+                ];
+
+                baseMs = now - 100000;
+                for (let i = 0; i < multiChoiceData.length; i++) {
+                    const student = multiChoiceData[i];
+                    await push(ref(db, `trial_events/registrations/${event2Id}`), {
+                        studentName: student.name,
+                        parentName: "測試家長",
+                        parentPhone: student.phone,
+                        preferences: { choice1: student.c1, choice2: student.c2 },
+                        clientTimestampMs: baseMs + (i * 1000),
+                        status: 'pending'
+                    });
+                }
+                log('多梯次建置完成！', 'success');
+
+                // ==========================================
+                // 3. 雙科配課模式測試
+                // ==========================================
+                log('建立 [Admin Test] 雙科配課模式測試...', 'info');
+                const event3Ref = push(ref(db, 'trial_events_config'));
+                const event3Id = event3Ref.key;
+
+                // 產生 8 個固定的 key (雖然可能只用到前 4 個)
+                const dKeys = [
+                    "math_day1_slotA", "math_day1_slotB", "math_day2_slotA", "math_day2_slotB",
+                    "sci_day1_slotA", "sci_day1_slotB", "sci_day2_slotA", "sci_day2_slotB"
+                ];
+
+                await set(event3Ref, {
+                    title: "[Admin Test] 雙科配課模式測試",
+                    type: "dual_match",
+                    status: "active",
+                    openTime: openTimeStr,
+                    closeTime: closeTimeStr,
+                    earlyAccessSec: 0,
+                    maxChoices: 2,
+                    desc: "<p>測試數學與自然雙科配課。依照附圖設定。</p>",
+                    sessions: {
+                        [dKeys[0]]: { name: "5/1 數學 (13:00-14:30)", date: "5/1", time: "13:00-14:30", classroom: "c_red_h", subject: "math", capacity: 3, startSeq: 1 },
+                        [dKeys[1]]: { name: "5/1 數學 (14:45-16:15)", date: "5/1", time: "14:45-16:15", classroom: "c_orange_h", subject: "math", capacity: 2, startSeq: 1 },
+                        [dKeys[2]]: { name: "5/9 數學 (13:15-14:45)", date: "5/9", time: "13:15-14:45", classroom: "c_red_h", subject: "math", capacity: 3, startSeq: 1 },
+                        [dKeys[3]]: { name: "5/9 數學 (15:00-16:30)", date: "5/9", time: "15:00-16:30", classroom: "c_orange_h", subject: "math", capacity: 2, startSeq: 1 },
+                        [dKeys[4]]: { name: "5/1 自然 (13:00-14:30)", date: "5/1", time: "13:00-14:30", classroom: "c_orange_h", subject: "sci", capacity: 2, startSeq: 1 },
+                        [dKeys[5]]: { name: "5/1 自然 (14:45-16:15)", date: "5/1", time: "14:45-16:15", classroom: "c_red_h", subject: "sci", capacity: 3, startSeq: 1 },
+                        [dKeys[6]]: { name: "5/9 自然 (13:15-14:45)", date: "5/9", time: "13:15-14:45", classroom: "c_orange_h", subject: "sci", capacity: 2, startSeq: 1 },
+                        [dKeys[7]]: { name: "5/9 自然 (15:00-16:30)", date: "5/9", time: "15:00-16:30", classroom: "c_red_h", subject: "sci", capacity: 3, startSeq: 1 }
+                    },
+                    createdAt: now,
+                    updatedAt: now
+                });
+
+                log('填寫雙科配課報名名單 (10人)...', 'info');
+                const dualMatchData = [
+                    { name: '陳柏宇', phone: '0922000001', pref: 'both_any' }, // 數學/自然
+                    { name: '謝依純', phone: '0922000002', pref: 'math_any' }, // 數學
+                    { name: '陳柏宇', phone: '0922000001', pref: 'sci_any' }, // 自然 (重複1)
+                    { name: '黃子軒', phone: '0922000003', pref: 'math_any' }, // 數學
+                    { name: '趙心如', phone: '0922000004', pref: 'sci_any' }, // 自然
+                    { name: '李大衛', phone: '0922000005', pref: 'both_any' }, // 數學/自然
+                    { name: '黃子軒', phone: '0922000003', pref: 'sci_any' }, // 自然 (重複2)
+                    { name: '林小志', phone: '0922000006', pref: 'both_any' }, // 數學/自然
+                    { name: '王大明', phone: '0922000007', pref: 'sci_any' }, // 自然
+                    { name: '謝依純', phone: '0922000002', pref: 'both_any' }, // 數學/自然 (重複3)
+                ];
+
+                baseMs = now - 100000;
+                for (let i = 0; i < dualMatchData.length; i++) {
+                    const student = dualMatchData[i];
+                    await push(ref(db, `trial_events/registrations/${event3Id}`), {
+                        studentName: student.name,
+                        parentName: "測試家長",
+                        parentPhone: student.phone,
+                        preferences: { choice1: student.pref }, // 雙科的特例，存在 choice1
+                        clientTimestampMs: baseMs + (i * 1000),
+                        status: 'pending'
+                    });
+                }
+                log('雙科配課建置完成！', 'success');
+
+                // ==========================================
+                // 4. 純候補抽放模式測試
+                // ==========================================
+                log('建立 [Admin Test] 純候補抽放模式測試...', 'info');
+                const event4Ref = push(ref(db, 'trial_events_config'));
+                const event4Id = event4Ref.key;
+
+                const wSess1 = "wait_sess_1_" + Date.now();
+                const wSess2 = "wait_sess_2_" + Date.now();
+
+                await set(event4Ref, {
+                    title: "[Admin Test] 純候補抽放模式測試",
+                    type: "waitlist_only",
+                    status: "active",
+                    openTime: openTimeStr,
+                    closeTime: closeTimeStr,
+                    earlyAccessSec: 0,
+                    maxChoices: 2,
+                    desc: "<p>測試純候補模式，所有人皆為候補。</p>",
+                    sessions: {
+                        [wSess1]: { name: "候補場次 一", capacity: 100 }, // 容量不影響，都會進候補
+                        [wSess2]: { name: "候補場次 二", capacity: 100 }
+                    },
+                    createdAt: now,
+                    updatedAt: now
+                });
+
+                log('填寫純候補報名名單 (8人)...', 'info');
+                const waitlistData = [
+                    { name: '周杰倫', phone: '0933000001', c1: wSess1, c2: wSess2 },
+                    { name: '蔡依林', phone: '0933000002', c1: wSess1, c2: null },
+                    { name: '周杰倫', phone: '0933000001', c1: wSess2, c2: null }, // 重複1
+                    { name: '林俊傑', phone: '0933000003', c1: wSess2, c2: wSess1 },
+                    { name: '王力宏', phone: '0933000004', c1: wSess1, c2: wSess2 },
+                    { name: '蔡依林', phone: '0933000002', c1: wSess2, c2: null }, // 重複2
+                    { name: '張惠妹', phone: '0933000005', c1: wSess1, c2: null },
+                    { name: '林俊傑', phone: '0933000003', c1: wSess1, c2: null }, // 重複3
+                ];
+
+                baseMs = now - 100000;
+                for (let i = 0; i < waitlistData.length; i++) {
+                    const student = waitlistData[i];
+                    await push(ref(db, `trial_events/registrations/${event4Id}`), {
+                        studentName: student.name,
+                        parentName: "測試家長",
+                        parentPhone: student.phone,
+                        preferences: { choice1: student.c1, choice2: student.c2 },
+                        clientTimestampMs: baseMs + (i * 1000),
+                        status: 'pending' // 對於 waitlist 來說，pending 也沒關係，反正之後會透過介面處理
+                    });
+                }
+                log('純候補抽放模式建置完成！', 'success');
+
+                log('🎉 全部建置完成！請前往系統後台查看。', 'success');
+                btnStart.textContent = '建置完成 (請重整頁面以重新產生)';
+            } catch (error) {
+                console.error(error);
+                log(`❌ 發生錯誤: ${error.message}`, 'error');
+                btnStart.disabled = false;
+                btnStart.textContent = '重新產生';
+            }
+        }
+
+        btnStart.addEventListener('click', createTestData);
+    </script>
+</body>
+
+</html>
