@@ -1046,7 +1046,7 @@
     </div>
 
     <script type="module">
-        import { db, ref, set, update, get, child, push, auth, onAuthStateChanged, signInWithRedirect, getRedirectResult, GoogleAuthProvider, signOut } from './firebase-config.js';
+        import { db, ref, set, update, get, child, push, auth, onAuthStateChanged, signInWithPopup, GoogleAuthProvider, signOut } from './firebase-config.js';
         import { onValue, runTransaction, serverTimestamp } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-database.js";
         import { classrooms } from './classrooms.js';
 
@@ -1080,23 +1080,15 @@
 
         function handleGoogleLogin() {
             const provider = new GoogleAuthProvider();
-            signInWithRedirect(auth, provider).catch((error) => {
-                console.error("登入失敗", error);
-                Swal.fire({ icon: 'error', title: '登入失敗，請再試一次。' });
+            signInWithPopup(auth, provider).catch((error) => {
+                if (error.code === 'auth/popup-blocked') {
+                    Swal.fire({ icon: 'warning', title: '彈出視窗被封鎖', html: '請在網址列允許「彈出式視窗」後再試一次。' });
+                } else if (error.code !== 'auth/popup-closed-by-user') {
+                    console.error("登入失敗", error);
+                    Swal.fire({ icon: 'error', title: '登入失敗，請再試一次。' });
+                }
             });
         }
-
-        // ★★★ 處理從 Google 跳轉回來的登入結果 ★★★
-        getRedirectResult(auth).then((result) => {
-            if (result && result.user) {
-                console.log('Redirect 登入成功:', result.user.email);
-            }
-        }).catch((error) => {
-            if (error.code !== 'auth/no-current-user') {
-                console.error('Redirect 登入結果錯誤:', error);
-                Swal.fire({ icon: 'error', title: '登入失敗，請再試一次。' });
-            }
-        });
 
         function handleGoogleLogout() {
             signOut(auth).then(() => {

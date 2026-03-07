@@ -1019,7 +1019,7 @@
             document.body.style.display = "block";
         };
 
-        import { auth, GoogleAuthProvider, signInWithRedirect, getRedirectResult, db, ref as dbRef, get, child } from './firebase-config.js';
+        import { auth, GoogleAuthProvider, db, ref as dbRef, get, child } from './firebase-config.js';
         import { onAuthStateChanged } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-auth.js";
 
         // ★★★ 處理 Redirect 登入結果與登入狀態檢查 (雙重驗證) ★★★
@@ -1053,7 +1053,6 @@
         });
 
         window.loginAdminWithGoogle = async function () {
-            // ★ 核心修正：必須確認「有登入」且「不是匿名訪客」
             if (auth.currentUser && !auth.currentUser.isAnonymous) {
                 await checkAdminRedirect(auth.currentUser);
                 return;
@@ -1061,27 +1060,22 @@
 
             const provider = new GoogleAuthProvider();
             try {
-                await signInWithRedirect(auth, provider);
-                // 跳轉後頁面會完全重載，不會執行到這裡
+                const { signInWithPopup } = await import('./firebase-config.js');
+                const result = await signInWithPopup(auth, provider);
+                if (result && result.user) {
+                    await checkAdminRedirect(result.user);
+                }
             } catch (error) {
-                if (error.code !== 'auth/popup-closed-by-user') {
+                if (error.code === 'auth/popup-blocked') {
+                    alert("⚠️ 瀏覽器封鎖了登入視窗！\n\n請在網址列允許「彈出式視窗」後再試一次。");
+                } else if (error.code === 'auth/popup-closed-by-user') {
+                    // 使用者自行關閉
+                } else {
                     console.error("登入失敗:", error);
                     alert("登入發生錯誤：" + error.message);
                 }
             }
         };
-
-        // ★★★ 處理從 Google 跳轉回來的登入結果 ★★★
-        getRedirectResult(auth).then(async (result) => {
-            if (result && result.user && !result.user.isAnonymous) {
-                await checkAdminRedirect(result.user);
-            }
-        }).catch((error) => {
-            if (error.code !== 'auth/no-current-user') {
-                console.error('Redirect 登入結果錯誤:', error);
-                alert("登入發生錯誤：" + error.message);
-            }
-        });
 
         // 目錄滾動高亮邏輯
         document.addEventListener("DOMContentLoaded", function () {

@@ -1354,38 +1354,39 @@
             };
 
             // ★★★ 管理員 Google 登入 ★★★
-            // 該函數直接呼叫 signInWithRedirect 跳轉到 Google 登入
             window.loginAdminWithGoogle = function () {
-                // ★ 核心修正：必須確認「有登入」且「不是匿名訪客」
                 if (auth.currentUser && !auth.currentUser.isAnonymous) {
                     checkAdminRedirect(auth.currentUser);
                     return;
                 }
 
+                if (!_signInWithPopup) {
+                    alert('系統尚未初始化完成，請稍後再試！');
+                    return;
+                }
+
                 const provider = new GoogleAuthProvider();
-                signInWithRedirect(auth, provider).catch(error => {
+                _signInWithPopup(auth, provider).then(signResult => {
+                    if (signResult && signResult.user) {
+                        return checkAdminRedirect(signResult.user);
+                    }
+                }).catch(error => {
                     console.error("登入失敗:", error);
+                    let errorMsg = "登入發生錯誤：" + error.message;
+                    if (error.code === 'auth/popup-blocked' || error.message.includes('popup')) {
+                        errorMsg = "⚠️ 瀏覽器封鎖了登入視窗！\n請在網址列允許「彈出式視窗」後再試一次。";
+                    } else if (error.code === 'auth/popup-closed-by-user') {
+                        return; // 使用者自行關閉，不需警告
+                    } else if (error.code === 'auth/unauthorized-domain') {
+                        errorMsg = "⚠️ 登入失敗：網域未被授權。";
+                    }
                     if (typeof Swal !== 'undefined') {
-                        Swal.fire("登入失敗", error.message, "warning");
+                        Swal.fire("登入取消或失敗", errorMsg, "warning");
                     } else {
-                        alert("登入失敗：" + error.message);
+                        alert("登入取消或失敗\n\n" + errorMsg);
                     }
                 });
             };
-
-            // ★★★ 處理從 Google 跳轉回來的登入結果 ★★★
-            getRedirectResult(auth).then(async (result) => {
-                if (result && result.user && !result.user.isAnonymous) {
-                    await checkAdminRedirect(result.user);
-                }
-            }).catch((error) => {
-                if (error.code !== 'auth/no-current-user') {
-                    console.error('Redirect 登入結果錯誤:', error);
-                    if (typeof Swal !== 'undefined') {
-                        Swal.fire("登入失敗", error.message, "warning");
-                    }
-                }
-            });
 
             // ★★★ Check URL ?mode= Parameter to auto enter mode ★★★
             const urlParams = new URLSearchParams(window.location.search);
