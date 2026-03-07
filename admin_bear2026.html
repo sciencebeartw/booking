@@ -53,6 +53,7 @@
                 <button onclick="switchTab('trial_events')">✨ 試聽活動管理</button>
                 <button onclick="switchTab('banners')">🖼️ 橫幅管理</button>
                 <button onclick="switchTab('notify')" style="color: #f1c40f; font-weight: bold;">📢 通知發送中心</button>
+                <button onclick="switchTab('bot')">🤖 防機器人監控</button>
             </div>
         </div>
         <div class="nav-actions">
@@ -102,6 +103,7 @@
                         <th onclick="sortBookingTable('seatId')">座位 ⇅</th>
                         <th onclick="sortBookingTable('studentName')">姓名 ⇅</th>
                         <th onclick="sortBookingTable('parentPhone')">電話 ⇅</th>
+                        <th onclick="sortBookingTable('userEmail')">Google 帳號 ⇅</th>
                         <th>操作</th>
                     </tr>
                 </thead>
@@ -1069,6 +1071,53 @@
 
         <div id="trialNotifyList"
             style="max-width:1000px; margin:20px auto; display:flex; flex-direction:column; gap:10px;"></div>
+    </div>
+
+    <!-- ★★★ 機器人防禦網監控 ★★★ -->
+    <div id="tab-bot" class="page-section">
+        <div class="center-box">
+            <h2 style="margin-top:0; color:#c0392b;">🤖 機器人防禦網路監控</h2>
+            <p style="color:#7f8c8d; font-size:14px; margin-top:-10px; margin-bottom:15px;">此處列出被 App Check
+                阻擋或被判定為異常高頻率送出的機器人警告名單。
+            </p>
+            <div style="display:flex; justify-content:center; gap:20px; flex-wrap:wrap;">
+                <div
+                    style="flex:1; min-width:300px; background:#fff; padding:15px; border-radius:8px; border-top:4px solid #e74c3c; box-shadow:0 2px 5px rgba(0,0,0,0.1);">
+                    <h3 style="margin-top:0; color:#e74c3c;">📌 正式劃位異常警告 (booking_enter)</h3>
+                    <div style="overflow-x:auto;">
+                        <table style="width:100%; border-collapse:collapse; text-align:left;">
+                            <thead>
+                                <tr style="background:#f9f9f9; border-bottom:2px solid #ddd;">
+                                    <th style="padding:8px;">時間</th>
+                                    <th style="padding:8px;">Google 信箱</th>
+                                    <th style="padding:8px;">課程/目標</th>
+                                    <th style="padding:8px;">懲罰</th>
+                                </tr>
+                            </thead>
+                            <tbody id="botTableBooking"></tbody>
+                        </table>
+                    </div>
+                </div>
+
+                <div
+                    style="flex:1; min-width:300px; background:#fff; padding:15px; border-radius:8px; border-top:4px solid #d35400; box-shadow:0 2px 5px rgba(0,0,0,0.1);">
+                    <h3 style="margin-top:0; color:#d35400;">📌 試聽報名異常警告 (trial_enter)</h3>
+                    <div style="overflow-x:auto;">
+                        <table style="width:100%; border-collapse:collapse; text-align:left;">
+                            <thead>
+                                <tr style="background:#f9f9f9; border-bottom:2px solid #ddd;">
+                                    <th style="padding:8px;">時間</th>
+                                    <th style="padding:8px;">Google 信箱</th>
+                                    <th style="padding:8px;">目標活動</th>
+                                    <th style="padding:8px;">懲罰</th>
+                                </tr>
+                            </thead>
+                            <tbody id="botTableTrial"></tbody>
+                        </table>
+                    </div>
+                </div>
+            </div>
+        </div>
     </div>
 
     <div id="opModal" class="preview-modal">

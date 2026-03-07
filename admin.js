@@ -98,9 +98,9 @@ const HTML_TPL_REGULAR = `
 <div style="background-color: #fdf2e9; padding: 20px; border-radius: 10px; border-left: 5px solid #e74c3c; margin-bottom: 20px;">
 <h3 style="color: #c0392b; margin-top: 0; font-size: 20px;">🚨 系統安檢與防禦機制 (必讀)</h3>
 <ul style="color: #333; line-height: 1.8; font-size: 16px;">
-<li><strong>90 秒專屬鎖定</strong>：點擊座位後，系統會為您保留 <strong>90 秒</strong>。尖峰時刻極易觸發 Google 圖片驗證，請保持冷靜作答，90 秒絕對充裕！</li>
-<li><strong style="color: #e74c3c;">🚫 絕對避開 LINE 內建瀏覽器</strong>：在 LINE 聊天室直接點開網址，極容易被 Google 判定為機器人而瘋狂跳出圖片驗證！請務必點擊選單<strong>「以 Safari 或 Chrome (預設瀏覽器) 開啟」</strong>。</li>
-<li><strong>降低圖片驗證機率之訣竅</strong>：請關閉「無痕模式」與廣告攔截器。劃位時建議暫時關閉 WiFi，<strong>改用個人 4G/5G 行動網路</strong>，可提升順暢度。</li>
+<li><strong>60 秒專屬鎖定</strong>：點擊座位後，系統會為您保留 <strong>60 秒</strong>。只要手動填表且不觸發防護網，60 秒絕對充裕！</li>
+<li><strong style="color: #e74c3c;">🚫 絕對避開 LINE 內建瀏覽器</strong>：在 LINE 聊天室直接點開網址，極容易被 Google 判定為高風險而觸發防護網。請務必點擊右上角選單<strong>「以 Safari 或 Chrome (預設瀏覽器) 開啟」</strong>。</li>
+<li><strong>降低防護網干擾機率之訣竅</strong>：請關閉「無痕模式」與廣告攔截器。劃位時建議暫時關閉 WiFi，<strong>改用個人 4G/5G 行動網路</strong>，可提升順暢度。</li>
 <li><strong>嚴禁重複劃位</strong>：當日若不慎重複劃位，系統將<span style="background-color: #ffcccc; color: red; padding: 2px 5px; border-radius: 3px;">直接無效化第二個以上的座位</span>。</li>
 <li><strong style="color: #d35400;">家有多寶必看（物理分流）</strong>：同一裝置同時僅能保留一席。若需搶兩個班，請務必<strong>使用不同裝置，由家人分頭進行！</strong></li>
 </ul>
@@ -122,8 +122,8 @@ const HTML_TPL_TRIAL_BASE = `
 <div style="background-color: #fdf2e9; padding: 20px; border-radius: 10px; border-left: 5px solid #e74c3c; margin-bottom: 20px;">
 <h3 style="color: #c0392b; margin-top: 0; font-size: 20px;">🚨 系統安檢與防禦機制 (必讀)</h3>
 <ul style="color: #333; line-height: 1.8; font-size: 16px;">
-<li><strong style="color: #e74c3c;">🚫 絕對避開 LINE 內建瀏覽器</strong>：在 LINE 聊天室直接點開網址，極容易被 Google 判定為機器人而瘋狂跳出圖片驗證！請務必點擊選單<strong>「以 Safari 或 Chrome (預設瀏覽器) 開啟」</strong>。</li>
-<li><strong>降低圖片驗證機率之訣竅</strong>：請關閉「無痕模式」與廣告攔截器。劃位時建議暫時關閉 WiFi，<strong>改用個人 4G/5G 行動網路</strong>，可提升順暢度。</li>
+<li><strong style="color: #e74c3c;">🚫 絕對避開 LINE 內建瀏覽器</strong>：在 LINE 聊天室直接點開網址，極容易被 Google 判定為高風險而觸發防護網鎖定。請務必點擊右上角選單<strong>「以 Safari 或 Chrome (預設瀏覽器) 開啟」</strong>。</li>
+<li><strong>降低防護網干擾機率之訣竅</strong>：請關閉「無痕模式」與廣告攔截器。劃位時建議暫時關閉 WiFi，<strong>改用個人 4G/5G 行動網路</strong>，可提升順暢度。</li>
 <li><strong>90秒預先入場</strong>：強烈建議在開放前 90 秒先進入網頁填寫基本資料，時間一到直接按下送出。</li>
 </ul>
 </div>
@@ -756,6 +756,62 @@ window.deleteCourse = async function (courseId, event) {
     }
 };
 
+// ★★★ 機器人防禦網監控 (Bot Monitor) ★★★
+const botWarningsBookingRef = ref(db, 'bot-warnings/booking_enter');
+const botWarningsTrialRef = ref(db, 'bot-warnings/trial_enter');
+
+function renderBotTable(snapshot, tableId, typeLabel) {
+    const tbody = document.getElementById(tableId);
+    if (!tbody) return;
+    tbody.innerHTML = '';
+    const data = snapshot.val() || {};
+
+    // 轉為陣列並以時間反序排列 (最新的在最上面)
+    const list = Object.keys(data).map(key => ({ key, ...data[key] })).sort((a, b) => b.timestamp - a.timestamp);
+
+    if (list.length === 0) {
+        tbody.innerHTML = `<tr><td colspan="4" style="text-align:center; padding:15px; color:#95a5a6;">尚無異常紀錄</td></tr>`;
+        return;
+    }
+
+    list.forEach(item => {
+        const tr = document.createElement('tr');
+        tr.style.borderBottom = "1px solid #eee";
+
+        const timeStr = window.formatTimeWithMs(item.timestamp);
+        let emailStr = item.email || item.uid || '未知';
+        if (item.studentName) {
+            emailStr = `${emailStr} <br><span style="font-size:11px; color:#3498db;">(學生：${window.escapeHTML(item.studentName)})</span>`;
+        }
+
+        let targetStr = item.targetId || '-';
+        if (typeLabel === 'booking') {
+            const course = coursesData[item.targetId];
+            if (course) {
+                targetStr = `[${course.grade}] ${course.subject} ${course.classType || ''}`;
+            }
+        }
+
+        const penaltyStr = item.penaltySeconds ? `<span style="background:#e74c3c; color:white; padding:2px 6px; border-radius:4px; font-size:12px;">延遲 ${item.penaltySeconds} 秒</span>` : '-';
+
+        tr.innerHTML = `
+            <td style="padding:8px; font-size:13px; color:#555;">${timeStr}</td>
+            <td style="padding:8px; font-size:13px; font-weight:bold;">${emailStr}</td>
+            <td style="padding:8px; font-size:13px; color:#444;">${window.escapeHTML(targetStr)}</td>
+            <td style="padding:8px; font-size:13px;">${penaltyStr}</td>
+        `;
+        tbody.appendChild(tr);
+    });
+}
+
+onValue(botWarningsBookingRef, (snapshot) => {
+    renderBotTable(snapshot, 'botTableBooking', 'booking');
+});
+
+onValue(botWarningsTrialRef, (snapshot) => {
+    renderBotTable(snapshot, 'botTableTrial', 'trial');
+});
+
 let archivedSeatsData = {};
 const allSeatsRef = ref(db, 'seats');
 const archivedSeatsRef = ref(db, 'archived_seats');
@@ -775,6 +831,7 @@ function buildAllBookings() {
                 allBookings.push({
                     courseId, courseName, seatId, status: info.status,
                     studentName: info.studentName || '-', parentPhone: info.parentPhone || '-',
+                    userEmail: info.userEmail || '-',
                     time: info.soldTime || '-', rawTime: info.timestamp,
                     orderId: info.orderId || '-'
                 });
@@ -792,6 +849,7 @@ function buildAllBookings() {
             allBookings.push({
                 courseId, courseName, seatId: info.originalSeatId || '-', status: 'deleted',
                 studentName: info.studentName || '-', parentPhone: info.parentPhone || '-',
+                userEmail: info.userEmail || '-',
                 time: info.soldTime || '-', rawTime: info.timestamp,
                 orderId: info.orderId || '-', archiveKey: archiveKey
             });
@@ -886,7 +944,7 @@ function renderTable() {
             recoverBtnHtml = `<button class="success" style="padding:5px 10px; font-size:12px; margin-right:5px;" onclick="window.recoverSeat('${b.courseId}', '${b.seatId}', '${b.studentName}', '${b.archiveKey || ""}')">恢復劃位</button>`;
         }
 
-        tr.innerHTML = `<td>${b.orderId}</td><td class=\"wrap-text\">${b.courseName}</td><td>${window.formatTimeWithMs(b.rawTime, b.time)}</td><td>${statusBadge}</td><td>${b.seatId}</td><td>${window.escapeHTML(b.studentName)}</td><td>${window.escapeHTML(b.parentPhone)}</td>
+        tr.innerHTML = `<td>${b.orderId}</td><td class=\"wrap-text\">${b.courseName}</td><td>${window.formatTimeWithMs(b.rawTime, b.time)}</td><td>${statusBadge}</td><td>${b.seatId}</td><td>${window.escapeHTML(b.studentName)}</td><td>${window.escapeHTML(b.parentPhone)}</td><td>${window.escapeHTML(b.userEmail)}</td>
                 <td>
                     ${recoverBtnHtml}
                     <button class="warning" style="padding:5px 10px; font-size:12px;" onclick="window.editOrder('${b.courseId}', '${b.seatId}', '${b.parentPhone}', '${b.orderId}', '${b.studentName}')">編輯</button>
@@ -1270,11 +1328,11 @@ function updateStats() {
 
 window.exportBookingCSV = function () {
     const filterId = document.getElementById('classSelector').value;
-    let csv = "\uFEFF訂單編號,課程,時間,狀態,座位,姓名,電話\n";
+    let csv = "\uFEFF訂單編號,課程,時間,狀態,座位,姓名,電話,Google 帳號\n";
     allBookings.forEach(b => {
         if (filterId !== 'all' && b.courseId !== filterId) return;
         let statusText = b.status === 'sold' ? '已劃位' : (b.status === 'deleted' ? '已釋出' : '填寫中');
-        csv += `'${b.orderId},${b.courseName},${b.time},${statusText},${b.seatId},${b.studentName},'${b.parentPhone}\n`;
+        csv += `'${b.orderId},${b.courseName},${b.time},${statusText},${b.seatId},${b.studentName},'${b.parentPhone},'${b.userEmail}\n`;
     });
     downloadCSV(csv, "booking_data.csv");
 };
@@ -1658,7 +1716,7 @@ window.closePreview = function () {
 
 renderClassroomPreview();
 
-const ZOMBIE_TIMEOUT = 2 * 60 * 1000;
+const ZOMBIE_TIMEOUT = 1.5 * 60 * 1000;
 const SWEEP_INTERVAL = 10 * 1000;
 
 function startZombieSweeper() {
