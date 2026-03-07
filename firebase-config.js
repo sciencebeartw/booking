@@ -31,12 +31,17 @@ const auth = getAuth(app);       // 初始化 Auth
 
 // ★★★ 初始化 App Check (配置 reCAPTCHA Enterprise) ★★★
 // 為了避免本地端開發時 (127.0.0.1 或 localhost) 因為沒加進網域白名單而導致 Google 登入死機
+// ★★★ V12.1 修正：加入 try-catch，避免 reCAPTCHA 失敗阻斷 Auth 登入流程 ★★★
 let appCheck = null;
 if (window.location.hostname !== 'localhost' && window.location.hostname !== '127.0.0.1') {
-  appCheck = initializeAppCheck(app, {
-    provider: new ReCaptchaEnterpriseProvider('6LdowIIsAAAAAMA97LyQY1KGj7tRDa-Mo0IcydeE'),
-    isTokenAutoRefreshEnabled: true // 自動更新 Token
-  });
+  try {
+    appCheck = initializeAppCheck(app, {
+      provider: new ReCaptchaEnterpriseProvider('6LdowIIsAAAAAMA97LyQY1KGj7tRDa-Mo0IcydeE'),
+      isTokenAutoRefreshEnabled: true // 自動更新 Token
+    });
+  } catch (e) {
+    console.warn("App Check 初始化失敗（可能是網域未加入白名單），登入功能仍可正常使用：", e);
+  }
 } else {
   console.warn("目前在本地端開發，暫時略過 App Check 初始化以利測試登入。");
 }
