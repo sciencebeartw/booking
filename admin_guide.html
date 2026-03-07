@@ -1019,7 +1019,7 @@
             document.body.style.display = "block";
         };
 
-        import { auth, GoogleAuthProvider, db, ref as dbRef, get, child } from './firebase-config.js';
+        import { auth, GoogleAuthProvider, signInWithRedirect, getRedirectResult, db, ref as dbRef, get, child } from './firebase-config.js';
         import { onAuthStateChanged } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-auth.js";
 
         // ★★★ 處理 Redirect 登入結果與登入狀態檢查 (雙重驗證) ★★★
@@ -1061,22 +1061,27 @@
 
             const provider = new GoogleAuthProvider();
             try {
-                const { signInWithPopup } = await import('./firebase-config.js');
-                const result = await signInWithPopup(auth, provider);
-                if (result && result.user) {
-                    await checkAdminRedirect(result.user);
-                }
+                await signInWithRedirect(auth, provider);
+                // 跳轉後頁面會完全重載，不會執行到這裡
             } catch (error) {
-                if (error.code === 'auth/popup-blocked') {
-                    alert("⚠️ 瀏覽器封鎖了登入視窗！\n\n【解決方法】\n請在網址列右側尋找「已封鎖彈出式視窗」的圖示，點擊並選擇「一律允許」，然後再按一次登入按鈕。");
-                } else if (error.code === 'auth/popup-closed-by-user') {
-                    // 使用者自行關閉，不需警告
-                } else {
+                if (error.code !== 'auth/popup-closed-by-user') {
                     console.error("登入失敗:", error);
                     alert("登入發生錯誤：" + error.message);
                 }
             }
         };
+
+        // ★★★ 處理從 Google 跳轉回來的登入結果 ★★★
+        getRedirectResult(auth).then(async (result) => {
+            if (result && result.user && !result.user.isAnonymous) {
+                await checkAdminRedirect(result.user);
+            }
+        }).catch((error) => {
+            if (error.code !== 'auth/no-current-user') {
+                console.error('Redirect 登入結果錯誤:', error);
+                alert("登入發生錯誤：" + error.message);
+            }
+        });
 
         // 目錄滾動高亮邏輯
         document.addEventListener("DOMContentLoaded", function () {

@@ -1354,6 +1354,7 @@
             };
 
             // ★★★ 管理員 Google 登入 ★★★
+            // 該函數直接呼叫 signInWithRedirect 跳轉到 Google 登入
             window.loginAdminWithGoogle = function () {
                 // ★ 核心修正：必須確認「有登入」且「不是匿名訪客」
                 if (auth.currentUser && !auth.currentUser.isAnonymous) {
@@ -1361,39 +1362,30 @@
                     return;
                 }
 
-                // ★★★ 關鍵：signInWithPopup 必須在同步的點擊事件函數內直接呼叫，
-                //   任何 await（包含 await import()）都會打斷「使用者手勢鏈」，
-                //   導致瀏覽器封鎖彈出視窗（popup-blocked）。
-                //   _signInWithPopup 已在頁面初始化時預先載入完畢。
-                if (!_signInWithPopup) {
-                    alert('系統尚未初始化完成，請稍後再試！');
-                    return;
-                }
-
                 const provider = new GoogleAuthProvider();
-
-                _signInWithPopup(auth, provider).then(signResult => {
-                    if (signResult && signResult.user) {
-                        return checkAdminRedirect(signResult.user);
-                    }
-                }).catch(error => {
+                signInWithRedirect(auth, provider).catch(error => {
                     console.error("登入失敗:", error);
-                    let errorMsg = "登入發生錯誤：" + error.message;
-                    if (error.code === 'auth/popup-blocked' || error.message.includes('popup')) {
-                        errorMsg = "⚠️ 瀏覽器依然封鎖了登入視窗！\n請務必關閉 AdBlock，或在網址列設定為「一律允許彈出式視窗」。";
-                    } else if (error.code === 'auth/popup-closed-by-user') {
-                        errorMsg = "您已取消登入。";
-                    } else if (error.code === 'auth/unauthorized-domain') {
-                        errorMsg = "⚠️ 登入失敗：網域未被授權。";
-                    }
-
                     if (typeof Swal !== 'undefined') {
-                        Swal.fire("登入取消或失敗", errorMsg, "warning");
+                        Swal.fire("登入失敗", error.message, "warning");
                     } else {
-                        alert("登入取消或失敗\n\n" + errorMsg);
+                        alert("登入失敗：" + error.message);
                     }
                 });
             };
+
+            // ★★★ 處理從 Google 跳轉回來的登入結果 ★★★
+            getRedirectResult(auth).then(async (result) => {
+                if (result && result.user && !result.user.isAnonymous) {
+                    await checkAdminRedirect(result.user);
+                }
+            }).catch((error) => {
+                if (error.code !== 'auth/no-current-user') {
+                    console.error('Redirect 登入結果錯誤:', error);
+                    if (typeof Swal !== 'undefined') {
+                        Swal.fire("登入失敗", error.message, "warning");
+                    }
+                }
+            });
 
             // ★★★ Check URL ?mode= Parameter to auto enter mode ★★★
             const urlParams = new URLSearchParams(window.location.search);
