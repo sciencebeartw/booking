@@ -1171,8 +1171,6 @@
                     try {
                         // 嘗試取得 App Check Token
                         const { getToken } = await import('https://www.gstatic.com/firebasejs/10.7.1/firebase-app-check.js');
-                        // appCheck 實例必須從 firebase-config.js 匯出，這裡假設已經 export 或是全域可用
-                        // 為了避免複雜的依賴，我們提供一個備用的延遲機制，如果 getToken 失敗，我們就當作疑似機器人
                         const { appCheck } = await import('./firebase-config.js');
 
                         if (appCheck) {
@@ -1180,12 +1178,13 @@
                             if (!appCheckTokenResponse.token) {
                                 isBotSuspected = true;
                             }
-                        } else {
-                            console.warn("App Check not initialized in detail.html");
                         }
+                        // appCheck 未初始化 = 直接放行（不懲罰）
                     } catch (err) {
-                        console.error("App Check 取得 Token 失敗或未設定:", err);
-                        isBotSuspected = true; // 發生任何錯誤都視為可疑，觸發 5 秒摩擦力
+                        // ★ 重要：App Check 失敗（如 reCAPTCHA 回 400）不代表是機器人，
+                        //   直接放行，讓 Firebase 後端規則自行決定是否接受請求。
+                        console.warn("App Check token 取得失敗，跳過驗證直接放行:", err.message);
+                        isBotSuspected = false;
                     }
 
                     const proceedToNextPage = () => {
