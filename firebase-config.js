@@ -36,7 +36,7 @@ let appCheck = null;
 if (window.location.hostname !== 'localhost' && window.location.hostname !== '127.0.0.1') {
   try {
     appCheck = initializeAppCheck(app, {
-      provider: new ReCaptchaEnterpriseProvider('6LdowIIsAAAAAMA97LyQY1KGj7tRDa-Mo0IcydeE'),
+      provider: new ReCaptchaEnterpriseProvider('6LdowIIsAAAAMA97LyQY1KGj7tRDa-Mo0IcydEE'),
       isTokenAutoRefreshEnabled: true // 自動更新 Token
     });
   } catch (e) {
