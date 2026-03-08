@@ -524,17 +524,14 @@
         <img src="logo2.png" alt="山熊升大" style="height:60px;">
     </header>
 
-    <!-- 返回按鈕 (移至 Header 下方，以便視覺平衡) -->
-    <div style="text-align:center; margin-top:15px;" id="backBtnWrapper">
+    <div class="main-container" id="mainApp" style="display: none; position: relative;">
+        <!-- 返回按鈕：左上角，與 booking.html 相同位置 -->
         <a href="#" id="backBtn"
-            style="color: #3498db; text-decoration: none; font-weight: bold; border: 1px solid #3498db; padding: 5px 15px; border-radius: 20px; transition: 0.3s; display: inline-block;">⬅
+            style="position: absolute; top: 15px; left: 20px; color: #3498db; text-decoration: none; font-weight: bold; font-size: 14px; border: 1px solid #3498db; padding: 5px 15px; border-radius: 20px; transition: 0.3s; display: inline-block;">⬅
             返回課程詳情</a>
-    </div>
-
-    <div class="main-container" id="mainApp" style="display: none;">
-        <!-- 課程標題（由 JS 動態善入） -->
+        <!-- 課程標題（由 JS 動態填入） -->
         <h2 id="bookingEventTitle"
-            style="margin: 0 0 20px 0; font-size: 20px; color: #2c3e50; border-bottom: 2px solid #eee; padding-bottom: 12px;">
+            style="margin: 40px 0 20px 0; font-size: 20px; color: #2c3e50; border-bottom: 2px solid #eee; padding-bottom: 12px;">
         </h2>
 
         <!-- 階段一：防洪閘門 (gateway 已移至 detail.html 彈窗，預設隐藏) -->
