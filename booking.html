@@ -771,51 +771,6 @@
             padding: 0 !important;
             margin: 0 auto !important;
         }
-
-        /* Auth Bar Styles */
-        .auth-bar {
-            background-color: #f8f9fa;
-            padding: 10px 20px;
-            text-align: center;
-            font-size: 14px;
-            border-bottom: 1px solid #e0e0e0;
-            display: flex;
-            justify-content: center;
-            align-items: center;
-            gap: 10px;
-        }
-
-        .auth-bar.logged-in {
-            background-color: #e6ffe6;
-            color: #28a745;
-        }
-
-        .auth-bar .btn-auth {
-            padding: 5px 10px;
-            border: none;
-            border-radius: 5px;
-            cursor: pointer;
-            font-size: 13px;
-            transition: background-color 0.2s;
-        }
-
-        .auth-bar .btn-login {
-            background-color: #007bff;
-            color: white;
-        }
-
-        .auth-bar .btn-login:hover {
-            background-color: #0056b3;
-        }
-
-        .auth-bar .btn-logout {
-            background-color: #dc3545;
-            color: white;
-        }
-
-        .auth-bar .btn-logout:hover {
-            background-color: #c82333;
-        }
     </style>
     <!-- SweetAlert2 -->
     <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
@@ -860,6 +815,7 @@
             </svg>
             使用 Google 帳號登入並前往劃位
         </button>
+        <p style="margin-top: 20px; font-size: 13px; color: #95a5a6;">登入即代表您同意本系統僅取用您的 Email 作為排位識別依據，絕不作他用。</p>
     </div>
 
     <!-- ★ 主要劃位區塊 (登入後才顯示) -->

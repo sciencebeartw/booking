@@ -690,9 +690,6 @@
                 authBar.innerHTML = `尚未登入 ⚠️ <button id="btnSmallLogin" class="btn-auth btn-login">使用 Google 帳號登入</button>`;
                 document.getElementById('btnSmallLogin').addEventListener('click', handleLogin);
 
-                loginBlockade.style.display = 'block';
-                mainApp.style.display = 'none';
-
                 if (countdownTimer) {
                     clearInterval(countdownTimer);
                     countdownTimer = null;
