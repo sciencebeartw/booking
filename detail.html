@@ -553,9 +553,12 @@
     </div>
 
     <header>
-        <img src="logo1.png" alt="山熊科學" style="height: 60px;">
-        <h1>山熊科學 / 山熊升大</h1>
-        <img src="logo2.png" alt="山熊升大" style="height: 60px;">
+        <a id="headerLogoLink" href="index.html"
+            style="display: flex; align-items: center; gap: 20px; color: white; text-decoration: none;">
+            <img src="logo1.png" alt="山熊科學" style="height: 60px;">
+            <h1>山熊科學 / 山熊升大</h1>
+            <img src="logo2.png" alt="山熊升大" style="height: 60px;">
+        </a>
     </header>
 
     <div class="container">
@@ -655,6 +658,16 @@
         const params = new URLSearchParams(window.location.search);
         const courseId = params.get('id') ? params.get('id').trim() : null;
         const eventId = params.get('eventId') ? params.get('eventId').trim() : null;
+
+        // ★★★ Header Link Logic ★★★
+        const headerLogoLink = document.getElementById('headerLogoLink');
+        if (headerLogoLink) {
+            if (eventId) {
+                headerLogoLink.href = "index.html?mode=trial";
+            } else if (courseId) {
+                headerLogoLink.href = "index.html?mode=regular";
+            }
+        }
 
         if (!courseId && !eventId) {
             alert("無效的連結！");
