@@ -495,6 +495,80 @@
             margin: 0 auto !important;
         }
 
+        .float-line-container {
+            position: fixed;
+            bottom: 20px;
+            right: 20px;
+            display: flex;
+            flex-direction: column;
+            gap: 15px;
+            z-index: 9999;
+            align-items: center;
+        }
+
+        .line-btn {
+            width: 65px;
+            height: 65px;
+            border-radius: 50%;
+            box-shadow: 0 4px 12px rgba(0, 0, 0, 0.3);
+            cursor: pointer;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            text-decoration: none;
+            color: white;
+            font-family: Arial, sans-serif;
+            transition: transform 0.2s;
+            animation: bounce 2s ease-in-out infinite;
+        }
+
+        .line-btn:active {
+            transform: scale(0.9);
+            animation: none;
+        }
+
+        .line-btn span.small {
+            font-size: 10px;
+            font-weight: bold;
+            margin-bottom: 2px;
+            letter-spacing: 0px;
+        }
+
+        .line-btn span.large {
+            font-size: 18px;
+            font-weight: 900;
+            letter-spacing: 1px;
+        }
+
+        .btn-bear {
+            background-color: #06C755;
+        }
+
+        .btn-high {
+            background-color: #0077CC;
+            animation-delay: 1s;
+        }
+
+        @keyframes bounce {
+
+            0%,
+            20%,
+            50%,
+            80%,
+            100% {
+                transform: translateY(0);
+            }
+
+            40% {
+                transform: translateY(-10px);
+            }
+
+            60% {
+                transform: translateY(-5px);
+            }
+        }
+
         footer {
             text-align: center;
             padding: 40px;
@@ -629,6 +703,18 @@
         </div>
     </div>
 
+    <!-- ★★★ 雙 LINE 按鈕 ★★★ -->
+    <div class="float-line-container">
+        <a href="https://lin.ee/FDQ1BLD" target="_blank" class="line-btn btn-bear" title="山熊科學官方LINE">
+            <span class="small">山熊科學</span>
+            <span class="large">LINE</span>
+        </a>
+        <a href="https://lin.ee/kzE9NrI" target="_blank" class="line-btn btn-high" title="山熊升大官方LINE">
+            <span class="small">山熊升大</span>
+            <span class="large">LINE</span>
+        </a>
+    </div>
+
     <script type="module">
         import { db, ref, set, push, get, child, auth, signInWithPopup, GoogleAuthProvider, signOut, onAuthStateChanged } from './firebase-config.js';
         // ★★★ 引入 Transaction 供限量候補使用 ★★★
@@ -689,6 +775,9 @@
                 authBar.classList.remove('logged-in');
                 authBar.innerHTML = `尚未登入 ⚠️ <button id="btnSmallLogin" class="btn-auth btn-login">使用 Google 帳號登入</button>`;
                 document.getElementById('btnSmallLogin').addEventListener('click', handleLogin);
+
+                loginBlockade.style.display = 'block';
+                mainApp.style.display = 'none';
 
                 if (countdownTimer) {
                     clearInterval(countdownTimer);
