@@ -1167,8 +1167,10 @@
                     console.warn("App Check not initialized in trial_booking.html");
                 }
             } catch (err) {
-                console.error("App Check 取得 Token 失敗或未設定:", err);
-                isBotSuspected = true; // 發生任何錯誤都視為可疑
+                // ★ 重要：App Check 失敗（如 reCAPTCHA 回 400）不代表是機器人，
+                //   直接放行，讓 Firebase 後端規則自行決定是否接受請求。
+                console.warn("App Check token 取得失敗，跳過驗證直接放行:", err.message);
+                isBotSuspected = false;
             }
 
             if (isBotSuspected) {

@@ -44,7 +44,7 @@
             ".read": "auth != null && auth.token.email != null && root.child('admins').child(auth.token.email.replace('.', ',').replace('.', ',').replace('.', ',')).exists()",
             "$courseId": {
                 "$waitId": {
-                    ".write": "( !data.exists() && newData.exists() ) || (auth != null && auth.token.email != null && root.child('admins').child(auth.token.email.replace('.', ',').replace('.', ',').replace('.', ',')).exists())"
+                    ".write": "(auth != null && !data.exists() && newData.exists()) || (auth != null && auth.token.email != null && root.child('admins').child(auth.token.email.replace('.', ',').replace('.', ',').replace('.', ',')).exists())"
                 }
             }
         },
@@ -58,7 +58,7 @@
                 ],
                 "$orderId": {
                     ".read": true,
-                    ".write": "( !data.exists() && newData.exists() ) || (auth != null && auth.token.email != null && root.child('admins').child(auth.token.email.replace('.', ',').replace('.', ',').replace('.', ',')).exists())"
+                    ".write": "(auth != null && !data.exists() && newData.exists()) || (auth != null && auth.token.email != null && root.child('admins').child(auth.token.email.replace('.', ',').replace('.', ',').replace('.', ',')).exists())"
                 }
             }
         },
@@ -81,12 +81,13 @@
                     // 1. 真．管理員擁有無敵權限
             (auth != null && auth.token.email != null && root.child('admins').child(auth.token.email.replace('.', ',').replace('.', ',').replace('.', ',')).exists()) ||
             
-            // 2. 家長放棄座位：軟刪除且驗證本人
+            // 2. 家長放棄座位：軟刪除且驗證本人UID
             (
               data.exists() && newData.exists() && 
               data.child('status').val() === 'locked' &&
               newData.child('status').val() === 'deleted' && 
-              data.child('user').val() === newData.child('user').val()
+              data.child('user').val() === newData.child('user').val() &&
+              data.child('user').val() === auth.uid
             ) ||
             
             // 3. 學生家長一般劃位：上鎖與結帳 (雙重防護)
@@ -140,8 +141,8 @@
                 "sessions": {
                     "$classKey": {
                         "currentWaitlistCount": {
-                            // 允許前台家長寫入，但「必須是數字」且「每次只能 +1」，防止竄改與洗單
-                            ".write": "newData.isNumber() && ( (!data.exists() && newData.val() == 1) || (data.exists() && newData.val() == data.val() + 1) )"
+                            // 允許前台家長寫入，但「必須登入」、「必須是數字」且「每次只能 +1」，防止竄改與洗單
+                            ".write": "auth != null && newData.isNumber() && ( (!data.exists() && newData.val() == 1) || (data.exists() && newData.val() == data.val() + 1) )"
                         }
                     }
                 }
