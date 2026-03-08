@@ -98,9 +98,9 @@ const HTML_TPL_REGULAR = `
 <div style="background-color: #fdf2e9; padding: 20px; border-radius: 10px; border-left: 5px solid #e74c3c; margin-bottom: 20px;">
 <h3 style="color: #c0392b; margin-top: 0; font-size: 20px;">🚨 系統安檢與防禦機制 (必讀)</h3>
 <ul style="color: #333; line-height: 1.8; font-size: 16px;">
-<li><strong>60 秒專屬鎖定</strong>：點擊座位後，系統會為您保留 <strong>60 秒</strong>。只要手動填表且不觸發防護網，60 秒絕對充裕！</li>
+<li><strong>60秒座位鎖</strong>：點擊座位後，系統會為您保留 <strong>60 秒</strong>。只要手動填表且不觸發防護網，60 秒絕對充裕！</li>
 <li><strong style="color: #e74c3c;">🚫 絕對避開 LINE 內建瀏覽器</strong>：在 LINE 聊天室直接點開網址，極容易被 Google 判定為高風險而觸發防護網。請務必點擊右上角選單<strong>「以 Safari 或 Chrome (預設瀏覽器) 開啟」</strong>。</li>
-<li><strong>降低防護網干擾機率之訣竅</strong>：請關閉「無痕模式」與廣告攔截器。劃位時建議暫時關閉 WiFi，<strong>改用個人 4G/5G 行動網路</strong>，可提升順暢度。</li>
+<li><strong>降低防護網干擾機率之訣竅</strong>：建議使用平時常用的 Google 帳號登入。請關閉「無痕模式」與廣告攔截器。劃位時建議暫時關閉 WiFi，<strong>改用個人 4G/5G 行動網路</strong>，可提升順暢度。</li>
 <li><strong>嚴禁重複劃位</strong>：當日若不慎重複劃位，系統將<span style="background-color: #ffcccc; color: red; padding: 2px 5px; border-radius: 3px;">直接無效化第二個以上的座位</span>。</li>
 <li><strong style="color: #d35400;">家有多寶必看（物理分流）</strong>：同一裝置同時僅能保留一席。若需搶兩個班，請務必<strong>使用不同裝置，由家人分頭進行！</strong></li>
 </ul>
@@ -108,11 +108,11 @@ const HTML_TPL_REGULAR = `
 <h3 style="color: #2c3e50; border-bottom: 2px dashed #bdc3c7; padding-bottom: 8px;">📝 報名資料填寫規範</h3>
 <ul style="color: #555; line-height: 1.8; font-size: 16px;">
 <li><strong>學生姓名</strong>：請務必填寫學生真實姓名，切勿使用暱稱，且填寫後系統不開放自改。</li>
-<li><strong>家長手機</strong>：請填寫 <span style="color: #27ae60; font-weight: bold;">10 碼正確手機號碼</span>。此號碼將作為日後「查詢訂單」的唯一鑰匙，填錯將無法查詢！</li>
+<li><strong>家長手機</strong>：請填寫 <span style="color: #27ae60; font-weight: bold;">10 碼正確手機號碼</span>。此號碼將作為日後「查詢訂單」的唯一鑰匙，填錯將無法查詢！若誤填他人姓名或電話號碼，一經系統比對發現，為保障其他家長權益，將直接取消該報名資格。</li>
 </ul>
 <div style="background-color: #e8f6f3; padding: 15px; border-radius: 8px; margin-bottom: 20px;">
 <h4 style="color: #16a085; margin-top: 0; font-size: 18px;">💰 繳費與保留座位流程</h4>
-<p style="margin-bottom: 0; color: #333; line-height: 1.6; font-size: 16px;">劃位前請<strong>務必點擊畫面右下角圖示，加入官方 LINE 並傳送學生姓名</strong>以完成家長身分綁定。<br>劃位完成後，我們將在整理名單後，透過 LINE 回傳劃位成功確認及繳費通知。<br><br>收到通知後，請於 <strong style="color: #d35400;">3 日內</strong> 完成繳費（可現場現金或轉帳）。<br>⚠️ 若逾期未繳且未主動聯繫，系統將自動釋出您的座位給候補同學。</p>
+<p style="margin-bottom: 0; color: #333; line-height: 1.6; font-size: 16px;">劃位前請<strong>務必點擊畫面右下角圖示，加入官方 LINE 並傳送學生姓名</strong>以完成家長身分綁定。<br>舊生需確認是否有進行過綁定，才會收到通知哦。<br>劃位完成後，我們將在整理名單後，透過 LINE 回傳劃位成功確認及繳費通知。<br><br>收到通知後，請於 <strong style="color: #d35400;">3 日內</strong> 完成繳費（可現場現金或轉帳）。<br>⚠️ 若逾期未繳且未主動聯繫，系統將自動釋出您的座位給候補同學。</p>
 </div>
 <h3 style="color: #2c3e50; border-bottom: 2px dashed #bdc3c7; padding-bottom: 8px;">📞 聯絡資訊</h3>
 <p style="color: #555; line-height: 1.8; font-size: 16px;"><strong>國中小山熊科學專線：</strong>03-6667360<br><strong>高中部山熊升大專線：</strong>03-6662248<br><strong>官方 LINE 帳號：</strong>請點擊畫面右下角圖示加入（國中小請點綠色「山熊科學」，高中請點藍色「山熊升大」）</p>
