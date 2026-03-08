@@ -841,8 +841,8 @@
 
     <!-- ★ 登入封鎖畫面 (預設顯示) -->
     <div id="loginBlockade">
-        <h2>🔒 劃位前請先登入</h2>
-        <p>為了保障報名公平性與您的權益，<br>本系統全面採用 Google 帳號實名制驗證。<br>登入後即可進入劃位大廳！</p>
+        <h2>🔒 報名前請先登入</h2>
+        <p>為了保障報名公平性與您的權益，<br>本系統全面採用 Google 帳號實名制驗證。<br>登入後即可進入報名！</p>
         <button id="btnHugeLogin" class="btn-huge-login">
             <svg width="24" height="24" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
                 <path
@@ -1067,8 +1067,8 @@
 
                 // 更新頂部登入列
                 authBar.className = "auth-bar";
-                authBar.innerHTML = `尚未登入，劃位前請先完成 Google 驗證 👉 <button id="btnLoginTop" class="btn-auth btn-login">使用 Google 帳號登入</button>`;
-                document.getElementById('btnLoginTop').addEventListener('click', handleGoogleLogin);
+                authBar.innerHTML = `尚未登入，劃位前請先完成 Google 驗證 👉 <button id="btnLogin" class="btn-auth btn-login">使用 Google 帳號登入</button>`;
+                document.getElementById('btnLogin').addEventListener('click', handleGoogleLogin);
 
                 // 清除表單信箱
                 document.getElementById('userEmail').value = "";
