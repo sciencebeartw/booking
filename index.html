@@ -1343,13 +1343,37 @@
                     if (snapshot.exists()) {
                         window.location.href = "admin_bear2026.html";
                     } else {
-                        const errMsg = "權限不足！此帳號（" + user.email + "）非系統管理員。";
-                        if (typeof Swal !== 'undefined') Swal.fire(errMsg);
-                        else alert(errMsg);
+                        // 帳號存在但不在管理員名單中
+                        if (typeof Swal !== 'undefined') {
+                            await Swal.fire({
+                                icon: 'error',
+                                title: '⛔ 權限不足',
+                                html: `此帳號（<strong>${user.email}</strong>）非系統管理員，無法進入後台。<br><br>若您是家長，請直接使用首頁的課程入口進行劃位，無須登入後台。`,
+                                confirmButtonText: '我知道了',
+                                confirmButtonColor: '#e74c3c',
+                            });
+                        } else {
+                            alert(`⛔ 權限不足！此帳號（${user.email}）非系統管理員。`);
+                        }
                         if (_signOut) await _signOut(auth);
                     }
                 } catch (error) {
                     console.error("驗證管理員身分失敗:", error);
+                    // ★ 最常見情況：Firebase rules 拒絕非管理員讀取 admins/ 節點（Permission denied）
+                    //   此時用戶不會看到任何錯誤，需要在此統一顯示提示並登出
+                    const email = (user && user.email) ? user.email : '未知帳號';
+                    if (typeof Swal !== 'undefined') {
+                        await Swal.fire({
+                            icon: 'error',
+                            title: '⛔ 權限不足',
+                            html: `此帳號（<strong>${email}</strong>）非系統管理員，無法進入後台。<br><br>若您是家長，請直接使用首頁的課程入口進行劃位，無須登入後台。`,
+                            confirmButtonText: '我知道了',
+                            confirmButtonColor: '#e74c3c',
+                        });
+                    } else {
+                        alert(`⛔ 權限不足！此帳號（${email}）非系統管理員。`);
+                    }
+                    if (_signOut) await _signOut(auth);
                 }
             };
 
