@@ -1366,6 +1366,7 @@
                     else if (hasP2 && now >= t2_start1) { isP2 = true; isP1 = false; }
                 }
 
+                let rawDebugStr = '';
                 document.querySelectorAll('.seat').forEach(seatEl => {
                     const seatId = seatEl.dataset.id;
                     if (!seatId || seatEl.classList.contains('blocked')) return;
@@ -1377,6 +1378,7 @@
                     seatEl.style.cursor = 'pointer';
 
                     if (seatInfo) {
+                        rawDebugStr += `[${seatId}:${seatInfo.status}|${seatInfo.user.substring(0, 6)}] `;
                         if (seatInfo.status === 'sold') {
                             if (seatInfo.user === myUserId) seatEl.classList.add('mylocked');
                             else seatEl.classList.add('sold');
@@ -1400,6 +1402,8 @@
                                 seatEl.classList.add('locked');
                             }
                         }
+                    } else {
+                        rawDebugStr += `[${seatId}:none] `;
                     }
                 });
 
@@ -1417,6 +1421,7 @@
                         }
                     }
                     debugBox.innerHTML = `<strong>[DEBUG] 座位計算狀態:</strong><br>
+                        Raw: ${rawDebugStr}<br>
                         soldCount (🔴/🔵): ${soldCount}<br>
                         currentPhaseLockedCount (🟣): ${currentPhaseLockedCount}<br>
                         <strong>effectiveSoldCount: ${effectiveSoldCount}</strong><br>
