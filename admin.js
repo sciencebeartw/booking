@@ -328,14 +328,12 @@ window.showSubjectDropdown = () => window.showCombobox('c_subject', 'subject_dro
 window.hideSubjectDropdown = () => window.hideCombobox('subject_dropdown');
 window.filterSubjectDropdown = (val) => window.filterCombobox('c_subject', 'subject_dropdown', val);
 
-// 初始化靜態 comboboxes（交由 DOMContentLoaded 後執行）
-document.addEventListener('DOMContentLoaded', () => {
-    initCombobox('c_teacher', TEACHER_OPTIONS);
-    initCombobox('e_teacher', TEACHER_OPTIONS);
-    initCombobox('c_class_type', CLASS_TYPE_OPTIONS, (val) => {
-        // 選完班別自動帶入上課時間（延遲確保 input.value 已填入）
-        setTimeout(() => window.autoFillTime(), 0);
-    });
+// 初始化靜態 comboboxes
+initCombobox('c_teacher', TEACHER_OPTIONS);
+initCombobox('e_teacher', TEACHER_OPTIONS);
+initCombobox('c_class_type', CLASS_TYPE_OPTIONS, (val) => {
+    // 選完班別自動帶入上課時間（延遲確保 input.value 已填入）
+    setTimeout(() => window.autoFillTime(), 0);
 });
 
 window.autoFillTime = function () {
