@@ -886,6 +886,12 @@
                     d.getFullYear() === today.getFullYear();
             }
 
+            function isTodayActive(startMs, endMs, now) {
+                if (!startMs || startMs >= 9999999999999) return false;
+                if (isToday(startMs)) return true;
+                return now >= startMs && now < endMs;
+            }
+
             // ★★★ 判斷是否為「未來的一天」 (導入伺服器時間校準) ★★★
             function isFutureDay(timestamp) {
                 const d = new Date(timestamp);
@@ -932,13 +938,23 @@
                     if (c.grade) categories.add(c.grade);
 
                     // Check all phases' stage-1 start times for today/upcoming detection
-                    const phaseStartFields = ['start1', 't2_start1', 't3_start1'];
+                    const now = Date.now() + serverTimeOffset;
+                    const phaseConfigs = [
+                        { s: c.start1, e: c.end1 },
+                        { s: c.start2, e: c.end2 },
+                        { s: c.t2_start1, e: c.t2_end1 },
+                        { s: c.t2_start2, e: c.t2_end2 },
+                        { s: c.t3_start1, e: c.t3_end1 },
+                        { s: c.t3_start2, e: c.t3_end2 }
+                    ];
+
                     let foundToday = false, foundUpcoming = false;
-                    for (const field of phaseStartFields) {
-                        if (c[field]) {
-                            const t = new Date(c[field]).getTime();
-                            if (isToday(t)) { foundToday = true; break; }
-                            if (isFutureDay(t)) { foundUpcoming = true; }
+                    for (const pc of phaseConfigs) {
+                        if (pc.s) {
+                            const tStart = new Date(pc.s).getTime();
+                            const tEnd = pc.e ? new Date(pc.e).getTime() : 9999999999999;
+                            if (isTodayActive(tStart, tEnd, now)) { foundToday = true; break; }
+                            if (isFutureDay(tStart)) { foundUpcoming = true; }
                         }
                     }
                     if (foundToday) hasTodayCourses = true;
@@ -1078,13 +1094,41 @@
 
                 if (currentCategory === 'today') {
                     finalCourses = visibleCourses.filter(c => {
-                        const fields = ['start1', 't2_start1', 't3_start1'];
-                        return fields.some(f => c[f] && isToday(new Date(c[f]).getTime()));
+                        const seatSettings = (allSeatsData[c.id] && allSeatsData[c.id]['_settings']) || {};
+                        const pStr = (t) => t ? new Date(t).getTime() : 9999999999999;
+
+                        const p1s1 = seatSettings.start1 || pStr(c.start1);
+                        const p1e1 = seatSettings.end1 || pStr(c.end1);
+                        const p1s2 = seatSettings.start2 || pStr(c.start2);
+                        const p1e2 = seatSettings.end2 || pStr(c.end2);
+
+                        const p2s1 = seatSettings.t2_start1 || pStr(c.t2_start1);
+                        const p2e1 = seatSettings.t2_end1 || pStr(c.t2_end1);
+                        const p2s2 = seatSettings.t2_start2 || pStr(c.t2_start2);
+                        const p2e2 = seatSettings.t2_end2 || pStr(c.t2_end2);
+
+                        const p3s1 = seatSettings.t3_start1 || pStr(c.t3_start1);
+                        const p3e1 = seatSettings.t3_end1 || pStr(c.t3_end1);
+                        const p3s2 = seatSettings.t3_start2 || pStr(c.t3_start2);
+                        const p3e2 = seatSettings.t3_end2 || pStr(c.t3_end2);
+
+                        return isTodayActive(p1s1, p1e1, now) || isTodayActive(p1s2, p1e2, now) ||
+                            isTodayActive(p2s1, p2e1, now) || isTodayActive(p2s2, p2e2, now) ||
+                            isTodayActive(p3s1, p3e1, now) || isTodayActive(p3s2, p3e2, now);
                     });
                 } else if (currentCategory === 'upcoming') {
                     finalCourses = visibleCourses.filter(c => {
-                        const fields = ['start1', 't2_start1', 't3_start1'];
-                        return fields.some(f => c[f] && isFutureDay(new Date(c[f]).getTime()));
+                        const seatSettings = (allSeatsData[c.id] && allSeatsData[c.id]['_settings']) || {};
+                        const pStr = (t) => t ? new Date(t).getTime() : 9999999999999;
+                        const starts = [
+                            seatSettings.start1 || pStr(c.start1),
+                            seatSettings.start2 || pStr(c.start2),
+                            seatSettings.t2_start1 || pStr(c.t2_start1),
+                            seatSettings.t2_start2 || pStr(c.t2_start2),
+                            seatSettings.t3_start1 || pStr(c.t3_start1),
+                            seatSettings.t3_start2 || pStr(c.t3_start2)
+                        ];
+                        return starts.some(t => t < 9999999999999 && isFutureDay(t));
                     });
                 } else if (currentCategory !== 'all') {
                     finalCourses = visibleCourses.filter(c => c.grade === currentCategory);
@@ -1247,7 +1291,7 @@
                 });
 
                 const effectiveSoldCount = soldCount + currentPhaseLockedCount;
-                let isFull = effectiveSoldCount >= (c.totalSeats || 999);
+                let isFull = (c.totalSeats > 0) && (effectiveSoldCount >= c.totalSeats);
 
                 if (isFull) {
                     if (isFinalConfiguredStage && c.waitlistEnabled) {
