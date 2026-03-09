@@ -396,6 +396,8 @@
                 icon: 'warning',
                 timer: 5000,
                 timerProgressBar: true,
+                showConfirmButton: false,
+                allowOutsideClick: false,
                 didOpen: () => {
                     const b = Swal.getHtmlContainer().querySelector('b');
                     timerInterval = setInterval(() => { b.textContent = Math.ceil(Swal.getTimerLeft() / 1000); }, 100);
