@@ -1,0 +1,1424 @@
+<!-- 檔案：demo.html -->
+<!-- 版本：V1.0 展示用頁面 - 完全離線，不連 Firebase -->
+<!DOCTYPE html>
+<html lang="zh-TW">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>🎬 山熊科學劃位系統 — 展示模式</title>
+    <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
+    <style>
+        * {
+            box-sizing: border-box;
+            margin: 0;
+            padding: 0;
+        }
+
+        body {
+            font-family: "Microsoft JhengHei", sans-serif;
+            background: #1a1a2e;
+            color: #eee;
+            height: 100vh;
+            overflow: hidden;
+            display: flex;
+            flex-direction: column;
+        }
+
+        /* ===== 頂部標題列 ===== */
+        #topBar {
+            background: linear-gradient(90deg, #16213e, #0f3460);
+            border-bottom: 2px solid #e94560;
+            padding: 8px 20px;
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            flex-shrink: 0;
+        }
+
+        #topBar h1 {
+            font-size: 18px;
+            color: #fff;
+            letter-spacing: 1px;
+        }
+
+        #topBar .demo-badge {
+            background: #e94560;
+            color: white;
+            font-size: 12px;
+            font-weight: bold;
+            padding: 3px 10px;
+            border-radius: 20px;
+            letter-spacing: 1px;
+        }
+
+        #topBar .time-display {
+            font-size: 13px;
+            color: #a0c4ff;
+            font-family: monospace;
+        }
+
+        /* ===== 主要佈局 ===== */
+        #mainLayout {
+            display: flex;
+            flex: 1;
+            overflow: hidden;
+        }
+
+        /* ===== 左側控制台 ===== */
+        #controlPanel {
+            width: 290px;
+            flex-shrink: 0;
+            background: #16213e;
+            border-right: 2px solid #0f3460;
+            overflow-y: auto;
+            padding: 12px;
+            display: flex;
+            flex-direction: column;
+            gap: 12px;
+        }
+
+        .panel-section {
+            background: #0f3460;
+            border-radius: 10px;
+            padding: 10px 12px;
+        }
+
+        .panel-section h3 {
+            font-size: 13px;
+            color: #a0c4ff;
+            margin-bottom: 8px;
+            letter-spacing: 1px;
+            border-bottom: 1px solid rgba(255, 255, 255, 0.1);
+            padding-bottom: 5px;
+        }
+
+        /* 場景快按鍵 */
+        .scene-btn {
+            display: block;
+            width: 100%;
+            padding: 8px 10px;
+            margin-bottom: 5px;
+            border: none;
+            border-radius: 6px;
+            cursor: pointer;
+            font-size: 13px;
+            font-weight: bold;
+            font-family: "Microsoft JhengHei", sans-serif;
+            text-align: left;
+            transition: 0.2s;
+            background: #1a1a2e;
+            color: #eee;
+            border: 1px solid #2d4a7a;
+        }
+
+        .scene-btn:hover {
+            background: #263d6e;
+            border-color: #4a90d9;
+        }
+
+        .scene-btn.active {
+            background: #0f7a4e;
+            border-color: #2ecc71;
+            color: #fff;
+        }
+
+        /* 手動開關 */
+        .toggle-row {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            padding: 5px 0;
+            border-bottom: 1px solid rgba(255, 255, 255, 0.05);
+            font-size: 13px;
+        }
+
+        .toggle-row:last-child {
+            border-bottom: none;
+        }
+
+        .toggle-label {
+            color: #ccc;
+        }
+
+        .toggle-switch {
+            position: relative;
+            width: 42px;
+            height: 22px;
+            flex-shrink: 0;
+        }
+
+        .toggle-switch input {
+            display: none;
+        }
+
+        .toggle-slider {
+            position: absolute;
+            cursor: pointer;
+            inset: 0;
+            background: #444;
+            border-radius: 22px;
+            transition: 0.3s;
+        }
+
+        .toggle-slider:before {
+            content: '';
+            position: absolute;
+            left: 3px;
+            top: 3px;
+            width: 16px;
+            height: 16px;
+            background: white;
+            border-radius: 50%;
+            transition: 0.3s;
+        }
+
+        .toggle-switch input:checked+.toggle-slider {
+            background: #2ecc71;
+        }
+
+        .toggle-switch input:checked+.toggle-slider:before {
+            transform: translateX(20px);
+        }
+
+        /* 計時器說明 */
+        .timer-control-row {
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            padding: 5px 0;
+            font-size: 13px;
+            color: #ccc;
+        }
+
+        .timer-control-row input[type=range] {
+            flex: 1;
+            accent-color: #e94560;
+        }
+
+        /* ===== 右側展示區 (三欄佈局) ===== */
+        #displayArea {
+            flex: 1;
+            display: grid;
+            grid-template-columns: 1fr 1fr 1.5fr;
+            /* 三欄：Index, Detail, Booking */
+            gap: 12px;
+            padding: 12px;
+            background: #f0f2f5;
+            overflow: hidden;
+            /* 防止外層捲動，改內部捲動 */
+        }
+
+        /* ===== 共用區塊外框 ===== */
+        .demo-block {
+            background: white;
+            border-radius: 12px;
+            box-shadow: 0 3px 15px rgba(0, 0, 0, 0.12);
+            display: flex;
+            flex-direction: column;
+            overflow: hidden;
+            height: 100%;
+            /* 填滿格線高度 */
+        }
+
+        .demo-block-header {
+            background: #2c3e50;
+            color: white;
+            padding: 10px 16px;
+            font-size: 14px;
+            font-weight: bold;
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            flex-shrink: 0;
+        }
+
+        .demo-block-header .page-label {
+            font-size: 11px;
+            background: rgba(255, 255, 255, 0.2);
+            padding: 2px 8px;
+            border-radius: 10px;
+        }
+
+        .demo-block-body {
+            padding: 16px;
+            overflow-y: auto;
+            /* 內容過長時個別捲動 */
+            flex: 1;
+        }
+
+        /* ===== INDEX 模擬：垂直排列課程卡片 ===== */
+        #indexSection .course-cards {
+            display: flex;
+            flex-direction: column;
+            /* 改為垂直，適應窄欄位 */
+            gap: 16px;
+        }
+
+        .course-card {
+            border: 1px solid #eee;
+            border-radius: 10px;
+            overflow: hidden;
+            box-shadow: 0 2px 8px rgba(0, 0, 0, 0.06);
+        }
+
+        .card-img-bar {
+            height: 60px;
+            /* 稍微縮小 */
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 24px;
+        }
+
+        .card-img-bar.bg-math {
+            background: linear-gradient(135deg, #667eea, #764ba2);
+        }
+
+        .card-img-bar.bg-science {
+            background: linear-gradient(135deg, #f7971e, #ffd200);
+        }
+
+        .card-img-bar.bg-english {
+            background: linear-gradient(135deg, #11998e, #38ef7d);
+        }
+
+        .card-info {
+            padding: 12px;
+        }
+
+        .card-title {
+            font-size: 15px;
+            font-weight: bold;
+            color: #2c3e50;
+            margin-bottom: 4px;
+        }
+
+        .card-sub {
+            font-size: 12px;
+            color: #888;
+            margin-bottom: 10px;
+        }
+
+        .card-phases {
+            display: flex;
+            gap: 6px;
+            flex-wrap: wrap;
+        }
+
+        /* ===== 燈號徽章 ===== */
+        .phase-badge {
+            display: inline-flex;
+            align-items: center;
+            gap: 4px;
+            padding: 4px 10px;
+            border-radius: 12px;
+            font-size: 12px;
+            font-weight: bold;
+        }
+
+        .badge-closed {
+            background: #ecf0f1;
+            color: #95a5a6;
+            border: 1px solid #bdc3c7;
+        }
+
+        .badge-upcoming {
+            background: #fef9e7;
+            color: #d68910;
+            border: 1px solid #f0c040;
+        }
+
+        .badge-open {
+            background: #eafaf1;
+            color: #1e8449;
+            border: 1px solid #52be80;
+        }
+
+        .badge-waitlist {
+            background: #fdf2e9;
+            color: #c0392b;
+            border: 1px solid #f1948a;
+        }
+
+        .badge-ended {
+            background: #f2f3f4;
+            color: #7f8c8d;
+            border: 1px solid #bdc3c7;
+        }
+
+        /* ===== DETAIL 模擬 ===== */
+        #detailSection .detail-inner {
+            display: flex;
+            flex-direction: column;
+            /* 適應窄欄位 */
+            gap: 20px;
+            align-items: center;
+            text-align: center;
+        }
+
+        .detail-img {
+            width: 100%;
+            aspect-ratio: 16/9;
+            border-radius: 8px;
+            background: linear-gradient(135deg, #667eea, #764ba2);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 48px;
+            flex-shrink: 0;
+        }
+
+        .detail-meta {
+            width: 100%;
+        }
+
+        .detail-meta h2 {
+            font-size: 20px;
+            color: #2c3e50;
+            margin-bottom: 12px;
+        }
+
+        .detail-meta .info-row {
+            font-size: 14px;
+            color: #555;
+            margin-bottom: 8px;
+            text-align: left;
+        }
+
+        .detail-meta .info-row strong {
+            color: #333;
+        }
+
+        .countdown-box {
+            background: #fdf2e9;
+            border: 2px solid #f39c12;
+            border-radius: 12px;
+            padding: 20px;
+            text-align: center;
+            margin-top: 20px;
+            width: 100%;
+        }
+
+        .countdown-label {
+            font-size: 14px;
+            color: #d35400;
+            margin-bottom: 6px;
+        }
+
+        .countdown-text {
+            font-size: 24px;
+            font-weight: bold;
+            color: #d35400;
+            font-family: monospace;
+        }
+
+        .btn-goto-booking {
+            display: block;
+            width: 100%;
+            margin-top: 15px;
+            padding: 12px;
+            background: #27ae60;
+            color: white;
+            border: none;
+            border-radius: 8px;
+            font-size: 16px;
+            font-weight: bold;
+            cursor: pointer;
+            font-family: "Microsoft JhengHei", sans-serif;
+            transition: 0.2s;
+        }
+
+        .btn-goto-booking:hover {
+            background: #219150;
+            transform: translateY(-1px);
+        }
+
+        .btn-goto-booking:disabled {
+            background: #bdc3c7;
+            cursor: not-allowed;
+            transform: none;
+        }
+
+        /* ===== BOOKING 模擬 ===== */
+        #deadlineBanner {
+            background: #e74c3c;
+            color: white;
+            text-align: center;
+            padding: 8px;
+            font-weight: bold;
+            font-size: 15px;
+            display: none;
+            border-radius: 6px;
+            margin-bottom: 10px;
+            font-family: monospace;
+        }
+
+        #deadlineBanner.urgent {
+            animation: blink 0.8s ease-in-out infinite;
+        }
+
+        @keyframes blink {
+
+            0%,
+            100% {
+                opacity: 1;
+            }
+
+            50% {
+                opacity: 0.5;
+            }
+        }
+
+        .seat-status-bar {
+            display: flex;
+            gap: 12px;
+            flex-wrap: wrap;
+            margin-bottom: 10px;
+            font-size: 12px;
+            color: #555;
+        }
+
+        .seat-legend {
+            display: flex;
+            align-items: center;
+            gap: 4px;
+        }
+
+        .dot {
+            width: 12px;
+            height: 12px;
+            border-radius: 3px;
+            display: inline-block;
+        }
+
+        .dot-open {
+            background: #4CAF50;
+        }
+
+        .dot-sold {
+            background: #e74c3c;
+        }
+
+        .dot-waitlist {
+            background: #9b59b6;
+        }
+
+        .dot-mine {
+            background: #3498db;
+        }
+
+        .classroom-wrapper {
+            overflow-x: auto;
+            text-align: center;
+            padding-bottom: 5px;
+        }
+
+        .classroom-inner {
+            display: inline-block;
+            margin: 0 auto;
+        }
+
+        .stage-box {
+            width: 100%;
+            border: 2px solid #333;
+            padding: 6px;
+            font-weight: bold;
+            font-size: 16px;
+            letter-spacing: 8px;
+            text-align: center;
+            margin-bottom: 10px;
+            background: #f9f9f9;
+            box-sizing: border-box;
+        }
+
+        .seat-row {
+            display: flex;
+            justify-content: center;
+            gap: 6px;
+            margin-bottom: 6px;
+        }
+
+        .seat {
+            width: 44px;
+            height: 52px;
+            border-radius: 6px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-weight: bold;
+            font-size: 12px;
+            cursor: pointer;
+            transition: 0.2s;
+            user-select: none;
+            flex-direction: column;
+            line-height: 1.1;
+        }
+
+        .seat:hover {
+            transform: scale(1.1);
+            z-index: 5;
+            position: relative;
+        }
+
+        .seat.open {
+            background: #4CAF50;
+            color: white;
+        }
+
+        .seat.sold {
+            background: #e74c3c;
+            color: white;
+            cursor: not-allowed;
+            pointer-events: none;
+        }
+
+        .seat.sold:hover {
+            transform: none;
+        }
+
+        .seat.waitlist-seat {
+            background: #9b59b6;
+            color: white;
+            cursor: not-allowed;
+            pointer-events: none;
+        }
+
+        .seat.waitlist-seat:hover {
+            transform: none;
+        }
+
+        .seat.mine {
+            background: #3498db;
+            color: white;
+            border: 2px solid #1a6fa8;
+        }
+
+        .seat.aisle {
+            background: transparent;
+            cursor: default;
+            pointer-events: none;
+        }
+
+        .seat.aisle:hover {
+            transform: none;
+        }
+
+        .seat-tag {
+            font-size: 9px;
+            opacity: 0.9;
+        }
+
+        /* ===== 候補區 ===== */
+        .waitlist-area {
+            margin-top: 12px;
+            padding: 14px;
+            background: #fff3e0;
+            border-radius: 10px;
+            display: none;
+            text-align: center;
+        }
+
+        .waitlist-area h3 {
+            color: #e67e22;
+            margin-bottom: 6px;
+            font-size: 15px;
+        }
+
+        .waitlist-area p {
+            font-size: 13px;
+            color: #555;
+            margin-bottom: 8px;
+        }
+
+        .btn-waitlist {
+            background: #e67e22;
+            color: white;
+            border: none;
+            padding: 10px 24px;
+            border-radius: 20px;
+            font-size: 15px;
+            font-weight: bold;
+            cursor: pointer;
+            font-family: "Microsoft JhengHei", sans-serif;
+            transition: 0.2s;
+        }
+
+        .btn-waitlist:hover {
+            background: #d35400;
+            transform: translateY(-2px);
+        }
+
+        /* Swal 樣式補丁 */
+        .swal2-html-container {
+            word-break: keep-all !important;
+            text-align: center !important;
+        }
+
+        .swal2-title {
+            justify-content: center !important;
+            text-align: center !important;
+        }
+    </style>
+</head>
+
+<body>
+
+    <!-- 頂部標題列 -->
+    <div id="topBar">
+        <h1>🏔️ 山熊科學 劃位系統展示</h1>
+        <div class="demo-badge">🎬 DEMO MODE — 不連線資料庫</div>
+        <div class="time-display" id="clockDisplay">--:--:--</div>
+    </div>
+
+    <!-- 主要佈局 -->
+    <div id="mainLayout">
+
+        <!-- ===== 左側控制台 ===== -->
+        <div id="controlPanel">
+
+            <!-- 場景快按鍵 -->
+            <div class="panel-section">
+                <h3>🎬 場景快按鍵</h3>
+                <button class="scene-btn" onclick="setScene('none')">⚫ 全部未開放</button>
+                <button class="scene-btn" onclick="setScene('t1s1')">🟢 梯次1 第1階段：開放中</button>
+                <button class="scene-btn" onclick="setScene('t1s2')">🟠 梯次1 第2階段：候補中</button>
+                <button class="scene-btn" onclick="setScene('t2s1')">🟢 梯次2 第1階段：開放中</button>
+                <button class="scene-btn" onclick="setScene('t2s2')">🟠 梯次2 第2階段：候補中</button>
+                <button class="scene-btn" onclick="setScene('t3s1')">🟢 梯次3 第1階段：開放中</button>
+                <button class="scene-btn" onclick="setScene('t3s2')">🟠 梯次3 第2階段：候補中</button>
+                <button class="scene-btn" onclick="setScene('all_ended')">🔴 全部已結束</button>
+                <button class="scene-btn" onclick="setScene('mixed')">🔀 混合：梯1結束/梯2開放/梯3未開放</button>
+            </div>
+
+            <!-- 手動開關 -->
+            <div class="panel-section">
+                <h3>🔧 手動微調開關</h3>
+                <div class="toggle-row">
+                    <span class="toggle-label">梯次1 第1階段（劃位）</span>
+                    <label class="toggle-switch">
+                        <input type="checkbox" id="sw_t1s1" onchange="onToggle()">
+                        <span class="toggle-slider"></span>
+                    </label>
+                </div>
+                <div class="toggle-row">
+                    <span class="toggle-label">梯次1 第2階段（候補）</span>
+                    <label class="toggle-switch">
+                        <input type="checkbox" id="sw_t1s2" onchange="onToggle()">
+                        <span class="toggle-slider"></span>
+                    </label>
+                </div>
+                <div class="toggle-row">
+                    <span class="toggle-label">梯次2 第1階段（劃位）</span>
+                    <label class="toggle-switch">
+                        <input type="checkbox" id="sw_t2s1" onchange="onToggle()">
+                        <span class="toggle-slider"></span>
+                    </label>
+                </div>
+                <div class="toggle-row">
+                    <span class="toggle-label">梯次2 第2階段（候補）</span>
+                    <label class="toggle-switch">
+                        <input type="checkbox" id="sw_t2s2" onchange="onToggle()">
+                        <span class="toggle-slider"></span>
+                    </label>
+                </div>
+                <div class="toggle-row">
+                    <span class="toggle-label">梯次3 第1階段（劃位）</span>
+                    <label class="toggle-switch">
+                        <input type="checkbox" id="sw_t3s1" onchange="onToggle()">
+                        <span class="toggle-slider"></span>
+                    </label>
+                </div>
+                <div class="toggle-row">
+                    <span class="toggle-label">梯次3 第2階段（候補）</span>
+                    <label class="toggle-switch">
+                        <input type="checkbox" id="sw_t3s2" onchange="onToggle()">
+                        <span class="toggle-slider"></span>
+                    </label>
+                </div>
+            </div>
+
+            <!-- 計時器設定 -->
+            <div class="panel-section">
+                <h3>⏱ 劃位計時器設定</h3>
+                <div class="timer-control-row">
+                    <span>秒數：</span>
+                    <input type="range" id="timerSec" min="5" max="120" value="60" oninput="updateTimerLabel()">
+                    <span id="timerSecLabel" style="font-weight:bold;color:#e94560;min-width:35px;">60 秒</span>
+                </div>
+                <div style="font-size:11px;color:#8899aa;margin-top:4px;">（展示時可縮短測試）</div>
+            </div>
+
+            <!-- 座位狀態設定 -->
+            <div class="panel-section">
+                <h3>🪑 座位狀態設定</h3>
+                <div class="toggle-row">
+                    <span class="toggle-label">模擬部分座位已售出</span>
+                    <label class="toggle-switch">
+                        <input type="checkbox" id="sw_someSold" checked onchange="renderSeats()">
+                        <span class="toggle-slider"></span>
+                    </label>
+                </div>
+                <div class="toggle-row">
+                    <span class="toggle-label">顯示候補區塊</span>
+                    <label class="toggle-switch">
+                        <input type="checkbox" id="sw_showWaitlist" onchange="updateWaitlistArea()">
+                        <span class="toggle-slider"></span>
+                    </label>
+                </div>
+                <div style="font-size:11px;color:#8899aa;margin-top:4px;">切換「候補中」場景時會自動顯示候補區</div>
+            </div>
+
+            <!-- 說明 -->
+            <div class="panel-section">
+                <h3>📖 燈號說明</h3>
+                <div style="font-size:12px;color:#aaa;line-height:1.8;">
+                    <div>⚫ <b style="color:#95a5a6">灰</b>：尚未開放</div>
+                    <div>🟡 <b style="color:#d4ac0d">橘黃</b>：即將開放</div>
+                    <div>🟢 <b style="color:#1e8449">綠</b>：開放劃位中</div>
+                    <div>🔴 <b style="color:#c0392b">紅橘</b>：候補登記中</div>
+                    <div>⬛ <b style="color:#7f8c8d">深灰</b>：已結束</div>
+                </div>
+            </div>
+
+        </div>
+        <!-- end 左側控制台 -->
+
+        <!-- ===== 右側展示區 ===== -->
+        <div id="displayArea">
+
+            <!-- INDEX 模擬區 -->
+            <div class="demo-block" id="indexSection">
+                <div class="demo-block-header">
+                    📋 課程列表頁 <span class="page-label">index.html</span>
+                    <span style="margin-left:auto;font-size:12px;font-weight:normal;opacity:0.8;">燈號依場景即時更新</span>
+                </div>
+                <div class="demo-block-body">
+                    <div class="course-cards">
+
+                        <!-- 課程卡 1 -->
+                        <div class="course-card">
+                            <div class="card-img-bar bg-math">🔢</div>
+                            <div class="card-info">
+                                <div class="card-title">國中數學精修班</div>
+                                <div class="card-sub">👩‍🏫 王老師 ｜ 每週六 14:00</div>
+                                <div class="card-phases" id="badges_math">
+                                    <!-- 由 JS 填入 -->
+                                </div>
+                            </div>
+                        </div>
+
+                        <!-- 課程卡 2 -->
+                        <div class="course-card">
+                            <div class="card-img-bar bg-science">🔬</div>
+                            <div class="card-info">
+                                <div class="card-title">高中物理實驗班</div>
+                                <div class="card-sub">👨‍🔬 陳老師 ｜ 每週日 10:00</div>
+                                <div class="card-phases" id="badges_science">
+                                    <!-- 由 JS 填入 -->
+                                </div>
+                            </div>
+                        </div>
+
+                        <!-- 課程卡 3 -->
+                        <div class="course-card">
+                            <div class="card-img-bar bg-english">📚</div>
+                            <div class="card-info">
+                                <div class="card-title">英文閱讀理解班</div>
+                                <div class="card-sub">👩‍🏫 林老師 ｜ 每週三 19:00</div>
+                                <div class="card-phases" id="badges_english">
+                                    <!-- 由 JS 填入 -->
+                                </div>
+                            </div>
+                        </div>
+
+                    </div>
+                </div>
+            </div>
+
+            <!-- DETAIL 模擬區 -->
+            <div class="demo-block" id="detailSection">
+                <div class="demo-block-header">
+                    📄 課程詳情頁 <span class="page-label">detail.html</span>
+                    <span style="margin-left:auto;font-size:12px;font-weight:normal;opacity:0.8;">含倒數計時 + 前往劃位按鈕</span>
+                </div>
+                <div class="demo-block-body">
+                    <div class="detail-inner">
+                        <div class="detail-img">🔢</div>
+                        <div class="detail-meta">
+                            <h2>國中數學精修班</h2>
+                            <div class="info-row"><strong>⏰ 上課時間：</strong>每週六 14:00–16:00</div>
+                            <div class="info-row"><strong>👩‍🏫 授課老師：</strong>王美華老師</div>
+                            <div class="info-row"><strong>📍 上課教室：</strong>山熊科學一樓教室 A</div>
+                            <div class="info-row"><strong>💰 費用：</strong>每月 $3,200</div>
+                        </div>
+                    </div>
+                    <div class="countdown-box">
+                        <div class="countdown-label" id="detailTimerLabel">距離開放還有</div>
+                        <div class="countdown-text" id="detailTimerText">尚未開放</div>
+                        <br>
+                        <button class="btn-goto-booking" id="btnGotoBooking" onclick="startBooking()" disabled>
+                            🔒 尚未開放
+                        </button>
+                    </div>
+                </div>
+            </div>
+
+            <!-- BOOKING 模擬區 -->
+            <div class="demo-block" id="bookingSection">
+                <div class="demo-block-header">
+                    🎟️ 劃位頁面 <span class="page-label">booking.html</span>
+                    <span style="margin-left:auto;font-size:12px;font-weight:normal;opacity:0.8;">含 60 秒計時器 +
+                        座位點擊填表</span>
+                </div>
+                <div class="demo-block-body">
+                    <!-- 倒數計時紅色警示列 -->
+                    <div id="deadlineBanner">⏳ 劃位倒數 計算中...</div>
+
+                    <!-- 座位圖例 -->
+                    <div class="seat-status-bar">
+                        <div class="seat-legend"><span class="dot dot-open"></span> 可選</div>
+                        <div class="seat-legend"><span class="dot dot-sold"></span> 已售出</div>
+                        <div class="seat-legend"><span class="dot dot-waitlist"></span> 候補保留</div>
+                        <div class="seat-legend"><span class="dot dot-mine"></span> 我選的</div>
+                    </div>
+
+                    <!-- 座位表 -->
+                    <div class="classroom-wrapper">
+                        <div class="classroom-inner">
+                            <div class="stage-box">　講　台　</div>
+                            <div id="seatGrid"></div>
+                        </div>
+                    </div>
+
+                    <!-- 候補區 -->
+                    <div class="waitlist-area" id="waitlistArea">
+                        <h3>📋 座位已全數劃位完畢</h3>
+                        <p>您可以登記候補，如有空位釋出系統將通知您。</p>
+                        <button class="btn-waitlist" onclick="doWaitlist()">📝 登記候補</button>
+                    </div>
+
+                </div>
+            </div>
+
+        </div>
+        <!-- end 右側展示區 -->
+
+    </div>
+
+    <script>
+        // ============================================================
+        //  狀態管理
+        // ============================================================
+        const state = {
+            t1s1: false, t1s2: false,
+            t2s1: false, t2s2: false,
+            t3s1: false, t3s2: false,
+        };
+
+        // 是否為「候補模式」（第2階段）
+        function isWaitlistMode() {
+            // 優先判斷：最高梯次的第2階段
+            if (state.t3s2) return true;
+            if (state.t2s2) return true;
+            if (state.t1s2) return true;
+            return false;
+        }
+
+        // 目前是否有任何開放
+        function isAnyOpen() {
+            return Object.values(state).some(v => v);
+        }
+
+        // ============================================================
+        //  時鐘
+        // ============================================================
+        function updateClock() {
+            const now = new Date();
+            const hh = String(now.getHours()).padStart(2, '0');
+            const mm = String(now.getMinutes()).padStart(2, '0');
+            const ss = String(now.getSeconds()).padStart(2, '0');
+            document.getElementById('clockDisplay').textContent = `${now.getFullYear()}-${String(now.getMonth() + 1).padStart(2, '0')}-${String(now.getDate()).padStart(2, '0')} ${hh}:${mm}:${ss}`;
+        }
+        setInterval(updateClock, 1000);
+        updateClock();
+
+        // ============================================================
+        //  計時器設定
+        // ============================================================
+        function updateTimerLabel() {
+            const v = document.getElementById('timerSec').value;
+            document.getElementById('timerSecLabel').textContent = v + ' 秒';
+        }
+
+        function getTimerSec() {
+            return parseInt(document.getElementById('timerSec').value);
+        }
+
+        // ============================================================
+        //  場景快按鍵
+        // ============================================================
+        function setScene(scene) {
+            // 清除所有開關
+            const keys = ['t1s1', 't1s2', 't2s1', 't2s2', 't3s1', 't3s2'];
+            keys.forEach(k => {
+                state[k] = false;
+                document.getElementById('sw_' + k).checked = false;
+            });
+
+            // 套用對應場景
+            const map = {
+                'none': [],
+                't1s1': ['t1s1'],
+                't1s2': ['t1s1', 't1s2'],    // 第1階段保持已完成狀態
+                't2s1': ['t2s1'],
+                't2s2': ['t2s1', 't2s2'],
+                't3s1': ['t3s1'],
+                't3s2': ['t3s1', 't3s2'],
+                'all_ended': [],               // 無開放 → 全結束
+                'mixed': ['t2s1'],           // 梯2開放，梯1已結，梯3未開
+            };
+
+            // 特殊：候補相關場景同步候補開關
+            const toSet = map[scene] || [];
+            toSet.forEach(k => {
+                state[k] = true;
+                document.getElementById('sw_' + k).checked = true;
+            });
+
+            // 候補場景自動開候補顯示
+            const isWL = ['t1s2', 't2s2', 't3s2'].includes(scene) ||
+                scene === 't1s2' || scene === 't2s2' || scene === 't3s2';
+            document.getElementById('sw_showWaitlist').checked = toSet.some(k => k.endsWith('s2'));
+
+            // 場景按鍵高亮
+            document.querySelectorAll('.scene-btn').forEach(btn => btn.classList.remove('active'));
+            event.target.classList.add('active');
+
+            refreshAll();
+        }
+
+        // 手動開關
+        function onToggle() {
+            const keys = ['t1s1', 't1s2', 't2s1', 't2s2', 't3s1', 't3s2'];
+            keys.forEach(k => {
+                state[k] = document.getElementById('sw_' + k).checked;
+            });
+            document.querySelectorAll('.scene-btn').forEach(btn => btn.classList.remove('active'));
+            refreshAll();
+        }
+
+        // ============================================================
+        //  燈號徽章產生
+        // ============================================================
+        function makeBadge(phase, open, ended, waitlist) {
+            if (waitlist) return `<span class="phase-badge badge-waitlist">🔴 梯${phase} 候補中</span>`;
+            if (open) return `<span class="phase-badge badge-open">🟢 梯${phase} 開放劃位</span>`;
+            if (ended) return `<span class="phase-badge badge-ended">⬛ 梯${phase} 已結束</span>`;
+            return `<span class="phase-badge badge-closed">⚪ 梯${phase} 尚未開放</span>`;
+        }
+
+        function getBadgesHTML() {
+            const badges = [];
+
+            // 梯次 1
+            if (state.t1s2) {
+                badges.push(makeBadge(1, false, false, true));
+            } else if (state.t1s1) {
+                badges.push(makeBadge(1, true, false, false));
+            } else {
+                // 判斷是否已結束（梯2或梯3有開/即將開）
+                const t1Ended = state.t2s1 || state.t2s2 || state.t3s1 || state.t3s2;
+                badges.push(makeBadge(1, false, t1Ended, false));
+            }
+
+            // 梯次 2
+            if (state.t2s2) {
+                badges.push(makeBadge(2, false, false, true));
+            } else if (state.t2s1) {
+                badges.push(makeBadge(2, true, false, false));
+            } else {
+                const t2Ended = state.t3s1 || state.t3s2;
+                const t2Upcoming = state.t1s1 || state.t1s2; // 梯1還在，梯2未到
+                if (t2Ended) badges.push(makeBadge(2, false, true, false));
+                else if (t2Upcoming) badges.push(`<span class="phase-badge badge-upcoming">🟡 梯2 即將開放</span>`);
+                else badges.push(makeBadge(2, false, false, false));
+            }
+
+            // 梯次 3
+            if (state.t3s2) {
+                badges.push(makeBadge(3, false, false, true));
+            } else if (state.t3s1) {
+                badges.push(makeBadge(3, true, false, false));
+            } else {
+                const t3Upcoming = state.t1s1 || state.t1s2 || state.t2s1 || state.t2s2;
+                if (t3Upcoming) badges.push(`<span class="phase-badge badge-upcoming">🟡 梯3 即將開放</span>`);
+                else badges.push(makeBadge(3, false, false, false));
+            }
+
+            return badges.join(' ');
+        }
+
+        // ============================================================
+        //  Detail 倒數計時邏輯
+        // ============================================================
+        let detailInterval = null;
+        let detailCountFrom = 0;
+
+        function updateDetailTimer() {
+            const labelEl = document.getElementById('detailTimerLabel');
+            const textEl = document.getElementById('detailTimerText');
+            const btn = document.getElementById('btnGotoBooking');
+
+            if (!isAnyOpen()) {
+                labelEl.textContent = '目前狀態';
+                textEl.textContent = '尚未開放';
+                btn.disabled = true;
+                btn.textContent = '🔒 尚未開放';
+                return;
+            }
+
+            if (isWaitlistMode()) {
+                labelEl.textContent = '目前開放狀態';
+                textEl.textContent = '🔴 候補登記中';
+                btn.disabled = false;
+                btn.textContent = '📝 前往候補登記';
+            } else {
+                labelEl.textContent = '⚡ 劃位開放中！';
+                textEl.textContent = '✅ 立即可劃位';
+                btn.disabled = false;
+                btn.textContent = '🚀 前往劃位 →';
+            }
+        }
+
+        // ============================================================
+        //  Booking 部分 - 計時器
+        // ============================================================
+        let bookingTimer = null;
+        let bookingSecondsLeft = 0;
+        let isBookingActive = false;
+        let currentSwalPromise = null; // 追蹤目前是否有 Swal 開著
+        let selectedSeat = null;
+
+        function startBooking() {
+            // 捲動到 booking 區
+            document.getElementById('bookingSection').scrollIntoView({ behavior: 'smooth' });
+
+            if (isBookingActive) return; // 已經在計時就不重複啟動
+
+            isBookingActive = true;
+            bookingSecondsLeft = getTimerSec();
+
+            const banner = document.getElementById('deadlineBanner');
+            banner.style.display = 'block';
+
+            if (bookingTimer) clearInterval(bookingTimer);
+
+            bookingTimer = setInterval(() => {
+                bookingSecondsLeft--;
+                updateDeadlineBanner();
+
+                if (bookingSecondsLeft <= 0) {
+                    clearInterval(bookingTimer);
+                    bookingTimer = null;
+                    isBookingActive = false;
+                    onBookingExpired();
+                }
+            }, 1000);
+
+            updateDeadlineBanner();
+        }
+
+        function updateDeadlineBanner() {
+            const banner = document.getElementById('deadlineBanner');
+            const s = bookingSecondsLeft;
+            if (s <= 0) {
+                banner.textContent = '⏰ 劃位時間已到！';
+                banner.classList.add('urgent');
+                return;
+            }
+            const m = Math.floor(s / 60);
+            const sec = s % 60;
+            banner.textContent = `⏳ 劃位倒數：${m}分 ${String(sec).padStart(2, '0')}秒`;
+            if (s <= 10) banner.classList.add('urgent');
+            else banner.classList.remove('urgent');
+        }
+
+        function onBookingExpired() {
+            const banner = document.getElementById('deadlineBanner');
+            banner.textContent = '⏰ 劃位時間已到！';
+            banner.classList.add('urgent');
+
+            // 如果 Swal 還開著（填表中），先關掉
+            Swal.close();
+
+            setTimeout(() => {
+                Swal.fire({
+                    icon: 'warning',
+                    title: '⏰ 劃位時間已到！',
+                    html: `<p>您的 ${getTimerSec()} 秒劃位時間已結束。</p><p style="color:#e74c3c;margin-top:8px;">座位選擇已取消，請重新進入劃位。</p>`,
+                    confirmButtonText: '確定',
+                    confirmButtonColor: '#e74c3c',
+                    allowOutsideClick: false,
+                }).then(() => {
+                    // 重置計時器顯示
+                    banner.style.display = 'none';
+                    banner.classList.remove('urgent');
+                    // 取消已選座位
+                    if (selectedSeat) {
+                        selectedSeat.classList.remove('mine');
+                        selectedSeat.classList.add('open');
+                        selectedSeat = null;
+                    }
+                });
+            }, 150);
+        }
+
+        // 手動重置計時
+        function resetTimer() {
+            if (bookingTimer) clearInterval(bookingTimer);
+            bookingTimer = null;
+            isBookingActive = false;
+            selectedSeat = null;
+            const banner = document.getElementById('deadlineBanner');
+            banner.style.display = 'none';
+            banner.classList.remove('urgent');
+            renderSeats();
+        }
+
+        // ============================================================
+        //  座位圖
+        // ============================================================
+        // 座位定義：4列，每列10個座位，部分空格 (aisle)
+        const seatLayout = [
+            ['A1', 'A2', 'A3', 'A4', 'A5', '_', 'A6', 'A7', 'A8', 'A9', 'A10'],
+            ['B1', 'B2', 'B3', 'B4', 'B5', '_', 'B6', 'B7', 'B8', 'B9', 'B10'],
+            ['C1', 'C2', 'C3', 'C4', 'C5', '_', 'C6', 'C7', 'C8', 'C9', 'C10'],
+            ['D1', 'D2', 'D3', 'D4', 'D5', '_', 'D6', 'D7', 'D8', 'D9', 'D10'],
+        ];
+
+        // 預設售出的座位
+        const defaultSold = ['A2', 'A3', 'B5', 'B6', 'C1', 'C9', 'D3', 'D7', 'D8'];
+        // 預設候補保留的座位（第2階段才顯示）
+        const waitlistSeats = ['A7', 'B2', 'C5'];
+
+        function renderSeats() {
+            const grid = document.getElementById('seatGrid');
+            const showSold = document.getElementById('sw_someSold').checked;
+            const isWL = isWaitlistMode();
+
+            grid.innerHTML = '';
+
+            seatLayout.forEach(row => {
+                const rowEl = document.createElement('div');
+                rowEl.className = 'seat-row';
+
+                row.forEach(seatId => {
+                    const el = document.createElement('div');
+                    el.className = 'seat';
+
+                    if (seatId === '_') {
+                        el.classList.add('aisle');
+                        el.setAttribute('aria-hidden', 'true');
+                    } else if (selectedSeat && selectedSeat.dataset.sid === seatId) {
+                        el.classList.add('mine');
+                        el.dataset.sid = seatId;
+                        el.innerHTML = `<span>${seatId}</span>`;
+                        el.title = '我的座位';
+                        el.onclick = () => handleSeatClick(el, seatId);
+                    } else if (showSold && defaultSold.includes(seatId)) {
+                        el.classList.add('sold');
+                        el.dataset.sid = seatId;
+                        el.innerHTML = `<span>${seatId}</span><span class="seat-tag">已售</span>`;
+                    } else if (isWL && waitlistSeats.includes(seatId)) {
+                        el.classList.add('waitlist-seat');
+                        el.dataset.sid = seatId;
+                        el.innerHTML = `<span>${seatId}</span><span class="seat-tag">候補</span>`;
+                    } else {
+                        el.classList.add('open');
+                        el.dataset.sid = seatId;
+                        el.innerHTML = `<span>${seatId}</span>`;
+                        el.onclick = () => handleSeatClick(el, seatId);
+                    }
+
+                    rowEl.appendChild(el);
+                });
+
+                grid.appendChild(rowEl);
+            });
+        }
+
+        // ============================================================
+        //  點擊座位 → 填表彈窗
+        // ============================================================
+        function handleSeatClick(el, seatId) {
+            if (!isAnyOpen()) {
+                Swal.fire({ icon: 'info', title: '⚠️ 目前非開放時間', text: '請等待管理員開放劃位。', timer: 2000, showConfirmButton: false });
+                return;
+            }
+            if (!isBookingActive) {
+                Swal.fire({ icon: 'info', title: '提示', text: '請先點擊「前往劃位」按鈕啟動計時器。', confirmButtonColor: '#27ae60' });
+                return;
+            }
+
+            const wlMode = isWaitlistMode();
+
+            Swal.fire({
+                title: wlMode ? `📝 候補登記 – 座位 ${seatId}` : `🪑 選擇座位 ${seatId}`,
+                html: `
+      <div style="text-align:left;">
+        <div style="background:#f0f2f5;padding:10px;border-radius:8px;margin-bottom:12px;font-size:14px;">
+          <strong>國中數學精修班</strong><br>
+          每週六 14:00 ｜ ${seatId} 區座位
+        </div>
+        ${wlMode ? '<div style="background:#fef9e7;padding:8px;border-radius:6px;margin-bottom:12px;font-size:13px;color:#7d6608">⚠️ 目前為候補階段，送出後排入候補名單</div>' : ''}
+        <div style="display:flex;flex-direction:column;gap:10px;">
+          <div>
+            <label style="font-weight:bold;font-size:14px;">學生姓名 *</label>
+            <input id="sw_name" type="text" class="swal2-input" placeholder="請輸入真實姓名" style="margin:5px 0 0 0;">
+          </div>
+          <div>
+            <label style="font-weight:bold;font-size:14px;">聯絡電話 *</label>
+            <input id="sw_phone" type="tel" class="swal2-input" placeholder="例：0912-345-678" style="margin:5px 0 0 0;">
+          </div>
+          <div>
+            <label style="font-weight:bold;font-size:14px;">備註（選填）</label>
+            <input id="sw_note" type="text" class="swal2-input" placeholder="例：同學一起報名..." style="margin:5px 0 0 0;">
+          </div>
+        </div>
+      </div>`,
+                showCancelButton: true,
+                confirmButtonText: wlMode ? '送出候補登記' : '確認劃位',
+                cancelButtonText: '取消',
+                confirmButtonColor: wlMode ? '#e67e22' : '#27ae60',
+                cancelButtonColor: '#e74c3c',
+                allowOutsideClick: false,
+                preConfirm: () => {
+                    const name = document.getElementById('sw_name').value.trim();
+                    const phone = document.getElementById('sw_phone').value.trim();
+                    if (!name || !phone) {
+                        Swal.showValidationMessage('請填寫姓名與電話！');
+                        return false;
+                    }
+                    return { name, phone, note: document.getElementById('sw_note').value.trim() };
+                }
+            }).then(result => {
+                if (result.isConfirmed) {
+                    handleBookingSuccess(el, seatId, result.value, wlMode);
+                }
+            });
+        }
+
+        function handleBookingSuccess(el, seatId, data, wlMode) {
+            // 停止計時
+            if (bookingTimer) clearInterval(bookingTimer);
+            bookingTimer = null;
+            isBookingActive = false;
+
+            const banner = document.getElementById('deadlineBanner');
+            banner.style.display = 'none';
+            banner.classList.remove('urgent');
+
+            if (wlMode) {
+                Swal.fire({
+                    icon: 'success',
+                    title: '📝 候補登記成功！',
+                    html: `<b>${data.name}</b> 已完成候補登記。<br>電話：${data.phone}<br><br>如有空位釋出，系統將以 LINE 或電話通知您。`,
+                    confirmButtonColor: '#e67e22',
+                });
+            } else {
+                // 標記座位為已選
+                selectedSeat = el;
+                el.classList.remove('open');
+                el.classList.add('mine');
+
+                Swal.fire({
+                    icon: 'success',
+                    title: '✅ 劃位成功！',
+                    html: `<b>${data.name}</b> 已成功劃位座位 <b>${seatId}</b>。<br>電話：${data.phone}<br><br>請截圖保存此確認畫面。`,
+                    confirmButtonColor: '#27ae60',
+                });
+            }
+        }
+
+        // 候補按鈕
+        function doWaitlist() {
+            Swal.fire({
+                title: '📝 候補登記',
+                html: `
+      <div style="text-align:left;">
+        <div style="background:#fef9e7;padding:10px;border-radius:8px;margin-bottom:12px;font-size:13px;color:#7d6608">
+          ⚠️ 座位已全數劃位完畢，登記後排入候補名單
+        </div>
+        <div style="display:flex;flex-direction:column;gap:10px;">
+          <div>
+            <label style="font-weight:bold;font-size:14px;">學生姓名 *</label>
+            <input id="wl_name" type="text" class="swal2-input" placeholder="請輸入真實姓名" style="margin:5px 0 0 0;">
+          </div>
+          <div>
+            <label style="font-weight:bold;font-size:14px;">聯絡電話 *</label>
+            <input id="wl_phone" type="tel" class="swal2-input" placeholder="例：0912-345-678" style="margin:5px 0 0 0;">
+          </div>
+        </div>
+      </div>`,
+                showCancelButton: true,
+                confirmButtonText: '送出候補',
+                cancelButtonText: '取消',
+                confirmButtonColor: '#e67e22',
+                preConfirm: () => {
+                    const name = document.getElementById('wl_name').value.trim();
+                    const phone = document.getElementById('wl_phone').value.trim();
+                    if (!name || !phone) { Swal.showValidationMessage('請填寫姓名與電話！'); return false; }
+                    return { name, phone };
+                }
+            }).then(result => {
+                if (result.isConfirmed) {
+                    Swal.fire({
+                        icon: 'success',
+                        title: '📝 候補登記成功！',
+                        html: `<b>${result.value.name}</b> 已列入候補名單。<br>如有空位，我們將主動聯繫。`,
+                        confirmButtonColor: '#e67e22',
+                    });
+                }
+            });
+        }
+
+        // ============================================================
+        //  候補區顯示控制
+        // ============================================================
+        function updateWaitlistArea() {
+            const show = document.getElementById('sw_showWaitlist').checked || isWaitlistMode();
+            document.getElementById('waitlistArea').style.display = show ? 'block' : 'none';
+        }
+
+        // ============================================================
+        //  統一刷新
+        // ============================================================
+        function refreshAll() {
+            // 更新燈號
+            const badgesHTML = getBadgesHTML();
+            ['math', 'science', 'english'].forEach(id => {
+                document.getElementById('badges_' + id).innerHTML = badgesHTML;
+            });
+
+            // 更新 detail 計時區
+            updateDetailTimer();
+
+            // 更新候補區
+            const isWL = isWaitlistMode();
+            document.getElementById('sw_showWaitlist').checked = isWL;
+            updateWaitlistArea();
+
+            // 重新渲染座位（候補/劃位模式不同）
+            renderSeats();
+        }
+
+        // ============================================================
+        //  初始化
+        // ============================================================
+        renderSeats();
+        refreshAll();
+    </script>
+</body>
+
+</html>

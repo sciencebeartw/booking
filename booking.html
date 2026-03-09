@@ -9,6 +9,7 @@
     <title>山熊科學 - 劃位系統</title>
     <link rel="icon" href="icon.png" type="image/png">
     <link rel="apple-touch-icon" href="icon.png">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/animate.css/4.1.1/animate.min.css" />
     <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
     <style>
         body {
@@ -772,8 +773,6 @@
             margin: 0 auto !important;
         }
     </style>
-    <!-- SweetAlert2 -->
-    <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
 </head>
 
 <body>
@@ -1451,7 +1450,19 @@
             const phone = document.getElementById('w_parentPhone').value.trim();
             const note = document.getElementById('w_note').value.trim();
 
-            if (!name || !phone) { Swal.fire("請填寫完整資料！"); return; }
+            if (!name || !phone) {
+                Swal.fire({
+                    icon: 'warning',
+                    title: '請填寫完整資料！',
+                    showClass: {
+                        popup: 'animate__animated animate__shakeX'
+                    },
+                    hideClass: {
+                        popup: 'animate__animated animate__fadeOutUp animate__faster'
+                    }
+                });
+                return;
+            }
             const phoneRegex = /^09\d{8}$/;
             if (!phoneRegex.test(phone)) { Swal.fire({ icon: 'error', title: '手機號碼格式錯誤！' }); return; }
 
@@ -1649,7 +1660,19 @@
 
             const name = nameInput.value.trim();
             const phone = phoneInput.value.trim();
-            if (!name || !phone) { Swal.fire("請填寫完整資料！"); return; }
+            if (!name || !phone) {
+                Swal.fire({
+                    icon: 'warning',
+                    title: '請填寫完整資料！',
+                    showClass: {
+                        popup: 'animate__animated animate__shakeX'
+                    },
+                    hideClass: {
+                        popup: 'animate__animated animate__fadeOutUp animate__faster'
+                    }
+                });
+                return;
+            }
             const phoneRegex = /^09\d{8}$/;
             if (!phoneRegex.test(phone)) { Swal.fire({ icon: 'error', title: '手機號碼格式錯誤！' }); return; }
 

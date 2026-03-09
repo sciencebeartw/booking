@@ -43,6 +43,7 @@
         "waitlist": {
             ".read": "auth != null && auth.token.email != null && root.child('admins').child(auth.token.email.replace('.', ',').replace('.', ',').replace('.', ',')).exists()",
             "$courseId": {
+                ".write": "auth != null && auth.token.email != null && root.child('admins').child(auth.token.email.replace('.', ',').replace('.', ',').replace('.', ',')).exists()",
                 "$waitId": {
                     ".write": "(auth != null && !data.exists() && newData.exists()) || (auth != null && auth.token.email != null && root.child('admins').child(auth.token.email.replace('.', ',').replace('.', ',').replace('.', ',')).exists())"
                 }
@@ -72,6 +73,7 @@
                 ".indexOn": [
                     "status"
                 ],
+                ".write": "auth != null && auth.token.email != null && root.child('admins').child(auth.token.email.replace('.', ',').replace('.', ',').replace('.', ',')).exists()",
                 "_settings": {
                     ".read": true,
                     ".write": "auth != null && auth.token.email != null && root.child('admins').child(auth.token.email.replace('.', ',').replace('.', ',').replace('.', ',')).exists()"

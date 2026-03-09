@@ -1280,12 +1280,10 @@
                     if (info.status === 'sold') {
                         soldCount++;
                     } else if (info.status === 'locked') {
-                        if (info.user === 'admin_reserved') {
+                        // 與 booking.html 一致：admin_reserved (橘色) 不計入已滿，
+                        // 但紫色 (phase2/phase3) 只要存在就代表家長現在不能點，必須計入已滿。
+                        if (info.user === 'admin_phase2' || info.user === 'admin_phase3') {
                             currentPhaseLockedCount++;
-                        } else if (info.user === 'admin_phase2') {
-                            if (isP1) currentPhaseLockedCount++;
-                        } else if (info.user === 'admin_phase3') {
-                            if (isP1 || isP2) currentPhaseLockedCount++;
                         }
                     }
                 });
