@@ -1405,6 +1405,24 @@
 
                 if (courseSettings) {
                     const effectiveSoldCount = soldCount + currentPhaseLockedCount;
+
+                    // 視覺化 Debug Box
+                    let debugBox = document.getElementById('waitlist-debug-box');
+                    if (!debugBox) {
+                        debugBox = document.createElement('div');
+                        debugBox.id = 'waitlist-debug-box';
+                        debugBox.style = 'background: #fff3cd; color: #856404; padding: 10px; margin: 10px 0; border: 1px solid #ffeeba; border-radius: 5px; font-family: monospace; font-size: 14px; text-align: left;';
+                        if (waitlistArea.parentNode) {
+                            waitlistArea.parentNode.insertBefore(debugBox, waitlistArea);
+                        }
+                    }
+                    debugBox.innerHTML = `<strong>[DEBUG] 座位計算狀態:</strong><br>
+                        soldCount (🔴/🔵): ${soldCount}<br>
+                        currentPhaseLockedCount (🟣): ${currentPhaseLockedCount}<br>
+                        <strong>effectiveSoldCount: ${effectiveSoldCount}</strong><br>
+                        totalSeats (總座位數): ${totalSeats}<br>
+                        waitlistEnabled: ${currentCourseData?.waitlistEnabled}`;
+
                     // V33.2 修正：增加 totalSeats > 0 的防呆，避免在載入瞬間因為 totalSeats 為 0 而誤判全滿
                     if (currentCourseData && currentCourseData.waitlistEnabled && totalSeats > 0 && effectiveSoldCount >= totalSeats) {
                         if (isFinalConfiguredStage) {
