@@ -1378,7 +1378,8 @@
                     seatEl.style.cursor = 'pointer';
 
                     if (seatInfo) {
-                        rawDebugStr += `[${seatId}:${seatInfo.status}|${seatInfo.user.substring(0, 6)}] `;
+                        const userStr = seatInfo.user ? seatInfo.user.substring(0, 6) : 'admin_';
+                        rawDebugStr += `[${seatId}:${seatInfo.status}|${userStr}] `;
                         if (seatInfo.status === 'sold') {
                             if (seatInfo.user === myUserId) seatEl.classList.add('mylocked');
                             else seatEl.classList.add('sold');
@@ -1389,15 +1390,17 @@
                                 checkAndRestoreSession(seatId, seatInfo.timestamp);
                             } else if (seatInfo.user === 'admin_reserved') {
                                 seatEl.classList.add('locked');
-                                // 使用者要求：admin_reserved（後台紫/前台橘）當作有人填寫中，不列入已滿的計算，所以移除 currentPhaseLockedCount++;
+                                // admin_reserved 視為橘色填寫中，不列入已滿計算
                             } else if (seatInfo.user === 'admin_phase2') {
                                 seatEl.classList.add('phase2');
                                 seatEl.innerHTML = `<span class="seat-id">${seatId}</span><span class="seat-tag">下梯開放</span>`;
-                                if (isP1) currentPhaseLockedCount++;
+                                // 只要是顯示為紫色的「下梯開放」，就代表一般家長現在絕對不能點，所以必定要佔用一個「已滿」的名額
+                                currentPhaseLockedCount++;
                             } else if (seatInfo.user === 'admin_phase3') {
                                 seatEl.classList.add('phase3');
                                 seatEl.innerHTML = `<span class="seat-id">${seatId}</span><span class="seat-tag">下梯開放</span>`;
-                                if (isP1 || isP2) currentPhaseLockedCount++;
+                                // 同上，只要鎖住就是不能點
+                                currentPhaseLockedCount++;
                             } else {
                                 seatEl.classList.add('locked');
                             }
