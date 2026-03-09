@@ -666,19 +666,8 @@
                 <!-- 由 JS 動態生成 6 個志願框框 -->
             </div>
 
-            <!-- 霸氣聲明區 -->
-            <div class="rules-container">
-                <h3>🚨 報名排位霸王規則聲明</h3>
-                <ul>
-                    <li><strong>時間絕對優先：</strong> 全國統一由您最後送出瞬間的「毫秒紀錄」做為排榜順序，且系統已設有智慧挪位機制，絕對公平。</li>
-                    <li><strong>防佔位條款：</strong> 凡獲派【同天雙科連排】者，若日後因故取消其中一科，為保他人權益，另一科之試聽資格將連動一併取消。</li>
-                    <li><strong>最終確認：</strong> 送出表單為志願與時間登錄。最終正取或候補結果，一律以山熊專人後續 LINE 發送之「正式確認憑證」為準。</li>
-                </ul>
-                <label class="rules-checkbox">
-                    <input type="checkbox" id="rulesAgreed">
-                    我已詳閱並同意上述試聽排位規則，了解違反連動條款將喪失資格。
-                </label>
-            </div>
+            <!-- 動態霸氣聲明區 (由 JS 依據活動類型注入) -->
+            <div class="rules-container" id="dynamicRulesContainer" style="display:none;"></div>
 
             <!-- 倒數與送出區 -->
             <div class="submit-area">
@@ -829,6 +818,74 @@
             window.MAX_PREFERENCES = 6;
             const prefContainer = document.getElementById('preferenceContainer');
             prefContainer.innerHTML = ''; // 清空可能存在的舊框架
+
+            // ★★★ 新增：動態佈署霸王條款與同意條款 ★★★
+            const rulesContainer = document.getElementById('dynamicRulesContainer');
+            let rulesHtml = '';
+
+            if (eventData.type === 'dual_match') {
+                rulesHtml = `
+                    <h3>🚨 報名排位霸王規則聲明</h3>
+                    <ul>
+                        <li><strong>時間絕對優先：</strong> 全國統一由您最後送出瞬間的「毫秒紀錄」做為排榜順序，且系統已設有智慧挪位機制，絕對公平。</li>
+                        <li><strong>防佔位條款：</strong> <span style="background-color: #fdf2e9; font-weight: bold; color: #c0392b; padding: 2px 5px; border-radius: 4px;">凡獲派【同天雙科連排】者，若日後因故取消其中一科，為保他人權益，另一科之試聽資格將連動一併取消。</span></li>
+                        <li><strong>最終確認：</strong> 送出表單為志願與時間登錄。最終正取或候補結果，一律以山熊專人後續 LINE 發送之「正式確認憑證」為準。</li>
+                    </ul>
+                    <label class="rules-checkbox" style="background:#fdf2e9; border: 1px solid #e67e22; padding: 15px; border-radius: 8px; color: #c0392b; font-weight: bold; font-size: 16px;">
+                        <input type="checkbox" id="rulesAgreed" style="transform: scale(1.5); margin-right: 15px;">
+                        我已詳閱並同意上述試聽排位規則，了解違反連動條款將喪失資格。
+                    </label>
+                `;
+            } else if (eventData.type === 'single_session') {
+                rulesHtml = `
+                    <h3>🚨 報名排位規則聲明 (單場次)</h3>
+                    <ul>
+                        <li><strong>時間絕對優先：</strong> 全國統一由您最後送出瞬間的「毫秒紀錄」做為排序依據，滿班即自動轉入候補。</li>
+                        <li><strong>最終確認：</strong> 送出表單為名額與時間登錄。最終正取或候補結果，一律以山熊專人後續 LINE 發送之「正式確認憑證」為準。</li>
+                    </ul>
+                    <label class="rules-checkbox">
+                        <input type="checkbox" id="rulesAgreed">
+                        我已詳閱並同意上述試聽排位規則。
+                    </label>
+                `;
+            } else if (eventData.type === 'multi_choice') {
+                rulesHtml = `
+                    <h3>🚨 報名排位規則聲明 (多梯志願)</h3>
+                    <ul>
+                        <li><strong>時間絕對優先：</strong> 全國統一由您最後送出瞬間的「毫秒紀錄」做為排榜順序，且系統已設有智慧挪位機制，絕對公平。</li>
+                        <li><strong>志願分發機制：</strong> 若您的第一志願已額滿，系統會瞬間自動為您安排第二志願，保障您最大的錄取機率。</li>
+                        <li><strong>最終確認：</strong> 送出表單為志願與時間登錄。最終正取或候補結果，一律以山熊專人後續 LINE 發送之「正式確認憑證」為準。</li>
+                    </ul>
+                    <label class="rules-checkbox">
+                        <input type="checkbox" id="rulesAgreed">
+                        我已詳閱並同意上述試聽排位規則。
+                    </label>
+                `;
+            } else if (eventData.type === 'waitlist_only') {
+                rulesHtml = `
+                    <h3>🚨 候補登記規則聲明</h3>
+                    <ul>
+                        <li><strong>登記順序優先：</strong> 此表單目前僅作為「候補意願登記」使用，系統將自動記錄登記的先後順序。</li>
+                        <li><strong>非保證錄取：</strong> 送出表單後即代表您已進入候補名單，<strong>不代表正式錄取</strong>。</li>
+                        <li><strong>開班通知：</strong> 若後續有座位釋出，或因人數踴躍決定加開新班，我們將依據候補順序主動聯繫您。</li>
+                    </ul>
+                    <label class="rules-checkbox">
+                        <input type="checkbox" id="rulesAgreed">
+                        我已詳閱並同意上述候補規則，了解此為登記排隊並非正式錄取。
+                    </label>
+                `;
+            }
+
+            if (rulesContainer) {
+                rulesContainer.innerHTML = rulesHtml;
+                rulesContainer.style.display = 'block';
+
+                // 綁定動態生成的 checkbox 的驗證事件
+                setTimeout(() => {
+                    const cb = document.getElementById('rulesAgreed');
+                    if (cb) cb.addEventListener('change', window.checkFormValidity);
+                }, 100);
+            }
 
             // ★★★ 新增：純候補模式專屬渲染 (Checkbox 多選) ★★★
             if (eventData.type === 'waitlist_only') {
