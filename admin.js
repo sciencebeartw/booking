@@ -387,7 +387,8 @@ function updateDatalists() {
     } else {
         // 未選年級 → 把現有課程科目存入選項陣列（使用者 focus 時才顯示）
         _currentSubjectOptions = [...new Set(Object.values(coursesData).map(c => c.subject).filter(Boolean))];
-        renderSubjectDropdown(_currentSubjectOptions);
+        _comboboxOptions['c_subject'] = _currentSubjectOptions;
+        _renderCombobox('subject_dropdown', _currentSubjectOptions, 'c_subject', null);
     }
 }
 
