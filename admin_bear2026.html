@@ -342,8 +342,14 @@
                 </div>
                 <div class="form-group">
                     <label>科目名稱 (Subject)</label>
-                    <input list="subject_list" id="c_subject" placeholder="選擇或輸入科目">
-                    <datalist id="subject_list"></datalist>
+                    <div style="position:relative;">
+                        <input type="text" id="c_subject" placeholder="選擇或輸入科目" autocomplete="off"
+                            oninput="filterSubjectDropdown(this.value)" onfocus="showSubjectDropdown()"
+                            onblur="setTimeout(hideSubjectDropdown, 150)">
+                        <div id="subject_dropdown"
+                            style="display:none; position:absolute; top:100%; left:0; right:0; background:#fff; border:1px solid #ccc; border-radius:0 0 6px 6px; box-shadow:0 4px 12px rgba(0,0,0,0.15); z-index:999; max-height:220px; overflow-y:auto;">
+                        </div>
+                    </div>
                 </div>
                 <div class="form-group">
                     <label>授課老師</label>

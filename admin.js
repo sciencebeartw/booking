@@ -255,17 +255,61 @@ const subjectsByGrade = {
     "升高二課程": ["高二粘立物理", "高二周逸化學", "高二黃浩數學", "高二明軒數學", "高二竹中數學", "高二小揚英文"],
     "升高三課程": ["高三粘立物理", "高三周逸化學", "高三黃浩數學", "高三明軒數學", "學測英文", "學測黃浩數學", "學測明軒數學", "學測自然"]
 };
+// ★★★ 科目自訂下拉選單（取代原生 datalist，解決 macOS Safari 少選項時消失的問題）★★★
+let _currentSubjectOptions = [];
+
 window.updateSubjects = function () {
     const grade = document.getElementById('c_grade').value;
-    const list = document.getElementById('subject_list');
-    const newOptions = subjectsByGrade[grade] || [];
-    // 比較現有 datalist 內容，相同就不動 DOM（避免瀏覽器關掉下拉選單）
-    const currentOptions = Array.from(list.options).map(o => o.value);
-    const isSame = currentOptions.length === newOptions.length && newOptions.every((s, i) => s === currentOptions[i]);
-    if (isSame) return;
-    list.innerHTML = "";
-    newOptions.forEach(s => list.innerHTML += `<option value="${s}">`);
+    _currentSubjectOptions = subjectsByGrade[grade] || [];
+    renderSubjectDropdown(_currentSubjectOptions);
 };
+
+function renderSubjectDropdown(options) {
+    const dropdown = document.getElementById('subject_dropdown');
+    if (!dropdown) return;
+    dropdown.innerHTML = '';
+    options.forEach(s => {
+        const item = document.createElement('div');
+        item.textContent = s;
+        item.style.cssText = 'padding:9px 12px; cursor:pointer; font-size:14px; border-bottom:1px solid #f0f0f0; color:#2c3e50;';
+        item.addEventListener('mousedown', () => selectSubject(s)); // mousedown 在 blur 前觸發
+        item.addEventListener('mouseenter', () => { item.style.background = '#f0f6ff'; });
+        item.addEventListener('mouseleave', () => { item.style.background = ''; });
+        dropdown.appendChild(item);
+    });
+}
+
+window.showSubjectDropdown = function () {
+    const dropdown = document.getElementById('subject_dropdown');
+    const input = document.getElementById('c_subject');
+    if (!dropdown) return;
+    const filtered = _currentSubjectOptions.filter(s =>
+        s.toLowerCase().includes((input.value || '').toLowerCase())
+    );
+    renderSubjectDropdown(filtered.length > 0 ? filtered : _currentSubjectOptions);
+    if (_currentSubjectOptions.length > 0) dropdown.style.display = 'block';
+};
+
+window.hideSubjectDropdown = function () {
+    const dropdown = document.getElementById('subject_dropdown');
+    if (dropdown) dropdown.style.display = 'none';
+};
+
+window.filterSubjectDropdown = function (val) {
+    const filtered = _currentSubjectOptions.filter(s =>
+        s.toLowerCase().includes(val.toLowerCase())
+    );
+    renderSubjectDropdown(filtered.length > 0 ? filtered : _currentSubjectOptions);
+    const dropdown = document.getElementById('subject_dropdown');
+    if (dropdown && _currentSubjectOptions.length > 0) dropdown.style.display = 'block';
+};
+
+function selectSubject(value) {
+    const input = document.getElementById('c_subject');
+    if (input) input.value = value;
+    window.hideSubjectDropdown();
+}
+
 window.autoFillTime = function () {
     const type = document.getElementById('c_class_type').value;
     const timeInput = document.getElementById('c_time_desc');
@@ -310,21 +354,17 @@ onValue(coursesRef, (snapshot) => {
 function updateDatalists() {
     const gradeEl = document.getElementById('c_grade');
     const selectedGrade = gradeEl ? gradeEl.value : '';
-    const subList = document.getElementById('subject_list');
 
     if (selectedGrade && subjectsByGrade[selectedGrade]) {
-        // 年級已選 → 只顯示該年級科目，讓 updateSubjects 做重複判斷
+        // 年級已選 → 用 updateSubjects 更新自訂下拉清單
         window.updateSubjects();
     } else {
-        // 未選年級 → 顯示全部現有課程科目作為提示
-        const newOptions = [...new Set(Object.values(coursesData).map(c => c.subject).filter(Boolean))];
-        const currentOptions = Array.from(subList.options).map(o => o.value);
-        const isSame = currentOptions.length === newOptions.length && newOptions.every((s, i) => s === currentOptions[i]);
-        if (isSame) return;
-        subList.innerHTML = "";
-        newOptions.forEach(s => subList.innerHTML += `<option value="${s}">`);
+        // 未選年級 → 把現有課程科目存入選項陣列（使用者 focus 時才顯示）
+        _currentSubjectOptions = [...new Set(Object.values(coursesData).map(c => c.subject).filter(Boolean))];
+        renderSubjectDropdown(_currentSubjectOptions);
     }
 }
+
 
 window.resetSeatEditor = function () {
     if (isEditorLocked) {
