@@ -231,13 +231,51 @@
                 <span class="icon">🏷️</span>管理員：設定保留模式
             </button>
             <button class="swal-btn btn-success" onclick="showSimpleSuccess('發送成功！')">
-                <span class="icon">�</span>LINE 通知發送成功
+                <span class="icon"></span>LINE 通知發送成功
             </button>
             <button class="swal-btn btn-error" onclick="showError('發送失敗', '尚未設定 GAS Webhook API 網址')">
                 <span class="icon">🌐</span>發送失敗：API 未設定
             </button>
             <button class="swal-btn btn-dark" onclick="showLoading()">
                 <span class="icon">🔄</span>通用傳送中加載圈
+            </button>
+        </div>
+
+        <!-- 錯誤體驗與阻擋 -->
+        <div class="section-title">🚫 錯誤體驗與操作阻擋 (Errors & Blocks)</div>
+        <div class="btn-grid">
+            <button class="swal-btn btn-warning" onclick="showPopupBlocked()">
+                <span class="icon">🪟</span>彈出視窗被封鎖
+            </button>
+            <button class="swal-btn btn-error" onclick="showLoginFailed()">
+                <span class="icon">🔌</span>登入失敗或連線錯誤
+            </button>
+            <button class="swal-btn btn-error" onclick="showInvalidCourse()">
+                <span class="icon">🔗</span>無效的課程/不存在
+            </button>
+            <button class="swal-btn btn-warning" onclick="showPhaseEnded()">
+                <span class="icon">⏳</span>劃位階段已結束
+            </button>
+            <button class="swal-btn btn-warning" onclick="showSeatCancelled()">
+                <span class="icon">❌</span>座位已被取消保留
+            </button>
+            <button class="swal-btn btn-warning" onclick="showTooSlow()">
+                <span class="icon">🐢</span>劃位慢了一步
+            </button>
+            <button class="swal-btn btn-warning" onclick="showAlreadyReserved()">
+                <span class="icon">⚠️</span>已有保留中座位
+            </button>
+            <button class="swal-btn btn-warning" onclick="showSeatLimit()">
+                <span class="icon">🔢</span>劃位數量達上限
+            </button>
+            <button class="swal-btn btn-warning" onclick="showWaitlistLimit()">
+                <span class="icon">📈</span>候補數量達上限
+            </button>
+            <button class="swal-btn btn-warning" onclick="showRuleConsent()">
+                <span class="icon">📄</span>請先同意排位規則
+            </button>
+            <button class="swal-btn btn-warning" onclick="showTimeout()">
+                <span class="icon">⏰</span>座位保留時間已到
             </button>
         </div>
     </div>
@@ -396,6 +434,41 @@
                 confirmButtonColor: THEME_PURPLE,
                 cancelButtonText: '取消'
             });
+        }
+
+        // --- 錯誤體驗與阻擋系列 ---
+        function showPopupBlocked() {
+            Swal.fire({ icon: 'warning', title: '彈出視窗被封鎖', html: '請在網址列允許「彈出式視窗」後再試一次。' });
+        }
+        function showLoginFailed() {
+            Swal.fire({ icon: 'error', title: '登入失敗，請再試一次。' });
+        }
+        function showInvalidCourse() {
+            Swal.fire({ icon: 'error', title: '無效的課程連結！' });
+        }
+        function showPhaseEnded() {
+            Swal.fire({ icon: 'warning', title: '劃位階段已結束！', html: '系統整理中，請等待下一階段開放。' });
+        }
+        function showSeatCancelled() {
+            Swal.fire({ icon: 'warning', title: '此座位已被取消保留', html: '請重新選擇。' });
+        }
+        function showTooSlow() {
+            Swal.fire({ icon: 'warning', title: '慢了一步！' });
+        }
+        function showAlreadyReserved() {
+            Swal.fire({ icon: 'warning', title: '您已經有一個座位正在保留中！' });
+        }
+        function showSeatLimit() {
+            Swal.fire({ icon: 'warning', title: '劃位上限', text: '同一個 Google 帳號在此班級最多只能劃 2 個座位！' });
+        }
+        function showWaitlistLimit() {
+            Swal.fire({ icon: 'warning', title: '已達上限', text: '您最多只能選擇 3 個班級候補！' });
+        }
+        function showRuleConsent() {
+            Swal.fire({ icon: 'warning', title: '請先同意規則', html: '您必須同意排位規則聲明<br>才能成功送出！' });
+        }
+        function showTimeout() {
+            Swal.fire({ icon: 'warning', title: '座位保留時間已到', html: '請重新選位！' });
         }
     </script>
 </body>
