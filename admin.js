@@ -255,60 +255,88 @@ const subjectsByGrade = {
     "升高二課程": ["高二粘立物理", "高二周逸化學", "高二黃浩數學", "高二明軒數學", "高二竹中數學", "高二小揚英文"],
     "升高三課程": ["高三粘立物理", "高三周逸化學", "高三黃浩數學", "高三明軒數學", "學測英文", "學測黃浩數學", "學測明軒數學", "學測自然"]
 };
-// ★★★ 科目自訂下拉選單（取代原生 datalist，解決 macOS Safari 少選項時消失的問題）★★★
-let _currentSubjectOptions = [];
+// ★★★ 通用自訂下拉 Combobox 系統（取代所有原生 datalist） ★★★
+// 靜態選項庫
+const TEACHER_OPTIONS = ['白熊老師', '阿喵老師', '小彥老師', '小東老師', '李翔老師', '冠維老師', '小揚老師', '黃道老師', '化鈞老師', 'Nick老師', '周逸老師', '黃浩老師', '小天老師', '富山老師', '黃韋老師', '蕭業老師', '郭序老師', '詩佩老師'];
+const CLASS_TYPE_OPTIONS = ['週一班', '週二班', '週三班', '週四班', '週五班', '週一、四班', '週二、五班', '週三、六班', '週六班', '週日班', '週六上午班', '週六下午班', '週六晚上班', '週日上午班', '週日下午班', '週日晚上班'];
 
-window.updateSubjects = function () {
-    const grade = document.getElementById('c_grade').value;
-    _currentSubjectOptions = subjectsByGrade[grade] || [];
-    renderSubjectDropdown(_currentSubjectOptions);
-};
+// 每個 combobox 的選項陣列（key = inputId）
+const _comboboxOptions = {};
 
-function renderSubjectDropdown(options) {
-    const dropdown = document.getElementById('subject_dropdown');
+function _getComboboxEl(dropdownId) { return document.getElementById(dropdownId); }
+
+function _renderCombobox(dropdownId, options, inputId, onSelect) {
+    const dropdown = _getComboboxEl(dropdownId);
     if (!dropdown) return;
     dropdown.innerHTML = '';
     options.forEach(s => {
         const item = document.createElement('div');
         item.textContent = s;
         item.style.cssText = 'padding:9px 12px; cursor:pointer; font-size:14px; border-bottom:1px solid #f0f0f0; color:#2c3e50;';
-        item.addEventListener('mousedown', () => selectSubject(s)); // mousedown 在 blur 前觸發
+        item.addEventListener('mousedown', () => {
+            const inp = document.getElementById(inputId);
+            if (inp) inp.value = s;
+            _getComboboxEl(dropdownId).style.display = 'none';
+            if (onSelect) onSelect(s);
+        });
         item.addEventListener('mouseenter', () => { item.style.background = '#f0f6ff'; });
         item.addEventListener('mouseleave', () => { item.style.background = ''; });
         dropdown.appendChild(item);
     });
 }
 
-window.showSubjectDropdown = function () {
-    const dropdown = document.getElementById('subject_dropdown');
-    const input = document.getElementById('c_subject');
-    if (!dropdown) return;
-    const filtered = _currentSubjectOptions.filter(s =>
-        s.toLowerCase().includes((input.value || '').toLowerCase())
-    );
-    renderSubjectDropdown(filtered.length > 0 ? filtered : _currentSubjectOptions);
-    if (_currentSubjectOptions.length > 0) dropdown.style.display = 'block';
+window.showCombobox = function (inputId, dropdownId) {
+    const allOpts = _comboboxOptions[inputId] || [];
+    const inp = document.getElementById(inputId);
+    const val = inp ? inp.value : '';
+    const filtered = allOpts.filter(s => s.toLowerCase().includes(val.toLowerCase()));
+    _renderCombobox(dropdownId, filtered.length > 0 ? filtered : allOpts, inputId, _comboboxCallbacks[inputId]);
+    const dropdown = _getComboboxEl(dropdownId);
+    if (dropdown && allOpts.length > 0) dropdown.style.display = 'block';
 };
 
-window.hideSubjectDropdown = function () {
-    const dropdown = document.getElementById('subject_dropdown');
+window.hideCombobox = function (dropdownId) {
+    const dropdown = _getComboboxEl(dropdownId);
     if (dropdown) dropdown.style.display = 'none';
 };
 
-window.filterSubjectDropdown = function (val) {
-    const filtered = _currentSubjectOptions.filter(s =>
-        s.toLowerCase().includes(val.toLowerCase())
-    );
-    renderSubjectDropdown(filtered.length > 0 ? filtered : _currentSubjectOptions);
-    const dropdown = document.getElementById('subject_dropdown');
-    if (dropdown && _currentSubjectOptions.length > 0) dropdown.style.display = 'block';
+window.filterCombobox = function (inputId, dropdownId, val) {
+    const allOpts = _comboboxOptions[inputId] || [];
+    const filtered = allOpts.filter(s => s.toLowerCase().includes(val.toLowerCase()));
+    _renderCombobox(dropdownId, filtered.length > 0 ? filtered : allOpts, inputId, _comboboxCallbacks[inputId]);
+    const dropdown = _getComboboxEl(dropdownId);
+    if (dropdown && allOpts.length > 0) dropdown.style.display = 'block';
 };
 
-function selectSubject(value) {
-    const input = document.getElementById('c_subject');
-    if (input) input.value = value;
-    window.hideSubjectDropdown();
+const _comboboxCallbacks = {};
+
+function initCombobox(inputId, options, onSelect) {
+    _comboboxOptions[inputId] = options;
+    if (onSelect) _comboboxCallbacks[inputId] = onSelect;
 }
+
+// Subject 科目下拉（動態，由 updateSubjects 控制）
+let _currentSubjectOptions = [];
+window.updateSubjects = function () {
+    const grade = document.getElementById('c_grade').value;
+    _currentSubjectOptions = subjectsByGrade[grade] || [];
+    _comboboxOptions['c_subject'] = _currentSubjectOptions;
+    _renderCombobox('subject_dropdown', _currentSubjectOptions, 'c_subject', null);
+};
+// 保留舊的 show/hide/filter 入口對應 subject（HTML 還參照舊名）
+window.showSubjectDropdown = () => window.showCombobox('c_subject', 'subject_dropdown');
+window.hideSubjectDropdown = () => window.hideCombobox('subject_dropdown');
+window.filterSubjectDropdown = (val) => window.filterCombobox('c_subject', 'subject_dropdown', val);
+
+// 初始化靜態 comboboxes（交由 DOMContentLoaded 後執行）
+document.addEventListener('DOMContentLoaded', () => {
+    initCombobox('c_teacher', TEACHER_OPTIONS);
+    initCombobox('e_teacher', TEACHER_OPTIONS);
+    initCombobox('c_class_type', CLASS_TYPE_OPTIONS, (val) => {
+        // 選完班別自動帶入上課時間（延遲確保 input.value 已填入）
+        setTimeout(() => window.autoFillTime(), 0);
+    });
+});
 
 window.autoFillTime = function () {
     const type = document.getElementById('c_class_type').value;

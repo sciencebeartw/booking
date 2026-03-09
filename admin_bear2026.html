@@ -185,7 +185,15 @@
             <div class="form-row">
                 <div class="form-group">
                     <label>授課老師</label>
-                    <input list="teacher_list" id="e_teacher" placeholder="選擇或輸入老師">
+                    <div style="position:relative;">
+                        <input type="text" id="e_teacher" placeholder="選擇或輸入老師" autocomplete="off"
+                            oninput="filterCombobox('e_teacher','e_teacher_dropdown',this.value)"
+                            onfocus="showCombobox('e_teacher','e_teacher_dropdown')"
+                            onblur="setTimeout(()=>hideCombobox('e_teacher_dropdown'),150)">
+                        <div id="e_teacher_dropdown"
+                            style="display:none; position:absolute; top:100%; left:0; right:0; background:#fff; border:1px solid #ccc; border-radius:0 0 6px 6px; box-shadow:0 4px 12px rgba(0,0,0,0.15); z-index:999; max-height:220px; overflow-y:auto;">
+                        </div>
+                    </div>
                 </div>
             </div>
 
@@ -353,52 +361,30 @@
                 </div>
                 <div class="form-group">
                     <label>授課老師</label>
-                    <input list="teacher_list" id="c_teacher" placeholder="選擇或輸入老師">
-                    <datalist id="teacher_list">
-                        <option value="白熊老師"></option>
-                        <option value="阿喵老師"></option>
-                        <option value="小彥老師"></option>
-                        <option value="小東老師"></option>
-                        <option value="李翔老師"></option>
-                        <option value="冠維老師"></option>
-                        <option value="小揚老師"></option>
-                        <option value="黃道老師"></option>
-                        <option value="化鈞老師"></option>
-                        <option value="Nick老師"></option>
-                        <option value="周逸老師"></option>
-                        <option value="黃浩老師"></option>
-                        <option value="小天老師"></option>
-                        <option value="富山老師"></option>
-                        <option value="黃韋老師"></option>
-                        <option value="蕭業老師"></option>
-                        <option value="郭序老師"></option>
-                        <option value="詩佩老師"></option>
-                    </datalist>
+                    <div style="position:relative;">
+                        <input type="text" id="c_teacher" placeholder="選擇或輸入老師" autocomplete="off"
+                            oninput="filterCombobox('c_teacher','c_teacher_dropdown',this.value)"
+                            onfocus="showCombobox('c_teacher','c_teacher_dropdown')"
+                            onblur="setTimeout(()=>hideCombobox('c_teacher_dropdown'),150)">
+                        <div id="c_teacher_dropdown"
+                            style="display:none; position:absolute; top:100%; left:0; right:0; background:#fff; border:1px solid #ccc; border-radius:0 0 6px 6px; box-shadow:0 4px 12px rgba(0,0,0,0.15); z-index:999; max-height:220px; overflow-y:auto;">
+                        </div>
+                    </div>
                 </div>
             </div>
 
             <div class="form-row">
                 <div class="form-group">
                     <label>班別 (Class Type)</label>
-                    <input list="class_type_list" id="c_class_type" placeholder="例如：週一班" onchange="autoFillTime()">
-                    <datalist id="class_type_list">
-                        <option value="週一班"></option>
-                        <option value="週二班"></option>
-                        <option value="週三班"></option>
-                        <option value="週四班"></option>
-                        <option value="週五班"></option>
-                        <option value="週一、四班"></option>
-                        <option value="週二、五班"></option>
-                        <option value="週三、六班"></option>
-                        <option value="週六班"></option>
-                        <option value="週日班"></option>
-                        <option value="週六上午班"></option>
-                        <option value="週六下午班"></option>
-                        <option value="週六晚上班"></option>
-                        <option value="週日上午班"></option>
-                        <option value="週日下午班"></option>
-                        <option value="週日晚上班"></option>
-                    </datalist>
+                    <div style="position:relative;">
+                        <input type="text" id="c_class_type" placeholder="例如：週一班" autocomplete="off"
+                            oninput="filterCombobox('c_class_type','c_class_type_dropdown',this.value)"
+                            onfocus="showCombobox('c_class_type','c_class_type_dropdown')"
+                            onblur="setTimeout(()=>hideCombobox('c_class_type_dropdown'),150)">
+                        <div id="c_class_type_dropdown"
+                            style="display:none; position:absolute; top:100%; left:0; right:0; background:#fff; border:1px solid #ccc; border-radius:0 0 6px 6px; box-shadow:0 4px 12px rgba(0,0,0,0.15); z-index:999; max-height:220px; overflow-y:auto;">
+                        </div>
+                    </div>
                 </div>
                 <div class="form-group">
                     <label>上課時間 (自動代入)</label>
