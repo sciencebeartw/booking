@@ -1150,10 +1150,8 @@
 
     <!-- ★★★ Auth Guard：頁面載入時立即驗證管理員身分 ★★★ -->
     <script type="module">
-        import { auth, onAuthStateChanged } from './firebase-config.js';
-        import { getDatabase, ref, get, child } from 'https://www.gstatic.com/firebasejs/10.7.1/firebase-database.js';
-
-        const db = getDatabase();
+        import { auth, db, onAuthStateChanged } from './firebase-config.js';
+        import { ref, get, child } from 'https://www.gstatic.com/firebasejs/10.7.1/firebase-database.js';
         // 先把整個 body 內容隱藏，等驗證完再顯示，避免閃現
         document.body.style.visibility = 'hidden';
 
