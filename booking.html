@@ -1389,7 +1389,7 @@
                                 checkAndRestoreSession(seatId, seatInfo.timestamp);
                             } else if (seatInfo.user === 'admin_reserved') {
                                 seatEl.classList.add('locked');
-                                currentPhaseLockedCount++;
+                                // 使用者要求：admin_reserved（後台紫/前台橘）當作有人填寫中，不列入已滿的計算，所以移除 currentPhaseLockedCount++;
                             } else if (seatInfo.user === 'admin_phase2') {
                                 seatEl.classList.add('phase2');
                                 seatEl.innerHTML = `<span class="seat-id">${seatId}</span><span class="seat-tag">下梯開放</span>`;
