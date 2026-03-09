@@ -907,6 +907,8 @@
                         <option value="both_any">🥇 兩科都上，所有時段皆可 (配位順序：同日雙科 ➔ 跨日雙科 ➔ 保底單科 ➔ 候補)</option>
                         <option value="both_day1">🥈 兩科都上，限 ${day1Date} (若雙科滿班，則降級保底單科或候補)</option>
                         <option value="both_day2">🥈 兩科都上，限 ${day2Date} (若雙科滿班，則降級保底單科或候補)</option>
+                    </optgroup>
+                    <optgroup label="✨ 單科彈性分發系列">
                         <option value="math_any">單補數學，所有時段皆可</option>
                         <option value="sci_any">單補自然，所有時段皆可</option>
                     </optgroup>
@@ -982,18 +984,18 @@
                     const level = parseInt(this.getAttribute('data-level'));
                     const val = this.value;
 
-                    // 防呆機制：高彈性選項連動取消警告
-                    const flexibleOptions = ['both_any', 'both_day1', 'both_day2', 'math_any', 'sci_any'];
+                    // 防呆機制：高彈性選項連動取消警告 (僅限雙科方案)
+                    const flexibleOptions = ['both_any', 'both_day1', 'both_day2'];
                     if (flexibleOptions.includes(val)) {
                         Swal.fire({
                             icon: 'warning',
                             title: '彈性配位與取消規範',
-                            html: '<div style="text-align:left; font-size:16px; line-height:1.6;">' +
-                                '您選擇了含有<strong style="color:#d35400;">彈性配位</strong>或<strong style="color:#d35400;">保底機制</strong>的方案！<br><br>' +
-                                '<span style="color:#c0392b; font-weight:bold; background:#fdf2e9; padding:10px; border-radius:8px; display:block;">' +
-                                '⚠️ 由於系統排課連動，且座位席次皆為套裝保留，若日後需要請假或取消，系統僅能「全部同時取消」，無法保留單一科目或單一時段！' +
+                            html: '<div style="font-size:16px; line-height:1.6;">' +
+                                '<div style="text-align:center; margin-bottom:10px;">您選擇了含有<strong style="color:#d35400;">彈性配位</strong>或<strong style="color:#d35400;">保底機制</strong>的方案！</div>' +
+                                '<span style="color:#c0392b; font-weight:bold; background:#fdf2e9; padding:10px; border-radius:8px; display:block; text-align:left;">' +
+                                '由於系統排課連動，且座位席次皆為套裝保留，若日後需要請假或取消，系統僅能「全部同時取消」，無法保留單一科目或單一時段！' +
                                 '</span><br>' +
-                                '請嚴格評估孩子當日的精神與時間是否能「全程參與」喔！</div>',
+                                '<div style="text-align:center;">請嚴格評估孩子當日的精神與時間是否能「全程參與」喔！</div></div>',
                             confirmButtonText: '我了解並同意，繼續選填',
                             confirmButtonColor: '#e67e22',
                             showCancelButton: true,
