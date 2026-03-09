@@ -255,7 +255,17 @@ const subjectsByGrade = {
     "升高二課程": ["高二粘立物理", "高二周逸化學", "高二黃浩數學", "高二明軒數學", "高二竹中數學", "高二小揚英文"],
     "升高三課程": ["高三粘立物理", "高三周逸化學", "高三黃浩數學", "高三明軒數學", "學測英文", "學測黃浩數學", "學測明軒數學", "學測自然"]
 };
-window.updateSubjects = function () { const grade = document.getElementById('c_grade').value; const list = document.getElementById('subject_list'); list.innerHTML = ""; if (subjectsByGrade[grade]) { subjectsByGrade[grade].forEach(s => list.innerHTML += `<option value="${s}">`); } };
+window.updateSubjects = function () {
+    const grade = document.getElementById('c_grade').value;
+    const list = document.getElementById('subject_list');
+    const newOptions = subjectsByGrade[grade] || [];
+    // 比較現有 datalist 內容，相同就不動 DOM（避免瀏覽器關掉下拉選單）
+    const currentOptions = Array.from(list.options).map(o => o.value);
+    const isSame = currentOptions.length === newOptions.length && newOptions.every((s, i) => s === currentOptions[i]);
+    if (isSame) return;
+    list.innerHTML = "";
+    newOptions.forEach(s => list.innerHTML += `<option value="${s}">`);
+};
 window.autoFillTime = function () {
     const type = document.getElementById('c_class_type').value;
     const timeInput = document.getElementById('c_time_desc');
@@ -300,20 +310,19 @@ onValue(coursesRef, (snapshot) => {
 function updateDatalists() {
     const gradeEl = document.getElementById('c_grade');
     const selectedGrade = gradeEl ? gradeEl.value : '';
+    const subList = document.getElementById('subject_list');
 
     if (selectedGrade && subjectsByGrade[selectedGrade]) {
-        // A grade is selected — keep the grade-filtered list; don't overwrite it.
-        // Re-apply via updateSubjects() to be safe (in case datalist was wiped).
+        // 年級已選 → 只顯示該年級科目，讓 updateSubjects 做重複判斷
         window.updateSubjects();
     } else {
-        // No grade selected — show all subjects from existing courses as hints.
-        const subjects = new Set();
-        Object.values(coursesData).forEach(c => {
-            if (c.subject) subjects.add(c.subject);
-        });
-        const subList = document.getElementById('subject_list');
+        // 未選年級 → 顯示全部現有課程科目作為提示
+        const newOptions = [...new Set(Object.values(coursesData).map(c => c.subject).filter(Boolean))];
+        const currentOptions = Array.from(subList.options).map(o => o.value);
+        const isSame = currentOptions.length === newOptions.length && newOptions.every((s, i) => s === currentOptions[i]);
+        if (isSame) return;
         subList.innerHTML = "";
-        subjects.forEach(s => subList.innerHTML += `<option value="${s}">`);
+        newOptions.forEach(s => subList.innerHTML += `<option value="${s}">`);
     }
 }
 
