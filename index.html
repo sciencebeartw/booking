@@ -931,14 +931,18 @@
                     allCourses.push(c);
                     if (c.grade) categories.add(c.grade);
 
-                    if (c.start1) {
-                        const start1Time = new Date(c.start1).getTime();
-                        if (isToday(start1Time)) {
-                            hasTodayCourses = true;
-                        } else if (isFutureDay(start1Time)) {
-                            hasUpcomingCourses = true;
+                    // Check all phases' stage-1 start times for today/upcoming detection
+                    const phaseStartFields = ['start1', 't2_start1', 't3_start1'];
+                    let foundToday = false, foundUpcoming = false;
+                    for (const field of phaseStartFields) {
+                        if (c[field]) {
+                            const t = new Date(c[field]).getTime();
+                            if (isToday(t)) { foundToday = true; break; }
+                            if (isFutureDay(t)) { foundUpcoming = true; }
                         }
                     }
+                    if (foundToday) hasTodayCourses = true;
+                    else if (foundUpcoming) hasUpcomingCourses = true;
                 };
 
                 if (rawCourses) {
@@ -1073,9 +1077,15 @@
                 let finalCourses = visibleCourses;
 
                 if (currentCategory === 'today') {
-                    finalCourses = visibleCourses.filter(c => c.start1 && isToday(new Date(c.start1).getTime()));
+                    finalCourses = visibleCourses.filter(c => {
+                        const fields = ['start1', 't2_start1', 't3_start1'];
+                        return fields.some(f => c[f] && isToday(new Date(c[f]).getTime()));
+                    });
                 } else if (currentCategory === 'upcoming') {
-                    finalCourses = visibleCourses.filter(c => c.start1 && isFutureDay(new Date(c.start1).getTime()));
+                    finalCourses = visibleCourses.filter(c => {
+                        const fields = ['start1', 't2_start1', 't3_start1'];
+                        return fields.some(f => c[f] && isFutureDay(new Date(c[f]).getTime()));
+                    });
                 } else if (currentCategory !== 'all') {
                     finalCourses = visibleCourses.filter(c => c.grade === currentCategory);
                 }
@@ -1218,6 +1228,7 @@
                 let soldCount = 0;
                 let currentPhaseLockedCount = 0;
                 const seatsInfo = allSeatsData[c.id] || {};
+
 
                 Object.keys(seatsInfo).forEach(seatId => {
                     if (seatId === '_settings') return;

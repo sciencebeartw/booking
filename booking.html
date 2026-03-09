@@ -1599,14 +1599,30 @@
                 isManualRelease = true;
             }
 
+            // ★★★ 安全釋出：用 transaction 確認座位仍是「我鎖定的 locked 狀態」才刪除
+            // 若已是 'sold'（另一個視窗已送出成功），則不覆蓋，保護訂單不被計時器清掉
+            const seatRef = ref(db, `seats/${currentClassId}/${seatToRelease}`);
+            runTransaction(seatRef, (currentData) => {
+                if (currentData && currentData.status === 'locked' && currentData.user === myUserId) {
+                    // 只有仍是本人 locked 狀態才釋出
+                    return { status: 'deleted', user: myUserId };
+                }
+                // 已是 sold 或被別人搶走 → 不做任何事
+                return currentData;
+            }).then((result) => {
+                if (!isAuto) {
+                    closeModal();
+                    if (result.committed) {
+                        Swal.fire({ icon: 'info', title: '已取消保留。' });
+                    }
+                }
+            }).catch(err => {
+                console.error("釋出失敗", err);
+                if (!isAuto) closeModal();
+            });
+
             if (isAuto) {
                 currentSeatId = null;
-                set(ref(db, `seats/${currentClassId}/${seatToRelease}`), { status: 'deleted', user: myUserId });
-            } else {
-                set(ref(db, `seats/${currentClassId}/${seatToRelease}`), { status: 'deleted', user: myUserId }).then(() => {
-                    closeModal();
-                    if (!isAuto) { Swal.fire({ icon: 'info', title: '已取消保留。' }); }
-                }).catch(err => { console.error("釋出失敗", err); closeModal(); });
             }
         }
 

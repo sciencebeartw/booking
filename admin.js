@@ -298,13 +298,23 @@ onValue(coursesRef, (snapshot) => {
 });
 
 function updateDatalists() {
-    const subjects = new Set();
-    Object.values(coursesData).forEach(c => {
-        if (c.subject) subjects.add(c.subject);
-    });
-    const subList = document.getElementById('subject_list');
-    subList.innerHTML = "";
-    subjects.forEach(s => subList.innerHTML += `<option value="${s}">`);
+    const gradeEl = document.getElementById('c_grade');
+    const selectedGrade = gradeEl ? gradeEl.value : '';
+
+    if (selectedGrade && subjectsByGrade[selectedGrade]) {
+        // A grade is selected — keep the grade-filtered list; don't overwrite it.
+        // Re-apply via updateSubjects() to be safe (in case datalist was wiped).
+        window.updateSubjects();
+    } else {
+        // No grade selected — show all subjects from existing courses as hints.
+        const subjects = new Set();
+        Object.values(coursesData).forEach(c => {
+            if (c.subject) subjects.add(c.subject);
+        });
+        const subList = document.getElementById('subject_list');
+        subList.innerHTML = "";
+        subjects.forEach(s => subList.innerHTML += `<option value="${s}">`);
+    }
 }
 
 window.resetSeatEditor = function () {
