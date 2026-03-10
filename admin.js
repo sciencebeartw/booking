@@ -1763,12 +1763,16 @@ window.fetchSheetInfo = async function() {
         if(typeof Swal !== 'undefined') Swal.fire("錯誤", "請先輸入 Google Sheet ID！", "warning");
         return;
     }
-    if(!gasWebhookUrl) {
+    let fetchUrl = gasWebhookUrl ? gasWebhookUrl.trim() : "";
+    if(!fetchUrl) {
         if(typeof Swal !== 'undefined') Swal.fire("錯誤", "尚未設定 GAS Webhook API 網址，請先至下方【系統設定】設定！", "error");
         return;
     }
-    if (!gasWebhookUrl.startsWith("http")) {
-        if(typeof Swal !== 'undefined') Swal.fire("設定錯誤", "Webhook 網址格式不正確，請至【系統設定】確認是否以 https:// 開頭！", "error");
+    try {
+        new URL(fetchUrl);
+        if (!fetchUrl.startsWith("http")) throw new Error("Not HTTP");
+    } catch(e) {
+        if(typeof Swal !== 'undefined') Swal.fire("設定錯誤", "Webhook 網址格式不正確（必須是完整的 https://... 網址），請至【系統設定】重新確認！", "error");
         return;
     }
 
@@ -1782,7 +1786,7 @@ window.fetchSheetInfo = async function() {
             action: 'get_sheet_info',
             sheetId: sheetId
         };
-        const response = await fetch(gasWebhookUrl, {
+        const response = await fetch(fetchUrl, {
             method: 'POST',
             body: JSON.stringify(payload)
         });
