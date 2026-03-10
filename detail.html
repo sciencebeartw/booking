@@ -1038,8 +1038,8 @@
                 // ★ Uses live serverTimeOffset from onValue listener
                 const now = Date.now() + serverTimeOffset;
 
-                // ── Trial events (simple) ──
                 if (c.isTrialEvent) {
+                    // ── Trial events (simple) ──
                     // check waitlist_only full
                     if (c.type === 'waitlist_only' && c.sessions) {
                         let allFull = true, hasAny = false;
@@ -1066,196 +1066,186 @@
                             timerLabel.textContent = "⛔ 目前狀態";
                             timerText.textContent = "所有班級候補均已額滿";
                             btn.textContent = "🔴 候補已額滿"; btn.className = "btn-action btn-disabled";
-                            btn.href = '#'; btn.onclick = null;
+                            btn.href = '#';
                         } else {
                             btn.textContent = "前往報名 ➜"; btn.className = "btn-action btn-active";
                             btn.href = '#';
-                            // btn.setAttribute('data-trial-id', c.id); // Removed old recaptcha trigger
-                            // btn.onclick = function (e) { // Removed old recaptcha trigger
-                            //     e.preventDefault();
-                            //     window._pendingTrialEventId = c.id;
-                            //     document.getElementById('recaptchaModal').style.display = 'flex';
-                            // };
                         }
                     } else {
                         timerLabel.textContent = "⛔ 狀態";
                         timerText.textContent = "報名已結束";
                         btn.textContent = "已截止"; btn.className = "btn-action btn-disabled";
                     }
-                    // return; // Removed this return to allow the event listener to be set
-                }
-
-                // ── Regular multi-phase courses ──
-                if (phases.length === 0) {
-                    timerText.textContent = "未設定開放時間"; // return; // Removed this return to allow the event listener to be set
-                } else { // Added else for regular courses
-                    const start1 = phases[0].s1;
-
-                    if (now < start1) {
-                        timerLabel.textContent = "距離開放還有";
-                        timerText.innerHTML = `<span style="font-size:32px;">${formatTime(start1 - now)}</span>`;
-                        btn.textContent = "尚未開放"; btn.className = "btn-action btn-disabled";
-                        // return; // Removed this return to allow the event listener to be set
-                    } else { // Added else for regular courses
-                        // Find the active phase/stage
-                        for (let i = 0; i < phases.length; i++) {
-                            const p = phases[i];
-                            const isLastPhase = !!p.isFinal;
-                            const nextPhase = phases[i + 1] || null;
-
-                            // Stage 1 open
-                            if (now >= p.s1 && now < p.e1) {
-                                timerLabel.textContent = "🔥 目前狀態";
-                                const stageLabel = phases.length > 1 ? `第 ${i + 1} 梯次 一階開放中` : "第一階段開放中";
-                                timerText.textContent = stageLabel;
-                                btn.textContent = "前往劃位 ➜"; btn.className = "btn-action btn-active";
-                                // btn.href = `booking.html?class=${c.id}`; // Removed old direct link
-                                // return; // Removed this return to allow the event listener to be set
-                                break; // Break from loop once active phase is found
-                            }
-
-                            // Between Stage 1 and Stage 2 (system maintenance)
-                            const hasS2 = p.s2 < INF;
-                            if (now >= p.e1 && hasS2 && now < p.s2) {
-                                const diff = p.s2 - now;
-                                timerLabel.textContent = "系統整理中 (暫停開放)";
-                                const stageLabel = phases.length > 1 ? `第 ${i + 1} 梯次二階` : "二階";
-                                timerText.innerHTML = `距離${stageLabel}還有：<br><span style="font-size:32px;">${formatTime(diff)}</span>`;
-                                btn.textContent = "暫停開放"; btn.className = "btn-action btn-disabled";
-                                // return; // Removed old direct link
-                                break; // Break from loop once active phase is found
-                            }
-
-                            // Stage 2 open
-                            if (hasS2 && now >= p.s2 && now < p.e2) {
-                                timerLabel.textContent = "🔥 目前狀態";
-                                let stageLabel;
-                                if (phases.length > 1) {
-                                    stageLabel = `第 ${i + 1} 梯次 二階開放中`;
-                                } else {
-                                    stageLabel = isLastPhase ? "第二階段開放中（含候補）" : "第二階段開放中";
-                                }
-                                timerText.textContent = stageLabel;
-                                btn.textContent = "前往劃位 ➜"; btn.className = "btn-action btn-active";
-                                // btn.href = `booking.html?class=${c.id}`; // Removed old direct link
-                                // return; // Removed this return to allow the event listener to be set
-                                break; // Break from loop once active phase is found
-                            }
-
-                            // After this phase but before the next phase starts
-                            const phaseEnd = hasS2 ? p.e2 : p.e1;
-                            if (now >= phaseEnd && nextPhase && now < nextPhase.s1) {
-                                const diff = nextPhase.s1 - now;
-                                timerLabel.textContent = `第 ${i + 1} 梯次已結束`;
-                                timerText.innerHTML = `距離第 ${i + 2} 梯次開放還有：<br><span style="font-size:32px;">${formatTime(diff)}</span>`;
-                                btn.textContent = "等待下一梯次"; btn.className = "btn-action btn-disabled";
-                                // return; // Removed old direct link
-                                break; // Break from loop once active phase is found
-                            }
-                            // If loop finishes without a break, it means all phases are done
-                            if (i === phases.length - 1) {
-                                timerLabel.textContent = "⛔ 狀態";
-                                timerText.textContent = "劃位已結束";
-                                btn.textContent = "已截止"; btn.className = "btn-action btn-disabled";
-                            }
-                        }
-                    }
-                }
-
-                // ==========================================
-                // === 點擊按鈕：前往劃位 / 前往報名 ===
-                // ==========================================
-                btn.onclick = null; // Clear previous onclick
-                btn.addEventListener('click', async (e) => {
-                    e.preventDefault();
-
-                    if (!auth.currentUser) {
-                        Swal.fire({
-                            icon: 'warning',
-                            title: '請先登入帳號',
-                            text: '為了確保劃位公平性，請先點擊畫面上方的按鈕進行 Google 登入。',
-                            confirmButtonText: '我知道了'
-                        });
-                        return;
-                    }
-
-                    if (btn.classList.contains("btn-disabled")) return;
-
-                    // ★★★ 新增：進入前的 App Check 驗證與摩擦力機制 ★★★
-                    let isBotSuspected = false;
-                    try {
-                        // 嘗試取得 App Check Token
-                        const { getToken } = await import('https://www.gstatic.com/firebasejs/10.7.1/firebase-app-check.js');
-                        const { appCheck } = await import('./firebase-config.js');
-
-                        if (appCheck) {
-                            const appCheckTokenResponse = await getToken(appCheck, false);
-                            if (!appCheckTokenResponse.token) {
-                                isBotSuspected = true;
-                            }
-                        }
-                        // appCheck 未初始化 = 直接放行（不懲罰）
-                    } catch (err) {
-                        // ★ 重要：App Check 失敗（如 reCAPTCHA 回 400）不代表是機器人，
-                        //   直接放行，讓 Firebase 後端規則自行決定是否接受請求。
-                        console.warn("App Check token 取得失敗，跳過驗證直接放行:", err.message);
-                        isBotSuspected = false;
-                    }
-
-                    const proceedToNextPage = () => {
-                        if (isTrialEvent) {
-                            window.location.href = `trial_booking.html?eventId=${eventId}`;
-                        } else {
-                            window.location.href = `booking.html?class=${courseId}`;
-                        }
-                    };
-
-                    if (isBotSuspected) {
-                        // 寫入機器人警告紀錄
-                        try {
-                            const { push, set, ref } = await import('./firebase-config.js');
-                            const warningRef = push(ref(db, `bot-warnings/${isTrialEvent ? 'trial_enter' : 'booking_enter'}`));
-                            await set(warningRef, {
-                                uid: auth.currentUser.uid,
-                                email: auth.currentUser.email,
-                                targetId: isTrialEvent ? eventId : courseId,
-                                timestamp: Date.now(),
-                                penaltySeconds: 5,
-                                userAgent: navigator.userAgent
-                            });
-                        } catch (logErr) {
-                            console.error("寫入警告紀錄失敗:", logErr);
-                        }
-
-                        // 彈出 5 秒摩擦力 SWAL
-                        let timerInterval;
-                        Swal.fire({
-                            title: '⚠️ 系統偵測到異常操作',
-                            html: '為確保公平性，請稍候 <b>5</b> 秒後將自動為您導向...',
-                            icon: 'warning',
-                            allowOutsideClick: false,
-                            allowEscapeKey: false,
-                            showConfirmButton: false,
-                            timer: 5000,
-                            timerProgressBar: true,
-                            didOpen: () => {
-                                const b = Swal.getHtmlContainer().querySelector('b');
-                                timerInterval = setInterval(() => {
-                                    b.textContent = Math.ceil(Swal.getTimerLeft() / 1000);
-                                }, 100);
-                            },
-                            willClose: () => {
-                                clearInterval(timerInterval);
-                            }
-                        }).then(() => {
-                            proceedToNextPage();
-                        });
+                } else {
+                    // ── Regular multi-phase courses ──
+                    if (phases.length === 0) {
+                        timerText.textContent = "未設定開放時間";
                     } else {
-                        // 真人高分，無感直通
-                        proceedToNextPage();
+                        const start1 = phases[0].s1;
+
+                        if (now < start1) {
+                            timerLabel.textContent = "距離開放還有";
+                            timerText.innerHTML = `<span style="font-size:32px;">${formatTime(start1 - now)}</span>`;
+                            btn.textContent = "尚未開放"; btn.className = "btn-action btn-disabled";
+                        } else {
+                            // Find the active phase/stage
+                            for (let i = 0; i < phases.length; i++) {
+                                const p = phases[i];
+                                const isLastPhase = !!p.isFinal;
+                                const nextPhase = phases[i + 1] || null;
+
+                                // Stage 1 open
+                                if (now >= p.s1 && now < p.e1) {
+                                    timerLabel.textContent = "🔥 目前狀態";
+                                    const stageLabel = phases.length > 1 ? `第 ${i + 1} 梯次 一階開放中` : "第一階段開放中";
+                                    timerText.textContent = stageLabel;
+                                    btn.textContent = "前往劃位 ➜"; btn.className = "btn-action btn-active";
+                                    break;
+                                }
+
+                                // Between Stage 1 and Stage 2 (system maintenance)
+                                const hasS2 = p.s2 < INF;
+                                if (now >= p.e1 && hasS2 && now < p.s2) {
+                                    const diff = p.s2 - now;
+                                    timerLabel.textContent = "系統整理中 (暫停開放)";
+                                    const stageLabel = phases.length > 1 ? `第 ${i + 1} 梯次二階` : "二階";
+                                    timerText.innerHTML = `距離${stageLabel}還有：<br><span style="font-size:32px;">${formatTime(diff)}</span>`;
+                                    btn.textContent = "暫停開放"; btn.className = "btn-action btn-disabled";
+                                    break;
+                                }
+
+                                // Stage 2 open
+                                if (hasS2 && now >= p.s2 && now < p.e2) {
+                                    timerLabel.textContent = "🔥 目前狀態";
+                                    let stageLabel;
+                                    if (phases.length > 1) {
+                                        stageLabel = `第 ${i + 1} 梯次 二階開放中`;
+                                    } else {
+                                        stageLabel = isLastPhase ? "第二階段開放中（含候補）" : "第二階段開放中";
+                                    }
+                                    timerText.textContent = stageLabel;
+                                    btn.textContent = "前往劃位 ➜"; btn.className = "btn-action btn-active";
+                                    break;
+                                }
+
+                                // After this phase but before the next phase starts
+                                const phaseEnd = hasS2 ? p.e2 : p.e1;
+                                if (now >= phaseEnd && nextPhase && now < nextPhase.s1) {
+                                    const diff = nextPhase.s1 - now;
+                                    timerLabel.textContent = `第 ${i + 1} 梯次已結束`;
+                                    timerText.innerHTML = `距離第 ${i + 2} 梯次開放還有：<br><span style="font-size:32px;">${formatTime(diff)}</span>`;
+                                    btn.textContent = "等待下一梯次"; btn.className = "btn-action btn-disabled";
+                                    break;
+                                }
+                                // If loop finishes without a break, it means all phases are done
+                                if (i === phases.length - 1) {
+                                    timerLabel.textContent = "⛔ 狀態";
+                                    timerText.textContent = "劃位已結束";
+                                    btn.textContent = "已截止"; btn.className = "btn-action btn-disabled";
+                                }
+                            }
+                        }
                     }
-                });
+                }
             }
+
+            // ==========================================
+            // === 點擊按鈕：前往劃位 / 前往報名 ===
+            // ==========================================
+            // Ensure we don't bind multiple listeners if startTimer is called repeatedly
+            const newBtn = btn.cloneNode(true);
+            btn.parentNode.replaceChild(newBtn, btn);
+            const activeBtn = newBtn;
+            
+            activeBtn.addEventListener('click', async (e) => {
+                e.preventDefault();
+
+                if (!auth.currentUser) {
+                    Swal.fire({
+                        icon: 'warning',
+                        title: '請先登入帳號',
+                        text: '為了確保劃位公平性，請先點擊畫面上方的按鈕進行 Google 登入。',
+                        confirmButtonText: '我知道了'
+                    });
+                    return;
+                }
+
+                if (activeBtn.classList.contains("btn-disabled")) return;
+
+                // ★★★ 新增：進入前的 App Check 驗證與摩擦力機制 ★★★
+                let isBotSuspected = false;
+                try {
+                    // 嘗試取得 App Check Token
+                    const { getToken } = await import('https://www.gstatic.com/firebasejs/10.7.1/firebase-app-check.js');
+                    const { appCheck } = await import('./firebase-config.js');
+
+                    if (appCheck) {
+                        const appCheckTokenResponse = await getToken(appCheck, false);
+                        if (!appCheckTokenResponse.token) {
+                            isBotSuspected = true;
+                        }
+                    }
+                    // appCheck 未初始化 = 直接放行（不懲罰）
+                } catch (err) {
+                    // ★ 重要：App Check 失敗（如 reCAPTCHA 回 400）不代表是機器人，
+                    //   直接放行，讓 Firebase 後端規則自行決定是否接受請求。
+                    console.warn("App Check token 取得失敗，跳過驗證直接放行:", err.message);
+                    isBotSuspected = false;
+                }
+
+                const proceedToNextPage = () => {
+                    if (isTrialEvent) {
+                        window.location.href = `trial_booking.html?eventId=${eventId}`;
+                    } else {
+                        window.location.href = `booking.html?class=${courseId}`;
+                    }
+                };
+
+                if (isBotSuspected) {
+                    // 寫入機器人警告紀錄
+                    try {
+                        const { push, set, ref } = await import('./firebase-config.js');
+                        const warningRef = push(ref(db, `bot-warnings/${isTrialEvent ? 'trial_enter' : 'booking_enter'}`));
+                        await set(warningRef, {
+                            uid: auth.currentUser.uid,
+                            email: auth.currentUser.email,
+                            targetId: isTrialEvent ? eventId : courseId,
+                            timestamp: Date.now(),
+                            penaltySeconds: 5,
+                            userAgent: navigator.userAgent
+                        });
+                    } catch (logErr) {
+                        console.error("寫入警告紀錄失敗:", logErr);
+                    }
+
+                    // 彈出 5 秒摩擦力 SWAL
+                    let timerInterval;
+                    Swal.fire({
+                        title: '⚠️ 系統偵測到異常操作',
+                        html: '為確保公平性，請稍候 <b>5</b> 秒後將自動為您導向...',
+                        icon: 'warning',
+                        allowOutsideClick: false,
+                        allowEscapeKey: false,
+                        showConfirmButton: false,
+                        timer: 5000,
+                        timerProgressBar: true,
+                        didOpen: () => {
+                            const b = Swal.getHtmlContainer().querySelector('b');
+                            timerInterval = setInterval(() => {
+                                b.textContent = Math.ceil(Swal.getTimerLeft() / 1000);
+                            }, 100);
+                        },
+                        willClose: () => {
+                            clearInterval(timerInterval);
+                        }
+                    }).then(() => {
+                        proceedToNextPage();
+                    });
+                } else {
+                    // 真人高分，無感直通
+                    proceedToNextPage();
+                }
+            });
 
             timerInterval = setInterval(update, 1000);
             update();
