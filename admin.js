@@ -3104,38 +3104,7 @@ window.sendAllBillsToLine = async function () {
 
     if (!userConfirmed) return;
 
-    if (typeof Swal !== 'undefined') {
-        Swal.fire({
-            html: `
-                <div style="margin:10px 0; display:flex; justify-content:center; align-items:center; flex-direction:column; gap:20px;">
-                    <svg width="100" height="100" viewBox="0 0 100 100" xmlns="http://www.w3.org/2000/svg">
-                        <style>
-                            @keyframes flyEnvelope { 0% { transform: translate(0px, 10px) rotate(-10deg); opacity: 0; } 20% { opacity: 1; transform: translate(15px, -5px) rotate(5deg); } 80% { opacity: 1; transform: translate(40px, -20px) rotate(15deg); } 100% { transform: translate(50px, -25px) rotate(20deg); opacity: 0; } }
-                            @keyframes spark { 0% { opacity: 0.2; transform: scale(0.8); } 50% { opacity: 1; transform: scale(1.2); } 100% { opacity: 0.2; transform: scale(0.8); } }
-                        </style>
-                        <circle cx="50" cy="50" r="45" fill="#f4f6f7" />
-                        <g style="animation: flyEnvelope 2s ease-in-out infinite;">
-                            <path d="M 20,40 L 60,40 L 60,65 L 20,65 Z" fill="#fff" stroke="#3498db" stroke-width="3" stroke-linejoin="round"/>
-                            <path d="M 20,40 L 40,55 L 60,40" fill="none" stroke="#e74c3c" stroke-width="3" stroke-linejoin="round"/>
-                            <rect x="25" y="45" width="8" height="6" fill="#f1c40f" />
-                        </g>
-                        <g fill="#27ae60">
-                            <circle cx="75" cy="25" r="3" style="animation: spark 1.5s infinite 0s;" />
-                            <circle cx="85" cy="40" r="4" style="animation: spark 1.5s infinite 0.5s;" />
-                            <circle cx="70" cy="55" r="2" style="animation: spark 1.5s infinite 1s;" />
-                        </g>
-                    </svg>
-                    <div style="font-size:24px; font-weight:bold; color:#2c3e50;">大批學費單產生與傳送中...</div>
-                    <div style="font-size:16px; color:#2c3e50; margin-bottom:5px;" id="swal-bill-status">正在處理第 <b>1</b> / ${selectedBills.length} 張學費單...</div>
-                    <div style="width:100%;height:8px;background:#eee;border-radius:4px;overflow:hidden;margin-bottom:8px;">
-                        <div id="swal-bill-bar" style="height:100%;width:0%;background:linear-gradient(90deg,#27ae60,#2ecc71);border-radius:4px;transition:width 0.4s ease;"></div>
-                    </div>
-                    <div style="font-size:13px;color:#888;">請勿關閉網頁 ⚡ 正在對接山熊魔法通道</div>
-                </div>`,
-            allowOutsideClick: false,
-            showConfirmButton: false
-        });
-    }
+    // 已移除原本遮擋畫面的 Swal.fire，改用頁面上原生的 #billProgressArea 顯示進度
 
     let successCount = 0;
     let failedList = [];
@@ -3159,15 +3128,8 @@ window.sendAllBillsToLine = async function () {
         const s = billStudents[i];
         if (!s.selected) continue; // 略過沒勾選的
         
-        // 更新 UI (直接操作 DOM 避免覆蓋 SVG 動畫)
+        // 僅更新頁面上的原生進度條，不需操作 Swal
         const currentCount = successCount + failedList.length + 1;
-        if (typeof Swal !== 'undefined' && Swal.isVisible()) {
-            const statusEl = document.getElementById('swal-bill-status');
-            const barEl = document.getElementById('swal-bill-bar');
-            if(statusEl) statusEl.innerHTML = `正在處理第 <b>${currentCount}</b> / ${selectedBills.length} 張學費單 (${s.name})...`;
-            if(barEl) barEl.style.width = `${(currentCount / selectedBills.length) * 100}%`;
-        }
-
         if (barText) barText.innerText = `${currentCount} / ${selectedBills.length} (${s.name})`;
         if (barFill) barFill.style.width = `${(currentCount / selectedBills.length) * 100}%`;
 
