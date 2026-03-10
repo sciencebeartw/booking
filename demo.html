@@ -200,8 +200,8 @@
         #displayArea {
             flex: 1;
             display: grid;
-            grid-template-columns: 1fr 1fr 1.5fr;
-            /* 三欄：Index, Detail, Booking */
+            grid-template-columns: 1fr 1.25fr 1.6fr;
+            /* 三欄：Index(較窄), Detail(加寬), Booking(最寬) */
             gap: 12px;
             padding: 12px;
             background: #f0f2f5;
@@ -251,193 +251,240 @@
         #indexSection .course-cards {
             display: flex;
             flex-direction: column;
-            /* 改為垂直，適應窄欄位 */
             gap: 16px;
+            padding-bottom: 20px;
         }
 
         .course-card {
-            border: 1px solid #eee;
-            border-radius: 10px;
+            background: white;
+            border-radius: 15px;
             overflow: hidden;
-            box-shadow: 0 2px 8px rgba(0, 0, 0, 0.06);
+            box-shadow: 0 10px 20px rgba(0, 0, 0, 0.05);
+            transition: 0.3s;
+            display: flex;
+            flex-direction: column;
+            border: 1px solid #eee;
+            position: relative;
+            text-decoration: none;
+            color: inherit;
         }
 
-        .card-img-bar {
-            height: 60px;
-            /* 稍微縮小 */
+        .course-card:hover {
+            transform: translateY(-5px);
+            box-shadow: 0 15px 30px rgba(0, 0, 0, 0.15);
+        }
+
+        .card-img {
+            height: 160px;
+            background-size: cover;
+            background-position: center;
+            background-color: #eee;
             display: flex;
             align-items: center;
             justify-content: center;
-            font-size: 24px;
+            font-size: 32px;
         }
 
-        .card-img-bar.bg-math {
-            background: linear-gradient(135deg, #667eea, #764ba2);
+        .card-body {
+            padding: 18px;
+            flex-grow: 1;
+            display: flex;
+            flex-direction: column;
         }
 
-        .card-img-bar.bg-science {
-            background: linear-gradient(135deg, #f7971e, #ffd200);
-        }
-
-        .card-img-bar.bg-english {
-            background: linear-gradient(135deg, #11998e, #38ef7d);
-        }
-
-        .card-info {
-            padding: 12px;
+        .card-category {
+            font-size: 12px;
+            color: #e74c3c;
+            font-weight: bold;
+            text-transform: uppercase;
+            letter-spacing: 1px;
+            margin-bottom: 5px;
         }
 
         .card-title {
-            font-size: 15px;
+            font-size: 18px;
             font-weight: bold;
+            margin-bottom: 8px;
             color: #2c3e50;
-            margin-bottom: 4px;
         }
 
-        .card-sub {
-            font-size: 12px;
-            color: #888;
-            margin-bottom: 10px;
+        .card-info {
+            font-size: 14px;
+            color: #555;
+            margin-bottom: 12px;
+            line-height: 1.6;
         }
 
-        .card-phases {
+        .card-footer {
+            margin-top: auto;
+            padding-top: 12px;
+            border-top: 1px solid #eee;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+
+        .card-price {
+            font-size: 16px;
+            font-weight: bold;
+            color: #27ae60;
+        }
+
+        .btn-view {
+            background: #3498db;
+            color: white;
+            padding: 6px 12px;
+            border-radius: 5px;
+            font-size: 13px;
+        }
+
+        /* ===== 燈號徽章 (與真實系統一致) ===== */
+        .status-badge-container {
             display: flex;
             gap: 6px;
             flex-wrap: wrap;
+            justify-content: flex-end;
         }
 
-        /* ===== 燈號徽章 ===== */
-        .phase-badge {
-            display: inline-flex;
-            align-items: center;
-            gap: 4px;
-            padding: 4px 10px;
-            border-radius: 12px;
+        .status-badge {
+            display: inline-block;
+            padding: 4px 8px;
+            border-radius: 4px;
             font-size: 12px;
             font-weight: bold;
+            color: white;
+            margin-left: auto;
+            white-space: nowrap;
         }
 
-        .badge-closed {
-            background: #ecf0f1;
-            color: #95a5a6;
-            border: 1px solid #bdc3c7;
+        .status-open {
+            background: #27ae60;
         }
 
-        .badge-upcoming {
-            background: #fef9e7;
-            color: #d68910;
-            border: 1px solid #f0c040;
+        .status-wait {
+            background: #f39c12;
         }
 
-        .badge-open {
-            background: #eafaf1;
-            color: #1e8449;
-            border: 1px solid #52be80;
+        .status-full {
+            background: #e74c3c;
         }
 
-        .badge-waitlist {
-            background: #fdf2e9;
-            color: #c0392b;
-            border: 1px solid #f1948a;
+        .status-closed {
+            background: #95a5a6;
         }
 
-        .badge-ended {
-            background: #f2f3f4;
-            color: #7f8c8d;
-            border: 1px solid #bdc3c7;
-        }
-
-        /* ===== DETAIL 模擬 ===== */
+        /* ===== DETAIL 模擬 (真實樣式移植) ===== */
         #detailSection .detail-inner {
             display: flex;
             flex-direction: column;
-            /* 適應窄欄位 */
             gap: 20px;
             align-items: center;
-            text-align: center;
         }
 
-        .detail-img {
+        .course-img {
             width: 100%;
             aspect-ratio: 16/9;
-            border-radius: 8px;
-            background: linear-gradient(135deg, #667eea, #764ba2);
+            background-size: cover;
+            background-position: center;
+            border-radius: 10px;
+            background-color: #eee;
+            flex-shrink: 0;
             display: flex;
             align-items: center;
             justify-content: center;
-            font-size: 48px;
-            flex-shrink: 0;
+            font-size: 32px;
         }
 
-        .detail-meta {
+        .course-meta {
             width: 100%;
         }
 
-        .detail-meta h2 {
-            font-size: 20px;
+        .course-meta h1 {
+            margin: 0 0 15px 0;
             color: #2c3e50;
-            margin-bottom: 12px;
+            font-size: 24px;
         }
 
-        .detail-meta .info-row {
-            font-size: 14px;
+        .course-meta .price {
+            font-size: 24px;
+            color: #27ae60;
+            font-weight: bold;
+            margin-bottom: 20px;
+        }
+
+        .info-item {
+            margin-bottom: 10px;
+            font-size: 15px;
             color: #555;
-            margin-bottom: 8px;
+            line-height: 1.5;
             text-align: left;
         }
 
-        .detail-meta .info-row strong {
+        .info-item strong {
             color: #333;
+            margin-right: 8px;
         }
 
         .countdown-box {
             background: #fdf2e9;
             border: 2px solid #f39c12;
-            border-radius: 12px;
             padding: 20px;
+            border-radius: 10px;
             text-align: center;
-            margin-top: 20px;
+            margin-top: 30px;
             width: 100%;
+            box-sizing: border-box;
         }
 
-        .countdown-label {
-            font-size: 14px;
+        .timer-label {
+            font-size: 16px;
             color: #d35400;
-            margin-bottom: 6px;
+            margin-bottom: 5px;
+            white-space: nowrap;
         }
 
-        .countdown-text {
-            font-size: 24px;
+        .timer-text {
+            font-size: 26px;
             font-weight: bold;
             color: #d35400;
             font-family: monospace;
+            white-space: nowrap;
+            text-overflow: ellipsis;
+            overflow: hidden;
         }
 
-        .btn-goto-booking {
-            display: block;
+        .btn-action {
+            display: inline-block;
             width: 100%;
-            margin-top: 15px;
-            padding: 12px;
-            background: #27ae60;
-            color: white;
+            padding: 15px;
+            text-align: center;
             border: none;
             border-radius: 8px;
-            font-size: 16px;
+            font-size: 20px;
             font-weight: bold;
             cursor: pointer;
-            font-family: "Microsoft JhengHei", sans-serif;
-            transition: 0.2s;
+            text-decoration: none;
+            transition: 0.3s;
+            margin-top: 10px;
+            box-sizing: border-box;
         }
 
-        .btn-goto-booking:hover {
-            background: #219150;
-            transform: translateY(-1px);
-        }
-
-        .btn-goto-booking:disabled {
+        .btn-disabled {
             background: #bdc3c7;
+            color: white;
             cursor: not-allowed;
-            transform: none;
+            pointer-events: none;
+        }
+
+        .btn-active {
+            background: #27ae60;
+            color: white;
+            box-shadow: 0 5px 15px rgba(39, 174, 96, 0.4);
+        }
+
+        .btn-active:hover {
+            background: #219150;
+            transform: translateY(-2px);
         }
 
         /* ===== BOOKING 模擬 ===== */
@@ -471,25 +518,25 @@
         }
 
         .seat-status-bar {
+            margin: 10px 0 20px 0;
             display: flex;
-            gap: 12px;
+            justify-content: center;
             flex-wrap: wrap;
-            margin-bottom: 10px;
-            font-size: 12px;
-            color: #555;
+            gap: 15px;
+            font-size: 14px;
         }
 
         .seat-legend {
             display: flex;
             align-items: center;
-            gap: 4px;
         }
 
         .dot {
-            width: 12px;
             height: 12px;
-            border-radius: 3px;
+            width: 12px;
             display: inline-block;
+            border-radius: 50%;
+            margin-right: 6px;
         }
 
         .dot-open {
@@ -511,7 +558,7 @@
         .classroom-wrapper {
             overflow-x: auto;
             text-align: center;
-            padding-bottom: 5px;
+            padding-bottom: 20px;
         }
 
         .classroom-inner {
@@ -521,43 +568,44 @@
 
         .stage-box {
             width: 100%;
-            border: 2px solid #333;
-            padding: 6px;
+            margin: 0 auto 20px auto;
+            padding: 12px;
+            border: 3px solid #333;
+            background-color: #fff;
             font-weight: bold;
-            font-size: 16px;
+            font-size: 22px;
             letter-spacing: 8px;
             text-align: center;
-            margin-bottom: 10px;
-            background: #f9f9f9;
             box-sizing: border-box;
         }
 
         .seat-row {
             display: flex;
             justify-content: center;
-            gap: 6px;
-            margin-bottom: 6px;
+            gap: 8px;
+            margin-bottom: 15px;
         }
 
         .seat {
-            width: 44px;
-            height: 52px;
+            width: 45px;
+            height: 55px;
             border-radius: 6px;
             display: flex;
             align-items: center;
             justify-content: center;
             font-weight: bold;
-            font-size: 12px;
+            font-size: 13px;
             cursor: pointer;
             transition: 0.2s;
             user-select: none;
             flex-direction: column;
             line-height: 1.1;
+            box-sizing: border-box;
         }
 
         .seat:hover {
             transform: scale(1.1);
-            z-index: 5;
+            z-index: 10;
             position: relative;
         }
 
@@ -571,6 +619,7 @@
             color: white;
             cursor: not-allowed;
             pointer-events: none;
+            transform: none;
         }
 
         .seat.sold:hover {
@@ -591,7 +640,7 @@
         .seat.mine {
             background: #3498db;
             color: white;
-            border: 2px solid #1a6fa8;
+            border: 2px solid #2980b9;
         }
 
         .seat.aisle {
@@ -798,36 +847,66 @@
 
                         <!-- 課程卡 1 -->
                         <div class="course-card">
-                            <div class="card-img-bar bg-math">🔢</div>
-                            <div class="card-info">
+                            <div class="card-img" style="background-image: url('https://via.placeholder.com/400x200/667eea/ffffff?text=%E6%95%B8%E5%AD%B8');"></div>
+                            <div class="card-body">
+                                <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:5px;">
+                                    <div class="card-category">升國一課程</div>
+                                    <div class="status-badge-container" id="badges_math">
+                                        <!-- 由 JS 填入 -->
+                                    </div>
+                                </div>
                                 <div class="card-title">國中數學精修班</div>
-                                <div class="card-sub">👩‍🏫 王老師 ｜ 每週六 14:00</div>
-                                <div class="card-phases" id="badges_math">
-                                    <!-- 由 JS 填入 -->
+                                <div class="card-info">
+                                    👨‍🏫 王老師<br>
+                                    ⏰ 每週六 14:00
+                                </div>
+                                <div class="card-footer">
+                                    <div class="card-price">$3,200</div>
+                                    <div class="btn-view">查看詳情 ➜</div>
                                 </div>
                             </div>
                         </div>
 
                         <!-- 課程卡 2 -->
                         <div class="course-card">
-                            <div class="card-img-bar bg-science">🔬</div>
-                            <div class="card-info">
+                            <div class="card-img" style="background-image: url('https://via.placeholder.com/400x200/f7971e/ffffff?text=%E7%89%A9%E7%90%86');"></div>
+                            <div class="card-body">
+                                <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:5px;">
+                                    <div class="card-category">升高一課程</div>
+                                    <div class="status-badge-container" id="badges_science">
+                                        <!-- 由 JS 填入 -->
+                                    </div>
+                                </div>
                                 <div class="card-title">高中物理實驗班</div>
-                                <div class="card-sub">👨‍🔬 陳老師 ｜ 每週日 10:00</div>
-                                <div class="card-phases" id="badges_science">
-                                    <!-- 由 JS 填入 -->
+                                <div class="card-info">
+                                    👨‍🔬 陳老師<br>
+                                    ⏰ 每週日 10:00
+                                </div>
+                                <div class="card-footer">
+                                    <div class="card-price">$4,000</div>
+                                    <div class="btn-view">查看詳情 ➜</div>
                                 </div>
                             </div>
                         </div>
 
                         <!-- 課程卡 3 -->
                         <div class="course-card">
-                            <div class="card-img-bar bg-english">📚</div>
-                            <div class="card-info">
+                            <div class="card-img" style="background-image: url('https://via.placeholder.com/400x200/11998e/ffffff?text=%E8%8B%B1%E6%96%87');"></div>
+                            <div class="card-body">
+                                <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:5px;">
+                                    <div class="card-category">升國二課程</div>
+                                    <div class="status-badge-container" id="badges_english">
+                                        <!-- 由 JS 填入 -->
+                                    </div>
+                                </div>
                                 <div class="card-title">英文閱讀理解班</div>
-                                <div class="card-sub">👩‍🏫 林老師 ｜ 每週三 19:00</div>
-                                <div class="card-phases" id="badges_english">
-                                    <!-- 由 JS 填入 -->
+                                <div class="card-info">
+                                    👨‍🏫 林老師<br>
+                                    ⏰ 每週三 19:00
+                                </div>
+                                <div class="card-footer">
+                                    <div class="card-price">$2,800</div>
+                                    <div class="btn-view">查看詳情 ➜</div>
                                 </div>
                             </div>
                         </div>
@@ -844,22 +923,21 @@
                 </div>
                 <div class="demo-block-body">
                     <div class="detail-inner">
-                        <div class="detail-img">🔢</div>
-                        <div class="detail-meta">
-                            <h2>國中數學精修班</h2>
-                            <div class="info-row"><strong>⏰ 上課時間：</strong>每週六 14:00–16:00</div>
-                            <div class="info-row"><strong>👩‍🏫 授課老師：</strong>王美華老師</div>
-                            <div class="info-row"><strong>📍 上課教室：</strong>山熊科學一樓教室 A</div>
-                            <div class="info-row"><strong>💰 費用：</strong>每月 $3,200</div>
+                        <div class="course-img" style="background-image: url('https://via.placeholder.com/800x450/667eea/ffffff?text=%E6%95%B8%E5%AD%B8');"></div>
+                        <div class="course-meta">
+                            <h1>國中數學精修班</h1>
+                            <div class="price">$3,200 / 月</div>
+
+                            <div class="info-item"><strong>⏰ 上課時間:</strong> <span>每週六 14:00–16:00</span></div>
+                            <div class="info-item"><strong>👨‍🏫 授課老師:</strong> <span>王美華老師</span></div>
+                            <div class="info-item"><strong>📍 上課教室:</strong> <span>山熊科學一樓教室 A</span></div>
+                            
+                            <div class="countdown-box">
+                                <div class="timer-label" id="detailTimerLabel">距離第一階段開放還有：</div>
+                                <div class="timer-text" id="detailTimerText">尚未開放</div>
+                                <a href="#" id="btnGotoBooking" class="btn-action btn-disabled" onclick="startBooking()">暫未開放</a>
+                            </div>
                         </div>
-                    </div>
-                    <div class="countdown-box">
-                        <div class="countdown-label" id="detailTimerLabel">距離開放還有</div>
-                        <div class="countdown-text" id="detailTimerText">尚未開放</div>
-                        <br>
-                        <button class="btn-goto-booking" id="btnGotoBooking" onclick="startBooking()" disabled>
-                            🔒 尚未開放
-                        </button>
                     </div>
                 </div>
             </div>
@@ -1071,24 +1149,28 @@
             const btn = document.getElementById('btnGotoBooking');
 
             if (!isAnyOpen()) {
-                labelEl.textContent = '目前狀態';
-                textEl.textContent = '尚未開放';
-                btn.disabled = true;
-                btn.textContent = '🔒 尚未開放';
+                labelEl.textContent = '⛔ 狀態';
+                textEl.textContent = '報名已結束';
+                btn.className = 'btn-action btn-disabled';
+                btn.textContent = '已截止';
                 return;
             }
 
-            if (isWaitlistMode()) {
-                labelEl.textContent = '目前開放狀態';
-                textEl.textContent = '🔴 候補登記中';
-                btn.disabled = false;
-                btn.textContent = '📝 前往候補登記';
-            } else {
-                labelEl.textContent = '⚡ 劃位開放中！';
-                textEl.textContent = '✅ 立即可劃位';
-                btn.disabled = false;
-                btn.textContent = '🚀 前往劃位 →';
-            }
+            let phaseStr = "";
+            let stageStr = "";
+
+            if (state.t3s2) { phaseStr = "3"; stageStr = "二階"; }
+            else if (state.t3s1) { phaseStr = "3"; stageStr = "一階"; }
+            else if (state.t2s2) { phaseStr = "2"; stageStr = "二階"; }
+            else if (state.t2s1) { phaseStr = "2"; stageStr = "一階"; }
+            else if (state.t1s2) { phaseStr = "1"; stageStr = "二階"; }
+            else if (state.t1s1) { phaseStr = "1"; stageStr = "一階"; }
+
+            labelEl.textContent = '🔥 目前狀態';
+            textEl.textContent = `第 ${phaseStr} 梯次 ${stageStr}開放中`;
+            
+            btn.className = 'btn-action btn-active';
+            btn.textContent = '前往劃位 ➜';
         }
 
         // ============================================================
