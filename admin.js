@@ -1815,12 +1815,13 @@ window.fetchSheetInfo = async function() {
         if(result.success) {
             window.fetchedSheetData = result.data;
             
-            const tabsList = document.getElementById('sheetTabsList');
-            tabsList.innerHTML = '';
+            const tabSelect = document.getElementById('sheetTabInput');
+            tabSelect.innerHTML = '<option value="">-- 選擇分頁 --</option>';
             result.data.tabs.forEach(tab => {
                 const opt = document.createElement('option');
                 opt.value = tab.name;
-                tabsList.appendChild(opt);
+                opt.textContent = tab.name;
+                tabSelect.appendChild(opt);
             });
             
             if(typeof Swal !== 'undefined') {
@@ -1862,17 +1863,17 @@ window.updateColumnDatalist = function() {
     const currentTab = document.getElementById('sheetTabInput').value.trim();
     const colsList = document.getElementById('sheetColsList');
     colsList.innerHTML = '';
-    
+
     const tabObj = window.fetchedSheetData.tabs.find(t => t.name === currentTab);
-    if(tabObj && tabObj.headers) {
-        tabObj.headers.forEach(h => {
-            if(h) {
-                const opt = document.createElement('option');
-                opt.value = h;
-                colsList.appendChild(opt);
-            }
-        });
-    }
+    // GAS 傳回的是 columns（非 headers）
+    const cols = (tabObj && tabObj.columns) ? tabObj.columns : (tabObj && tabObj.headers ? tabObj.headers : []);
+    cols.forEach(h => {
+        if(h) {
+            const opt = document.createElement('option');
+            opt.value = h;
+            colsList.appendChild(opt);
+        }
+    });
 };
 
 const bannersRef = ref(db, 'banners');

@@ -154,8 +154,9 @@
             <div style="margin-top:20px; padding:15px; background:#e8f4f8; border-radius:8px; border-left:5px solid #3498db; display:flex; flex-wrap:wrap; gap:10px; justify-content:center; align-items:center;">
                 <input type="text" id="sheetIdInput" placeholder="Google Sheet ID (必填)" style="padding:8px; width:220px;" title="請輸入試算表網址列的 /d/ 到 /edit 之間那串英文數字">
                 <button id="btnFetchSheetInfo" onclick="fetchSheetInfo()" class="btn-bear" style="margin:0; padding:8px 15px;">⬇️ 載入分頁與欄位</button>
-                <input type="text" id="sheetTabInput" list="sheetTabsList" placeholder="分頁名稱 (例如: 學生資料)" style="padding:8px; width:150px;" onchange="updateColumnDatalist()">
-                <datalist id="sheetTabsList"></datalist>
+                <select id="sheetTabInput" style="padding:8px; width:160px;" onchange="window.updateColumnDatalist()">
+                    <option value="">-- 選擇分頁 --</option>
+                </select>
                 <div style="display:flex; flex-wrap:wrap; gap:5px; background:rgba(255,255,255,0.5); padding:5px; border-radius:5px;">
                     <input type="text" id="matchCol1Input" list="sheetColsList" placeholder="比對欄位1 (預設: 姓名)" style="padding:8px; width:150px; font-size:12px;" title="對應試算表中的尋找欄位，預設為「姓名」">
                     <input type="text" id="matchCol2Input" list="sheetColsList" placeholder="比對欄位2 (預設: 家長電話)" style="padding:8px; width:160px; font-size:12px;" title="預設為「家長電話」或「電話」">
@@ -1251,7 +1252,7 @@
         </div>
     </div>
 
-    <script type="module" src="admin.js?v=202603110000"></script>
+    <script type="module" src="admin.js?v=202603110030"></script>
 
     <!-- ★★★ Auth Guard：頁面載入時立即驗證管理員身分 ★★★ -->
     <script type="module">
