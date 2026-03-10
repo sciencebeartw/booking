@@ -1748,14 +1748,17 @@ window.syncToGoogleSheet = async function() {
             title: '同步至 Google 試算表中...',
             html: `
                 <div style="margin:20px 0; display:flex; justify-content:center; align-items:center; flex-direction:column; gap:15px;">
-                    <div style="font-size: 50px; animation: bear-bounce 0.8s infinite alternate;">🚀</div>
-                    <div style="color:#555; font-size:15px; line-height:1.5;">系統正在為您寫入資料，請不要關閉視窗<br>這可能需要幾十秒鐘，請耐心等候...</div>
+                    <svg width="80" height="80" viewBox="0 0 100 100" xmlns="http://www.w3.org/2000/svg" style="animation: spin-atom 6s linear infinite;">
+                        <circle cx="50" cy="50" r="8" fill="#e74c3c" />
+                        <ellipse cx="50" cy="50" rx="40" ry="12" fill="none" stroke="#3498db" stroke-width="3" transform="rotate(30 50 50)" stroke-linecap="round" stroke-dasharray="150 100" style="animation: dash-orbit 2s linear infinite;" />
+                        <ellipse cx="50" cy="50" rx="40" ry="12" fill="none" stroke="#3498db" stroke-width="3" transform="rotate(90 50 50)" stroke-linecap="round" stroke-dasharray="150 100" style="animation: dash-orbit 2s linear infinite reverse;" />
+                        <ellipse cx="50" cy="50" rx="40" ry="12" fill="none" stroke="#e67e22" stroke-width="3" transform="rotate(150 50 50)" stroke-linecap="round" stroke-dasharray="150 100" style="animation: dash-orbit 2s linear infinite;" />
+                    </svg>
+                    <div style="color:#555; font-size:15px; line-height:1.5;">系統正在為您寫入資料，請不要關閉視窗<br><span style="font-size:13px; color:#888;">這可能需要幾十秒鐘，請耐心等候...</span></div>
                 </div>
                 <style>
-                    @keyframes bear-bounce { 
-                        0% { transform: translateY(0); } 
-                        100% { transform: translateY(-20px) scale(1.1); } 
-                    }
+                    @keyframes spin-atom { 100% { transform: rotate(360deg); } }
+                    @keyframes dash-orbit { 0% { stroke-dashoffset: 0; } 100% { stroke-dashoffset: 250; } }
                 </style>
             `,
             allowOutsideClick: false,
@@ -2307,6 +2310,9 @@ startZombieSweeper();
 window.initBillPage = function () {
     window.renderCourseConfig();
     window.processBills();
+    if(typeof window.refreshBillArchives === 'function') {
+        window.refreshBillArchives();
+    }
 };
 
 onValue(ref(db, 'print_layouts'), (snapshot) => {
