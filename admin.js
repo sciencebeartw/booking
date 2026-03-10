@@ -1794,7 +1794,24 @@ window.fetchSheetInfo = async function() {
             method: 'POST',
             body: JSON.stringify(payload)
         });
-        const result = await response.json();
+        // 先讀 text，再 parse JSON，避免 Safari 在非 JSON 回應時直接丟出神秘的 SyntaxError
+        let responseText = '';
+        try {
+            responseText = await response.text();
+        } catch(textErr) {
+            throw new Error('無法讀取 GAS 回應內容。請確認網路連線正常。');
+        }
+        // 若回應是 HTML（例如 Google 登入頁面），表示 GAS 未設定為公開存取
+        if (responseText.trim().startsWith('<!DOCTYPE') || responseText.trim().startsWith('<html')) {
+            throw new Error(`GAS 部署設定錯誤：回傳了 HTML 頁面（HTTP ${response.status}），\n請到 Google Apps Script → 部署 → 管理部署作業 → 網頁應用程式，確認「誰可以存取」設定為「所有人」（Anyone），不能是「只有登入的 Google 帳戶」。`);
+        }
+        // 嘗試 JSON.parse
+        let result;
+        try {
+            result = JSON.parse(responseText);
+        } catch(parseErr) {
+            throw new Error(`GAS 回傳非 JSON 資料（HTTP ${response.status}）：${responseText.substring(0, 150)}`);
+        }
         if(result.success) {
             window.fetchedSheetData = result.data;
             
