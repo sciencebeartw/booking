@@ -1758,20 +1758,24 @@ window.syncToGoogleSheet = async function() {
 window.fetchedSheetData = null;
 
 window.fetchSheetInfo = async function() {
-    const sheetId = document.getElementById('sheetIdInput').value.trim();
+    let sheetId = document.getElementById('sheetIdInput').value.trim();
+    // 若使用者貼入完整 Google Sheet URL，自動擷取 ID
+    if (sheetId.startsWith('http')) {
+        const m = sheetId.match(/\/spreadsheets\/d\/([a-zA-Z0-9_-]+)/);
+        if (m) { sheetId = m[1]; document.getElementById('sheetIdInput').value = sheetId; }
+    }
     if(!sheetId) {
         if(typeof Swal !== 'undefined') Swal.fire("錯誤", "請先輸入 Google Sheet ID！", "warning");
         return;
     }
-    let fetchUrl = gasWebhookUrl ? gasWebhookUrl.trim() : "";
+    let fetchUrl = (gasWebhookUrl || "").trim();
     if(!fetchUrl) {
         if(typeof Swal !== 'undefined') Swal.fire("錯誤", "尚未設定 GAS Webhook API 網址，請先至下方【系統設定】設定！", "error");
         return;
     }
-    try {
-        new URL(fetchUrl);
-        if (!fetchUrl.startsWith("http")) throw new Error("Not HTTP");
-    } catch(e) {
+    let _urlValid = false;
+    try { const _u = new URL(fetchUrl); _urlValid = (_u.protocol === 'https:' || _u.protocol === 'http:'); } catch(e) { _urlValid = false; }
+    if (!_urlValid) {
         if(typeof Swal !== 'undefined') Swal.fire("設定錯誤", "Webhook 網址格式不正確（必須是完整的 https://... 網址），請至【系統設定】重新確認！", "error");
         return;
     }
