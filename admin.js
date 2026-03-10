@@ -1094,7 +1094,8 @@ function renderTable() {
 }
 
 function populateAdvancedFilters(list) {
-    const filterSeat = document.getElementById('filter_seat');
+    const filterSeat = document.getElementById('filter_seatId');
+    if (!filterSeat) return;
     const currentSeatSel = filterSeat.value;
     
     const uniqueSeats = [...new Set(list.map(b => b.seatId))].filter(Boolean).sort();
@@ -1585,7 +1586,7 @@ if(document.getElementById('filter_status')) {
 // 試算表同步相關
 document.addEventListener('DOMContentLoaded', () => {
     if(document.getElementById('sheetIdInput')) {
-        document.getElementById('sheetIdInput').value = localStorage.getItem('bear_sync_sheetId') || '';
+        document.getElementById('sheetIdInput').value = localStorage.getItem('bear_sync_sheetId') || '1T8IRQYUXVLPE-X-ToeFhU1sqmSiI-aqWoTUVfJxQOWk';
         document.getElementById('sheetTabInput').value = localStorage.getItem('bear_sync_tabName') || '';
         document.getElementById('sheetColumnInput').value = localStorage.getItem('bear_sync_columnName') || '';
         document.getElementById('matchCol1Input').value = localStorage.getItem('bear_sync_matchCol1') || '';
