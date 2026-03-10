@@ -1821,7 +1821,10 @@ window.fetchSheetInfo = async function() {
             if(typeof Swal !== 'undefined') Swal.fire("讀取失敗", result.msg || "未知錯誤", "error");
         }
     } catch(err) {
-        if(typeof Swal !== 'undefined') Swal.fire("發生錯誤", err.message, "error");
+        // 防止 Safari 的原始錯誤字串被直接展示給使用者
+        const displayMsg = (err.message && err.message.length < 80) ? err.message : '';
+        const hint = displayMsg && !displayMsg.includes('pattern') ? displayMsg : '請先至《系統設定》確認 GAS Webhook 網址是否完整（需含 https://），否則請檢查網路連線。';
+        if(typeof Swal !== 'undefined') Swal.fire("載入失敗", hint, "error");
     } finally {
         btn.innerHTML = originalText;
         btn.disabled = false;
@@ -2548,13 +2551,12 @@ window.deleteBillArchive = async function() {
 };
 
 /** 一鍵傳送完成後，自動儲存本次快照至 Firebase */
-window.saveBillArchive = async function(sentClasses) {
+window.saveBillArchive = async function(sentClasses, customLabel) {
     if (!billStudents || billStudents.length === 0) return;
     const ts = String(Date.now());
     const dt = new Date();
-    const label = dt.toLocaleString('zh-TW', { year: 'numeric', month: '2-digit', day: '2-digit', hour: '2-digit', minute: '2-digit' }) + ' 傳送存檔';
+    const defaultLabel = dt.toLocaleString('zh-TW', { year: 'numeric', month: '2-digit', day: '2-digit', hour: '2-digit', minute: '2-digit' }) + ' 存檔';
 
-    // 快照：用 phone___name 作為 key，存目前的 items 版本
     const students = {};
     billStudents.forEach(s => {
         const key = `${s.phone}___${s.name}`;
@@ -2563,24 +2565,72 @@ window.saveBillArchive = async function(sentClasses) {
 
     const archiveData = {
         sentAt: Date.now(),
-        label: label,
+        label: customLabel || defaultLabel,
         classes: sentClasses || [],
         students: students
     };
 
     try {
         await set(ref(db, `bill_sent/${ts}`), archiveData);
-        console.log(`[存檔] 已儲存本次傳送快照：${ts}`);
-        // 更新下拉選單
         await window.refreshBillArchives();
-        // 自動選取剛存的
         const sel = document.getElementById('billArchiveSelector');
         if (sel) sel.value = ts;
         await window.loadBillArchive();
+        return ts;
     } catch(e) {
         console.warn('[存檔] 儲存失敗：', e.message);
+        throw e;
     }
 };
+
+/** 手動存檔：彈出確認並讓使用者輸入備注名稱 */
+window.manualSaveBillArchive = async function() {
+    if (!billStudents || billStudents.length === 0) {
+        if(typeof Swal !== 'undefined') Swal.fire("提示", "目前沒有學費單資料可存檔，請先產生學費單。", "info");
+        return;
+    }
+
+    // 取得目前勾選的班級用作標籤建議
+    const checkedClasses = Object.keys(coursesData).filter(key => {
+        const cb = document.getElementById(`bill_check_${key}`);
+        return cb && cb.checked;
+    }).map(key => {
+        const c = coursesData[key];
+        return c ? `[${c.grade}] ${c.subject}` : key;
+    });
+
+    const dt = new Date();
+    const defaultLabel = dt.toLocaleString('zh-TW', { year: 'numeric', month: '2-digit', day: '2-digit', hour: '2-digit', minute: '2-digit' }) + ' 手動存檔';
+
+    let archiveLabel = defaultLabel;
+    if (typeof Swal !== 'undefined') {
+        const { value, isConfirmed } = await Swal.fire({
+            title: '💾 手動存檔',
+            html: `<div style="text-align:left;font-size:14px; margin-bottom:8px;">為這筆存檔設定一個名稱（可用來記錄是第幾梯次、第幾次）：</div>`,
+            input: 'text',
+            inputValue: defaultLabel,
+            inputPlaceholder: '例如：2026/03/10 第一梯次第一階段',
+            showCancelButton: true,
+            confirmButtonText: '💾 存檔',
+            cancelButtonText: '取消',
+            inputValidator: (v) => !v.trim() ? '請輸入存檔名稱！' : null
+        });
+        if (!isConfirmed) return;
+        archiveLabel = value.trim();
+    }
+
+    const infoDiv = document.getElementById('billArchiveInfo');
+    if (infoDiv) infoDiv.textContent = '⏳ 存檔中...';
+
+    try {
+        await window.saveBillArchive(checkedClasses, archiveLabel);
+        if (infoDiv) infoDiv.innerHTML = `✅ 已存檔「<strong>${archiveLabel}</strong>」（共 ${billStudents.length} 人快照）。`;
+        if(typeof Swal !== 'undefined') Swal.fire({ title: '存檔成功！', icon: 'success', timer: 1500, showConfirmButton: false });
+    } catch(e) {
+        if (infoDiv) infoDiv.textContent = '❌ 存檔失敗：' + e.message;
+    }
+};
+
 
 function formatBillDate(dateStr, count) {
     let html = "";
@@ -2906,10 +2956,15 @@ window.sendAllBillsToLine = async function () {
 
     if (typeof Swal !== 'undefined') {
         Swal.fire({
-            title: '大批學費單產生與傳送中...',
-            html: '正在對接山熊魔法通道，請勿關閉網頁 🚀',
+            title: '🚀 大批學費單產生與傳送中...',
+            html: `
+                <div style="font-size:16px; color:#2c3e50; margin-bottom:12px;" id="swal-bill-status">正在處理第 <b>1</b> / ${selectedBills.length} 張學費單...</div>
+                <div style="width:100%;height:8px;background:#eee;border-radius:4px;overflow:hidden;margin-bottom:12px;">
+                    <div id="swal-bill-bar" style="height:100%;width:0%;background:linear-gradient(90deg,#27ae60,#2ecc71);border-radius:4px;transition:width 0.4s ease;"></div>
+                </div>
+                <div style="font-size:13px;color:#888;">請勿關閉網頁 ⚡ 正在對接山熊魔法通道</div>`,
             allowOutsideClick: false,
-            didOpen: () => { Swal.showLoading(); }
+            showConfirmButton: false
         });
     }
 
@@ -2987,15 +3042,11 @@ window.sendAllBillsToLine = async function () {
 
     if (barText) barText.innerText = `✅ 發送完畢 (${selectedBills.length} / ${selectedBills.length})`;
 
-    // ★★★ 自動儲存本次傳送的存檔快照 ★★★
-    const checkedClasses = Object.keys(coursesData).filter(key => {
-        const cb = document.getElementById(`bill_check_${key}`);
-        return cb && cb.checked;
-    }).map(key => {
-        const c = coursesData[key];
-        return c ? `[${c.grade}] ${c.subject}` : key;
-    });
-    window.saveBillArchive(checkedClasses);
+    // ★★★ 傳送完成後提醒手動存檔 ★★★
+    const infoDiv = document.getElementById('billArchiveInfo');
+    if (infoDiv) {
+        infoDiv.innerHTML = '✅ 傳送完成！<br>如需記錄本次傳送當作下次比對基準，請點上方的 <strong>💾 手動存檔</strong> 按鈕。';
+    }
 
     // 發送完成結果報告
     if (typeof Swal !== 'undefined') {

@@ -894,8 +894,9 @@
                 <select id="billArchiveSelector" style="padding:6px 10px; font-size:14px; border:2px solid #3498db; border-radius:5px; min-width:280px;" onchange="window.loadBillArchive()">
                     <option value="">— 不做比對（直接顯示全部）—</option>
                 </select>
-                <button onclick="window.refreshBillArchives()" class="btn-bear" style="padding:6px 15px; font-size:13px; margin:0;">🔄 重新載入存檔清單</button>
-                <button onclick="window.deleteBillArchive()" class="danger" style="padding:6px 12px; font-size:13px; margin:0;">🗑️ 刪除此存檔</button>
+                <button onclick="window.refreshBillArchives()" class="btn-bear" style="padding:6px 15px; font-size:13px; margin:0;">🔄 重新載入清單</button>
+                <button onclick="window.manualSaveBillArchive()" style="padding:6px 14px; font-size:13px; margin:0; background:#27ae60; color:white; border:none; border-radius:5px; cursor:pointer; font-weight:bold;">💾 手動存檔</button>
+                <button onclick="window.deleteBillArchive()" class="danger" style="padding:6px 12px; font-size:13px; margin:0;">🗑️ 刪除存檔</button>
             </div>
             <div id="billArchiveInfo" style="font-size:13px; color:#666; margin-bottom:10px; min-height:20px;"></div>
 
@@ -1235,7 +1236,7 @@
         </div>
     </div>
 
-    <script type="module" src="admin.js?v=202603102150"></script>
+    <script type="module" src="admin.js?v=202603102200"></script>
 
     <!-- ★★★ Auth Guard：頁面載入時立即驗證管理員身分 ★★★ -->
     <script type="module">
