@@ -5954,11 +5954,29 @@ async function triggerBatchSend(containerId, buttonId) {
     if (barEl) {
         barEl.style.display = 'block';
         barEl.innerHTML = `
-            <div style="font-size:16px; font-weight:bold; color:#2c3e50; margin-bottom:10px;">
-                🚀 發送進度：<span id="${barId}-text">0 / ${cards.length}</span>
-            </div>
-            <div style="width:100%; height:20px; background:#eee; border-radius:10px; overflow:hidden;">
-                <div id="${barId}-fill" style="width:0%; height:100%; background:#2ecc71; transition:width 0.3s;"></div>
+            <div style="margin:10px 0; display:flex; justify-content:center; align-items:center; flex-direction:column; gap:15px; background:#fff; padding:20px; border-radius:10px; border:2px solid #ecf0f1; box-shadow:0 4px 15px rgba(0,0,0,0.05);">
+                <svg width="80" height="80" viewBox="0 0 100 100" xmlns="http://www.w3.org/2000/svg">
+                    <style>
+                        @keyframes flyEnvelope { 0% { transform: translate(0px, 10px) rotate(-10deg); opacity: 0; } 20% { opacity: 1; transform: translate(15px, -5px) rotate(5deg); } 80% { opacity: 1; transform: translate(40px, -20px) rotate(15deg); } 100% { transform: translate(50px, -25px) rotate(20deg); opacity: 0; } }
+                        @keyframes spark { 0% { opacity: 0.2; transform: scale(0.8); } 50% { opacity: 1; transform: scale(1.2); } 100% { opacity: 0.2; transform: scale(0.8); } }
+                    </style>
+                    <circle cx="50" cy="50" r="45" fill="#f4f6f7" />
+                    <g style="animation: flyEnvelope 2s ease-in-out infinite;">
+                        <path d="M 20,40 L 60,40 L 60,65 L 20,65 Z" fill="#fff" stroke="#3498db" stroke-width="3" stroke-linejoin="round"/>
+                        <path d="M 20,40 L 40,55 L 60,40" fill="none" stroke="#e74c3c" stroke-width="3" stroke-linejoin="round"/>
+                        <rect x="25" y="45" width="8" height="6" fill="#f1c40f" />
+                    </g>
+                    <g fill="#27ae60">
+                        <circle cx="75" cy="25" r="3" style="animation: spark 1.5s infinite 0s;" />
+                        <circle cx="85" cy="40" r="4" style="animation: spark 1.5s infinite 0.5s;" />
+                        <circle cx="70" cy="55" r="2" style="animation: spark 1.5s infinite 1s;" />
+                    </g>
+                </svg>
+                <div style="font-size:20px; font-weight:bold; color:#2c3e50;">大批通知傳送中...</div>
+                <div style="font-size:15px; color:#2c3e50; font-weight:bold;">發送進度：<span id="${barId}-text">0 / ${cards.length}</span></div>
+                <div style="width:100%; height:10px; background:#eee; border-radius:5px; overflow:hidden; margin-top:5px;">
+                    <div id="${barId}-fill" style="width:0%; height:100%; background:linear-gradient(90deg,#27ae60,#2ecc71); transition:width 0.3s ease;"></div>
+                </div>
             </div>`;
     }
     if (reportEl) {
