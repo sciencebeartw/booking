@@ -206,10 +206,22 @@ let currentEditorLayout = [];
 let isEditorLocked = false;
 
 window.switchTab = function (tabName) {
+    window.currentTabId = tabName;
     document.querySelectorAll('.page-section').forEach(el => el.classList.remove('active'));
     document.querySelectorAll('.nav-tabs button').forEach(el => el.classList.remove('active'));
-    document.getElementById(`tab-${tabName}`).classList.add('active');
-    event.target.classList.add('active');
+    
+    const tabEl = document.getElementById(`tab-${tabName}`);
+    if (tabEl) tabEl.classList.add('active');
+    
+    if (window.event && window.event.target && window.event.target.tagName === 'BUTTON') {
+        window.event.target.classList.add('active');
+    }
+    
+    if (tabName === 'monitor' || tabName === 'multisync') {
+        renderTable();
+        if (tabName === 'monitor') loadVisualMap();
+    }
+    
     if (tabName === 'bills') initBillPage();
     if (tabName === 'print') initPrintPage();
     if (tabName === 'trial_events') renderTrialEventsList();
@@ -965,41 +977,53 @@ window.sortBookingTable = function (col) {
     renderTable();
 };
 
-window.applyAdvancedFilters = function() {
+window.applyAdvancedFilters = function(isMulti = false) {
     renderTable();
 };
 
-window.clearAdvancedFilters = function() {
-    if(document.getElementById('filter_status')) document.getElementById('filter_status').value = '';
-    if(document.getElementById('filter_courseName')) document.getElementById('filter_courseName').value = '';
-    if(document.getElementById('filter_time')) document.getElementById('filter_time').value = '';
-    if(document.getElementById('filter_seatId')) document.getElementById('filter_seatId').value = '';
-    if(document.getElementById('filter_studentName')) document.getElementById('filter_studentName').value = '';
-    if(document.getElementById('filter_parentPhone')) document.getElementById('filter_parentPhone').value = '';
-    if(document.getElementById('filter_isOldStudent')) document.getElementById('filter_isOldStudent').value = '';
-    if(document.getElementById('filter_userEmail')) document.getElementById('filter_userEmail').value = '';
+window.clearAdvancedFilters = function(isMulti = false) {
+    const prefix = isMulti ? 'multi_' : '';
+    if(document.getElementById(prefix + 'filter_status')) document.getElementById(prefix + 'filter_status').value = '';
+    if(document.getElementById(prefix + 'filter_courseName')) document.getElementById(prefix + 'filter_courseName').value = '';
+    if(document.getElementById(prefix + 'filter_time')) document.getElementById(prefix + 'filter_time').value = '';
+    if(document.getElementById(prefix + 'filter_seatId')) document.getElementById(prefix + 'filter_seatId').value = '';
+    if(document.getElementById(prefix + 'filter_studentName')) document.getElementById(prefix + 'filter_studentName').value = '';
+    if(document.getElementById(prefix + 'filter_parentPhone')) document.getElementById(prefix + 'filter_parentPhone').value = '';
+    if(document.getElementById(prefix + 'filter_isOldStudent')) document.getElementById(prefix + 'filter_isOldStudent').value = '';
+    if(document.getElementById(prefix + 'filter_userEmail')) document.getElementById(prefix + 'filter_userEmail').value = '';
     renderTable();
 };
 
 function renderTable() {
-    const searchText = document.getElementById('searchInput').value.trim().toLowerCase();
+    const isMultiMode = window.currentTabId === 'multisync';
+    const activeClasses = isMultiMode ? multiSelectedClasses : (() => {
+        const sel = document.getElementById('classSelector');
+        return (sel && sel.value !== 'all') ? [sel.value] : [];
+    })();
+
+    const prefix = isMultiMode ? 'multi_' : '';
+    const tbodyId = isMultiMode ? 'multiBookingTable' : 'bookingTable';
+
+    const searchInput = document.getElementById(prefix + 'searchInput');
+    const searchText = searchInput ? searchInput.value.trim().toLowerCase() : '';
     
     // 進階過濾欄位
-    const filterStatus = document.getElementById('filter_status') ? document.getElementById('filter_status').value : '';
-    const filterCourseName = document.getElementById('filter_courseName') ? document.getElementById('filter_courseName').value : '';
-    const filterTime = document.getElementById('filter_time') ? document.getElementById('filter_time').value : '';
-    const filterSeat = document.getElementById('filter_seatId') ? document.getElementById('filter_seatId').value : '';
-    const filterName = document.getElementById('filter_studentName') ? document.getElementById('filter_studentName').value.trim().toLowerCase() : '';
-    const filterPhone = document.getElementById('filter_parentPhone') ? document.getElementById('filter_parentPhone').value.trim().toLowerCase() : '';
-    const filterIsOldStudent = document.getElementById('filter_isOldStudent') ? document.getElementById('filter_isOldStudent').value : '';
-    const filterEmail = document.getElementById('filter_userEmail') ? document.getElementById('filter_userEmail').value.trim().toLowerCase() : '';
+    const filterStatus = document.getElementById(prefix + 'filter_status') ? document.getElementById(prefix + 'filter_status').value : '';
+    const filterCourseName = document.getElementById(prefix + 'filter_courseName') ? document.getElementById(prefix + 'filter_courseName').value : '';
+    const filterTime = document.getElementById(prefix + 'filter_time') ? document.getElementById(prefix + 'filter_time').value : '';
+    const filterSeat = document.getElementById(prefix + 'filter_seatId') ? document.getElementById(prefix + 'filter_seatId').value : '';
+    const filterName = document.getElementById(prefix + 'filter_studentName') ? document.getElementById(prefix + 'filter_studentName').value.trim().toLowerCase() : '';
+    const filterPhone = document.getElementById(prefix + 'filter_parentPhone') ? document.getElementById(prefix + 'filter_parentPhone').value.trim().toLowerCase() : '';
+    const filterIsOldStudent = document.getElementById(prefix + 'filter_isOldStudent') ? document.getElementById(prefix + 'filter_isOldStudent').value : '';
+    const filterEmail = document.getElementById(prefix + 'filter_userEmail') ? document.getElementById(prefix + 'filter_userEmail').value.trim().toLowerCase() : '';
     
-    const tbody = document.getElementById('bookingTable');
+    const tbody = document.getElementById(tbodyId);
+    if (!tbody) return;
     tbody.innerHTML = "";
 
     let displayList = allBookings.filter(b => {
-        // 班級過濾：如果有多選班級，只顯示選中的班級；如果都沒選，預設顯示全部。
-        if (currentSelectedClasses.length > 0 && !currentSelectedClasses.includes(b.courseId)) return false;
+        // 班級過濾
+        if (activeClasses.length > 0 && !activeClasses.includes(b.courseId)) return false;
         
         // 全域搜尋過濾
         if (searchText && !b.studentName.toLowerCase().includes(searchText) && !b.parentPhone.includes(searchText) && !b.orderId.toLowerCase().includes(searchText)) return false;
@@ -1030,17 +1054,13 @@ function renderTable() {
     });
 
     const nameCounts = {};
-    // ✅ 新增邏輯：跨班級抓取重複報名的學生，只要是 sold 都計數
     displayList.forEach(b => {
         if (b.status === 'sold') {
-            // 如果是多選班級，我們計算「名字出現幾次」來抓出同時報名多班的家長
-            // 否則，同一班級內通常不允許名字重複，但可以維持原本邏輯加上 courseId
-            const countKey = currentSelectedClasses.length > 1 ? b.studentName : (b.courseId + '_' + b.studentName);
+            const countKey = activeClasses.length > 1 ? b.studentName : (b.courseId + '_' + b.studentName);
             nameCounts[countKey] = (nameCounts[countKey] || 0) + 1;
         }
     });
 
-    // 動態重複調色盤：用名字算出專屬背景色，保證同一人顏色一樣，不同群組顏色不同。
     const duplicatePalette = ['#ffe6e6', '#e6f2ff', '#e6ffe6', '#fffada', '#f2e6ff', '#ffebe6'];
     const getColorForName = (name) => {
         let hash = 0;
@@ -1059,11 +1079,10 @@ function renderTable() {
         let recoverBtnHtml = '';
         if (b.status === 'sold') {
             statusBadge = '<span class="badge sold">已劃位</span>';
-            const countKey = currentSelectedClasses.length > 1 ? b.studentName : (b.courseId + '_' + b.studentName);
+            const countKey = activeClasses.length > 1 ? b.studentName : (b.courseId + '_' + b.studentName);
             
             if (nameCounts[countKey] > 1) {
-                // 如果是多個班級且偵測到重複，使用高亮黃色並加上粗體提示，否則使用預設調色盤
-                if (currentSelectedClasses.length > 1) {
+                if (activeClasses.length > 1) {
                     tr.style.backgroundColor = '#fff3cd'; // 醒目的黃底色
                     tr.style.fontWeight = 'bold';
                     tr.style.border = '2px solid #ffeeba';
@@ -1092,16 +1111,27 @@ function renderTable() {
     });
     
     populateAdvancedFilters(allBookings.filter(b => {
-        // 更新過濾選項內容時，只看目前選中的班級
-        if (currentSelectedClasses.length > 0 && !currentSelectedClasses.includes(b.courseId)) return false;
+        if (activeClasses.length > 0 && !activeClasses.includes(b.courseId)) return false;
         if (searchText && !b.studentName.toLowerCase().includes(searchText) && !b.parentPhone.includes(searchText) && !b.orderId.toLowerCase().includes(searchText)) return false;
         return true;
-    }));
+    }), prefix);
+
+    // Update status bar texts
+    if (!isMultiMode) {
+        document.getElementById('totalSold').textContent = displayList.filter(b => b.status === 'sold').length;
+        const sel = document.getElementById('classSelector');
+        document.getElementById('currentClassName').textContent = (sel && sel.value !== 'all' && coursesData[sel.value]) ? `[${coursesData[sel.value].grade}] ${coursesData[sel.value].subject}` : '所有課程';
+    } else {
+        const nameSpan = document.getElementById('multiCurrentClassName');
+        if (nameSpan) {
+            nameSpan.textContent = activeClasses.length > 0 ? activeClasses.map(id => coursesData[id] ? coursesData[id].subject : id).join(', ') : '無';
+        }
+    }
 }
 
-function populateAdvancedFilters(list) {
+function populateAdvancedFilters(list, prefix = '') {
     const populateSelect = (id, mapper, labelMapper = null) => {
-        const el = document.getElementById(id);
+        const el = document.getElementById(prefix + id);
         if (!el || el.tagName !== 'SELECT') return;
         const currentSel = el.value;
         const uniques = [...new Set(list.map(mapper))].filter(Boolean).sort();
@@ -1125,17 +1155,16 @@ window.loadVisualMap = function () {
     const mapContainer = document.getElementById('visualMap');
     const mapContent = document.getElementById('mapContent');
 
-    // 視覺地圖只在「剛好選取 1 個班級」的時候才會正常顯示圖形！
-    // 多選的時候我們就把地圖隱藏，因為教室座位不相容！
-    if (currentSelectedClasses.length !== 1 || !coursesData[currentSelectedClasses[0]]) {
-        mapContainer.style.display = 'none';
+    const sel = document.getElementById('classSelector');
+    const courseId = sel ? sel.value : 'all';
+
+    if (courseId === 'all' || !coursesData[courseId]) {
+        if(mapContainer) mapContainer.style.display = 'none';
         return;
     }
 
-    const courseId = currentSelectedClasses[0];
-    mapContainer.style.display = 'block';
-    mapContent.innerHTML = "";
-
+    if(mapContainer) mapContainer.style.display = 'block';
+    if(mapContent) mapContent.innerHTML = "";
 
     const c = coursesData[courseId];
     let layoutToRender = [];
@@ -1369,7 +1398,7 @@ window.confirmOpSell = function () {
     }).catch(err => alert("失敗：" + err.message));
 };
 
-let currentSelectedClasses = [];
+let multiSelectedClasses = [];
 
 function updateClassSelector() {
     const optionsData = Object.keys(coursesData).map(k => `${k}-${coursesData[k].grade}-${coursesData[k].subject}-${coursesData[k].classType}`).join('|');
@@ -1377,53 +1406,59 @@ function updateClassSelector() {
     currentClassSelectorStr = optionsData;
 
     const selector = document.getElementById('classSelector');
-    const currentVal = selector.value;
-    selector.innerHTML = '<option value="all">選擇班級加入監看...</option>';
+    const multiSelector = document.getElementById('multiClassSelector');
+    const currentVal = selector ? selector.value : 'all';
+    const multiCurrentVal = multiSelector ? multiSelector.value : 'all';
+    
+    let optionsArray = [];
     Object.keys(coursesData).forEach(key => {
         const c = coursesData[key];
-        const option = document.createElement('option');
-        option.value = key;
-        option.textContent = `[${c.grade}] ${c.subject} ${c.classType || ''}`;
-        selector.appendChild(option);
+        optionsArray.push(`<option value="${key}">[${c.grade}] ${c.subject} ${c.classType || ''}</option>`);
     });
-    selector.value = currentVal;
+    
+    if (selector) { 
+        selector.innerHTML = '<option value="all">全部課程總覽</option>' + optionsArray.join(''); 
+        selector.value = currentVal; 
+    }
+    if (multiSelector) { 
+        multiSelector.innerHTML = '<option value="all">選擇課程加入檢視</option>' + optionsArray.join(''); 
+        multiSelector.value = multiCurrentVal; 
+    }
 }
 
 window.addSelectedClass = function() {
-    const selector = document.getElementById('classSelector');
+    const selector = document.getElementById('multiClassSelector');
+    if(!selector) return;
     const courseId = selector.value;
-    if (courseId !== 'all' && !currentSelectedClasses.includes(courseId)) {
-        if (currentSelectedClasses.length >= 5) {
-            alert("⚠️ 最多只能同時監看 5 個班級！");
+    if (courseId !== 'all' && !multiSelectedClasses.includes(courseId)) {
+        if (multiSelectedClasses.length >= 20) {
+            alert("⚠️ 最多只能同時監看 20 個班級！");
             return;
         }
-        currentSelectedClasses.push(courseId);
+        multiSelectedClasses.push(courseId);
         renderSelectedClasses();
         renderTable();
-        loadVisualMap();
     }
     selector.value = 'all'; // 重置選單
 };
 
 window.removeSelectedClass = function(courseId) {
-    currentSelectedClasses = currentSelectedClasses.filter(id => id !== courseId);
+    multiSelectedClasses = multiSelectedClasses.filter(id => id !== courseId);
     renderSelectedClasses();
     renderTable();
-    loadVisualMap();
 };
 
 window.clearSelectedClasses = function() {
-    currentSelectedClasses = [];
+    multiSelectedClasses = [];
     renderSelectedClasses();
     renderTable();
-    loadVisualMap();
 };
 
 function renderSelectedClasses() {
-    const container = document.getElementById('selectedClassesContainer');
+    const container = document.getElementById('multiClassTagsContainer');
     if (!container) return;
     container.innerHTML = '';
-    currentSelectedClasses.forEach(id => {
+    multiSelectedClasses.forEach(id => {
         const c = coursesData[id];
         if (!c) return;
         const tag = document.createElement('span');
@@ -1582,9 +1617,15 @@ function downloadCSV(content, fileName) {
     link.click();
 }
 
-// 監聽 Class Selector 的 change 不再直接 render，而是給 Add 按鈕觸發
-// 不過為了防止使用者操作有誤，不綁定 onchange，依賴 Add 按鈕
+document.getElementById('classSelector').addEventListener('change', () => {
+    renderTable();
+    loadVisualMap();
+});
+
 document.getElementById('searchInput').addEventListener('input', renderTable);
+if (document.getElementById('multiSearchInput')) {
+    document.getElementById('multiSearchInput').addEventListener('input', renderTable);
+}
 // 進階過濾器的 event listener
 if(document.getElementById('filter_status')) {
     document.getElementById('filter_status').addEventListener('change', window.applyAdvancedFilters);

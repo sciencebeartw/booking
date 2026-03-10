@@ -42,6 +42,7 @@
         <div class="nav-tabs">
             <div class="nav-tab-row">
                 <button class="active" onclick="switchTab('monitor')">📊 劃位監控</button>
+                <button onclick="switchTab('multisync')">🔄 多班檢視與同步</button>
                 <button onclick="switchTab('waitlist')">📋 候補名單</button>
                 <button onclick="switchTab('courses')">📝 課程管理</button>
                 <button onclick="switchTab('classrooms')">🏫 教室預覽</button>
@@ -75,12 +76,8 @@
                 <select id="classSelector" class="big-selector" style="max-width:300px;">
                     <option value="all">全部課程總覽</option>
                 </select>
-                <button onclick="window.addSelectedClass()" class="success" style="padding: 10px 15px; font-size: 14px; margin:0;">➕ 加入檢視</button>
-                <button onclick="window.clearSelectedClasses()" class="warning" style="padding: 10px 15px; font-size: 14px; margin:0;">🧹 清除</button>
             </div>
-            <div id="multiClassTagsContainer" style="display:flex; flex-wrap:wrap; gap:10px; justify-content:center; margin-bottom:15px; min-height:30px;">
-                <!-- 所選班級標籤將顯示於此 -->
-            </div>
+            
             <div id="visualMap" class="visual-map-container">
                 <div
                     style="display: flex; justify-content: center; align-items: center; gap: 15px; margin-bottom: 15px;">
@@ -97,20 +94,6 @@
                 <button onclick="exportBookingCSV()" class="success">📥 匯出 Excel</button>
                 <button onclick="generateCourseTestData()" class="dark">🎲 產生測試資料</button>
                 <button onclick="clearCourseTestData()" class="danger">🗑️ 清除測試資料</button>
-            </div>
-            
-            <div style="margin-top:10px; padding:15px; background:#fdf2e9; border-radius:8px; border-left:5px solid #e67e22; display:flex; flex-wrap:wrap; gap:10px; justify-content:center; align-items:center;">
-                <input type="text" id="sheetIdInput" placeholder="Google Sheet ID (必填)" style="padding:8px; width:220px;" title="請輸入試算表網址列的 /d/ 到 /edit 之間那串英文數字">
-                <button id="btnFetchSheetInfo" onclick="fetchSheetInfo()" class="btn-bear" style="margin:0; padding:8px 15px;">⬇️ 載入分頁與欄位</button>
-                <input type="text" id="sheetTabInput" list="sheetTabsList" placeholder="分頁名稱 (例如: 學生資料)" style="padding:8px; width:150px;" onchange="updateColumnDatalist()">
-                <datalist id="sheetTabsList"></datalist>
-                <div style="display:flex; flex-wrap:wrap; gap:5px; background:rgba(255,255,255,0.5); padding:5px; border-radius:5px;">
-                    <input type="text" id="matchCol1Input" list="sheetColsList" placeholder="比對欄位1 (預設: 姓名)" style="padding:8px; width:150px; font-size:12px;" title="對應試算表中的尋找欄位，預設為「姓名」">
-                    <input type="text" id="matchCol2Input" list="sheetColsList" placeholder="比對欄位2 (預設: 家長電話)" style="padding:8px; width:160px; font-size:12px;" title="預設為「家長電話」或「電話」">
-                </div>
-                <input type="text" id="sheetColumnInput" list="sheetColsList" placeholder="寫入欄位 (例如: 115國一生物)" style="padding:8px; width:180px;">
-                <datalist id="sheetColsList"></datalist>
-                <button onclick="syncToGoogleSheet()" class="warning" style="margin:0; padding:8px 15px;">🔗 同步至試算表 (GAS)</button>
             </div>
         </div>
         <div class="table-container">
@@ -129,19 +112,85 @@
                         <th>操作</th>
                     </tr>
                     <tr id="tableFilterRow" style="background:#f4f6f7;">
-                        <th><input type="text" id="filter_orderId" placeholder="篩選..." style="width:90%; padding:2px;" onkeyup="applyAdvancedFilters()"></th>
-                        <th><select id="filter_courseName" style="width:100%; padding:2px;" onchange="applyAdvancedFilters()"><option value="">全部</option></select></th>
-                        <th><select id="filter_time" style="width:100%; padding:2px;" onchange="applyAdvancedFilters()"><option value="">全部</option></select></th>
-                        <th><select id="filter_status" style="width:100%; padding:2px;" onchange="applyAdvancedFilters()"><option value="">全部</option></select></th>
-                        <th><select id="filter_seatId" style="width:100%; padding:2px;" onchange="applyAdvancedFilters()"><option value="">全部</option></select></th>
-                        <th><input type="text" id="filter_studentName" placeholder="篩選..." style="width:90%; padding:2px;" onkeyup="applyAdvancedFilters()"></th>
-                        <th><input type="text" id="filter_parentPhone" placeholder="篩選..." style="width:90%; padding:2px;" onkeyup="applyAdvancedFilters()"></th>
-                        <th><select id="filter_isOldStudent" style="width:100%; padding:2px;" onchange="applyAdvancedFilters()"><option value="">全部</option><option value="是">是</option><option value="否">否</option></select></th>
-                        <th><input type="text" id="filter_userEmail" placeholder="篩選..." style="width:90%; padding:2px;" onkeyup="applyAdvancedFilters()"></th>
-                        <th><button onclick="clearAdvancedFilters()" style="padding:2px 5px; font-size:12px; background:#e74c3c; color:white; border:none; cursor:pointer;">清除過濾</button></th>
+                        <th><input type="text" id="filter_orderId" placeholder="篩選..." style="width:90%; padding:2px;" onkeyup="applyAdvancedFilters(false)"></th>
+                        <th><select id="filter_courseName" style="width:100%; padding:2px;" onchange="applyAdvancedFilters(false)"><option value="">全部</option></select></th>
+                        <th><select id="filter_time" style="width:100%; padding:2px;" onchange="applyAdvancedFilters(false)"><option value="">全部</option></select></th>
+                        <th><select id="filter_status" style="width:100%; padding:2px;" onchange="applyAdvancedFilters(false)"><option value="">全部</option></select></th>
+                        <th><select id="filter_seatId" style="width:100%; padding:2px;" onchange="applyAdvancedFilters(false)"><option value="">全部</option></select></th>
+                        <th><input type="text" id="filter_studentName" placeholder="篩選..." style="width:90%; padding:2px;" onkeyup="applyAdvancedFilters(false)"></th>
+                        <th><input type="text" id="filter_parentPhone" placeholder="篩選..." style="width:90%; padding:2px;" onkeyup="applyAdvancedFilters(false)"></th>
+                        <th><select id="filter_isOldStudent" style="width:100%; padding:2px;" onchange="applyAdvancedFilters(false)"><option value="">全部</option><option value="是">是</option><option value="否">否</option></select></th>
+                        <th><input type="text" id="filter_userEmail" placeholder="篩選..." style="width:90%; padding:2px;" onkeyup="applyAdvancedFilters(false)"></th>
+                        <th><button onclick="clearAdvancedFilters(false)" style="padding:2px 5px; font-size:12px; background:#e74c3c; color:white; border:none; cursor:pointer;">清除過濾</button></th>
                     </tr>
                 </thead>
                 <tbody id="bookingTable"></tbody>
+            </table>
+        </div>
+    </div>
+
+    <div id="tab-multisync" class="page-section">
+        <div class="center-box">
+            <h2 style="margin-top:0; color:#2c3e50;">🔄 多班檢視與同步 (跨班重複比對)</h2>
+            <div style="display:flex; justify-content:center; gap:10px; align-items:center; margin-bottom: 10px;">
+                <select id="multiClassSelector" class="big-selector" style="max-width:300px;">
+                    <option value="all">選擇課程加入檢視</option>
+                </select>
+                <button onclick="window.addSelectedClass()" class="success" style="padding: 10px 15px; font-size: 14px; margin:0;">➕ 加入檢視</button>
+                <button onclick="window.clearSelectedClasses()" class="warning" style="padding: 10px 15px; font-size: 14px; margin:0;">🧹 清除</button>
+            </div>
+            <div id="multiClassTagsContainer" style="display:flex; flex-wrap:wrap; gap:10px; justify-content:center; margin-bottom:15px; min-height:30px;">
+                <!-- 所選班級標籤將顯示於此 -->
+            </div>
+            <div style="margin-top:20px; display:flex; flex-wrap:wrap; gap:10px; justify-content:center; align-items:center;">
+                <input type="text" id="multiSearchInput" placeholder="搜尋姓名、電話或訂單編號..."
+                    style="padding:10px; width:100%; max-width:300px;">
+                <button onclick="exportBookingCSV(true)" class="success">📥 匯出 Excel</button>
+            </div>
+            
+            <div style="margin-top:20px; padding:15px; background:#fdf2e9; border-radius:8px; border-left:5px solid #e67e22; display:flex; flex-wrap:wrap; gap:10px; justify-content:center; align-items:center;">
+                <input type="text" id="sheetIdInput" placeholder="Google Sheet ID (必填)" style="padding:8px; width:220px;" title="請輸入試算表網址列的 /d/ 到 /edit 之間那串英文數字">
+                <button id="btnFetchSheetInfo" onclick="fetchSheetInfo()" class="btn-bear" style="margin:0; padding:8px 15px;">⬇️ 載入分頁與欄位</button>
+                <input type="text" id="sheetTabInput" list="sheetTabsList" placeholder="分頁名稱 (例如: 學生資料)" style="padding:8px; width:150px;" onchange="updateColumnDatalist()">
+                <datalist id="sheetTabsList"></datalist>
+                <div style="display:flex; flex-wrap:wrap; gap:5px; background:rgba(255,255,255,0.5); padding:5px; border-radius:5px;">
+                    <input type="text" id="matchCol1Input" list="sheetColsList" placeholder="比對欄位1 (預設: 姓名)" style="padding:8px; width:150px; font-size:12px;" title="對應試算表中的尋找欄位，預設為「姓名」">
+                    <input type="text" id="matchCol2Input" list="sheetColsList" placeholder="比對欄位2 (預設: 家長電話)" style="padding:8px; width:160px; font-size:12px;" title="預設為「家長電話」或「電話」">
+                </div>
+                <input type="text" id="sheetColumnInput" list="sheetColsList" placeholder="寫入欄位 (例如: 115國一生物)" style="padding:8px; width:180px;">
+                <datalist id="sheetColsList"></datalist>
+                <button onclick="syncToGoogleSheet()" class="warning" style="margin:0; padding:8px 15px;">🔗 同步至試算表 (GAS)</button>
+            </div>
+        </div>
+        <div class="table-container">
+            <table>
+                <thead>
+                    <tr id="multiTableHeaderRow">
+                        <th onclick="sortBookingTable('orderId', true)">訂單編號 ⇅</th>
+                        <th onclick="sortBookingTable('courseName', true)">課程 ⇅</th>
+                        <th onclick="sortBookingTable('time', true)">時間 ⇅</th>
+                        <th onclick="sortBookingTable('status', true)">狀態 ⇅</th>
+                        <th onclick="sortBookingTable('seatId', true)">座位 ⇅</th>
+                        <th onclick="sortBookingTable('studentName', true)">姓名 ⇅</th>
+                        <th onclick="sortBookingTable('parentPhone', true)">電話 ⇅</th>
+                        <th onclick="sortBookingTable('isOldStudent', true)">身分 ⇅</th>
+                        <th onclick="sortBookingTable('userEmail', true)">Google 帳號 ⇅</th>
+                        <th>操作</th>
+                    </tr>
+                    <tr id="multiTableFilterRow" style="background:#f4f6f7;">
+                        <th><input type="text" id="multi_filter_orderId" placeholder="篩選..." style="width:90%; padding:2px;" onkeyup="applyAdvancedFilters(true)"></th>
+                        <th><select id="multi_filter_courseName" style="width:100%; padding:2px;" onchange="applyAdvancedFilters(true)"><option value="">全部</option></select></th>
+                        <th><select id="multi_filter_time" style="width:100%; padding:2px;" onchange="applyAdvancedFilters(true)"><option value="">全部</option></select></th>
+                        <th><select id="multi_filter_status" style="width:100%; padding:2px;" onchange="applyAdvancedFilters(true)"><option value="">全部</option></select></th>
+                        <th><select id="multi_filter_seatId" style="width:100%; padding:2px;" onchange="applyAdvancedFilters(true)"><option value="">全部</option></select></th>
+                        <th><input type="text" id="multi_filter_studentName" placeholder="篩選..." style="width:90%; padding:2px;" onkeyup="applyAdvancedFilters(true)"></th>
+                        <th><input type="text" id="multi_filter_parentPhone" placeholder="篩選..." style="width:90%; padding:2px;" onkeyup="applyAdvancedFilters(true)"></th>
+                        <th><select id="multi_filter_isOldStudent" style="width:100%; padding:2px;" onchange="applyAdvancedFilters(true)"><option value="">全部</option><option value="是">是</option><option value="否">否</option></select></th>
+                        <th><input type="text" id="multi_filter_userEmail" placeholder="篩選..." style="width:90%; padding:2px;" onkeyup="applyAdvancedFilters(true)"></th>
+                        <th><button onclick="clearAdvancedFilters(true)" style="padding:2px 5px; font-size:12px; background:#e74c3c; color:white; border:none; cursor:pointer;">清除過濾</button></th>
+                    </tr>
+                </thead>
+                <tbody id="multiBookingTable"></tbody>
             </table>
         </div>
     </div>
@@ -1172,7 +1221,7 @@
         </div>
     </div>
 
-    <script type="module" src="admin.js?v=202603102040"></script>
+    <script type="module" src="admin.js?v=202603102100"></script>
 
     <!-- ★★★ Auth Guard：頁面載入時立即驗證管理員身分 ★★★ -->
     <script type="module">
