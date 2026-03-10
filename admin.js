@@ -1481,7 +1481,9 @@ function renderSelectedClasses() {
         
         // 渲染下方 Alias Mapping 輸入框
         if (aliasList) {
-            const defaultName = c.classType || c.subject || c.courseName;
+            const defaultName = c.classType || c.subject || '';
+            const displayName = `[${c.grade}] ${c.subject} ${c.classType || ''}`.trim();
+
             const row = document.createElement('div');
             row.style.display = 'flex';
             row.style.alignItems = 'center';
@@ -1490,7 +1492,7 @@ function renderSelectedClasses() {
             row.style.padding = '5px 10px';
             row.style.borderRadius = '5px';
             row.innerHTML = `
-                <span style="font-size:14px; min-width:150px; font-weight:bold; color:#333;">${c.courseName}</span>
+                <span style="font-size:14px; min-width:150px; font-weight:bold; color:#333;">${displayName}</span>
                 <span style="color:#888;">➡️</span>
                 <input type="text" id="aliasInput_${id}" value="${defaultName}" style="padding:6px; flex:1; border:1px solid #ccc; border-radius:4px;" placeholder="寫入試算表的字眼">
             `;
@@ -1744,9 +1746,20 @@ window.syncToGoogleSheet = async function() {
     if(typeof Swal !== 'undefined') {
         Swal.fire({
             title: '同步至 Google 試算表中...',
-            html: '這可能需要幾十秒鐘，請耐心等候',
+            html: `
+                <div style="margin:20px 0; display:flex; justify-content:center; align-items:center; flex-direction:column; gap:15px;">
+                    <div style="font-size: 50px; animation: bear-bounce 0.8s infinite alternate;">🚀</div>
+                    <div style="color:#555; font-size:15px; line-height:1.5;">系統正在為您寫入資料，請不要關閉視窗<br>這可能需要幾十秒鐘，請耐心等候...</div>
+                </div>
+                <style>
+                    @keyframes bear-bounce { 
+                        0% { transform: translateY(0); } 
+                        100% { transform: translateY(-20px) scale(1.1); } 
+                    }
+                </style>
+            `,
             allowOutsideClick: false,
-            didOpen: () => { Swal.showLoading(); }
+            showConfirmButton: false
         });
     }
 
