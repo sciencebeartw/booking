@@ -132,23 +132,21 @@
     <div id="tab-multisync" class="page-section">
         <div class="center-box">
             <h2 style="margin-top:0; color:#2c3e50;">🔄 多班檢視與同步 (跨班重複比對)</h2>
-            <div style="display:flex; justify-content:center; gap:10px; align-items:center; margin-bottom: 10px;">
-                <select id="multiClassSelector" class="big-selector" style="max-width:300px;">
+            <div style="display:flex; flex-wrap:wrap; justify-content:center; gap:10px; align-items:center; margin-bottom: 20px; background: #fdf2e9; padding: 15px; border-radius: 8px; border-left:5px solid #e1b12c;">
+                <select id="multiClassSelector" class="big-selector" style="max-width:250px; margin:0; padding:8px;">
                     <option value="all">選擇課程加入檢視</option>
                 </select>
-                <button onclick="window.addSelectedClass()" class="success" style="padding: 10px 15px; font-size: 14px; margin:0;">➕ 加入檢視</button>
-                <button onclick="window.clearSelectedClasses()" class="warning" style="padding: 10px 15px; font-size: 14px; margin:0;">🧹 清除</button>
+                <button onclick="window.addSelectedClass()" class="success" style="padding: 8px 15px; font-size: 14px; margin:0;">➕ 加入檢視</button>
+                <button onclick="window.clearSelectedClasses()" class="warning" style="padding: 8px 15px; font-size: 14px; margin:0;">🧹 清除所有</button>
+                <div style="width: 2px; height: 30px; background: #ccc; margin: 0 5px;" class="hide-on-mobile"></div>
+                <input type="text" id="multiSearchInput" placeholder="搜尋班級、姓名、電話或訂單..." style="padding:8px; width:100%; max-width:200px; margin:0;">
+                <button onclick="exportBookingCSV(true)" class="success" style="padding: 8px 15px; margin:0;">📥 匯出 Excel</button>
             </div>
             <div id="multiClassTagsContainer" style="display:flex; flex-wrap:wrap; gap:10px; justify-content:center; margin-bottom:15px; min-height:30px;">
                 <!-- 所選班級標籤將顯示於此 -->
             </div>
-            <div style="margin-top:20px; display:flex; flex-wrap:wrap; gap:10px; justify-content:center; align-items:center;">
-                <input type="text" id="multiSearchInput" placeholder="搜尋姓名、電話或訂單編號..."
-                    style="padding:10px; width:100%; max-width:300px;">
-                <button onclick="exportBookingCSV(true)" class="success">📥 匯出 Excel</button>
-            </div>
             
-            <div style="margin-top:20px; padding:15px; background:#fdf2e9; border-radius:8px; border-left:5px solid #e67e22; display:flex; flex-wrap:wrap; gap:10px; justify-content:center; align-items:center;">
+            <div style="margin-top:20px; padding:15px; background:#e8f4f8; border-radius:8px; border-left:5px solid #3498db; display:flex; flex-wrap:wrap; gap:10px; justify-content:center; align-items:center;">
                 <input type="text" id="sheetIdInput" placeholder="Google Sheet ID (必填)" style="padding:8px; width:220px;" title="請輸入試算表網址列的 /d/ 到 /edit 之間那串英文數字">
                 <button id="btnFetchSheetInfo" onclick="fetchSheetInfo()" class="btn-bear" style="margin:0; padding:8px 15px;">⬇️ 載入分頁與欄位</button>
                 <input type="text" id="sheetTabInput" list="sheetTabsList" placeholder="分頁名稱 (例如: 學生資料)" style="padding:8px; width:150px;" onchange="updateColumnDatalist()">
@@ -1221,7 +1219,7 @@
         </div>
     </div>
 
-    <script type="module" src="admin.js?v=202603102100"></script>
+    <script type="module" src="admin.js?v=202603102115"></script>
 
     <!-- ★★★ Auth Guard：頁面載入時立即驗證管理員身分 ★★★ -->
     <script type="module">

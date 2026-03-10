@@ -1767,6 +1767,10 @@ window.fetchSheetInfo = async function() {
         if(typeof Swal !== 'undefined') Swal.fire("錯誤", "尚未設定 GAS Webhook API 網址，請先至下方【系統設定】設定！", "error");
         return;
     }
+    if (!gasWebhookUrl.startsWith("http")) {
+        if(typeof Swal !== 'undefined') Swal.fire("設定錯誤", "Webhook 網址格式不正確，請至【系統設定】確認是否以 https:// 開頭！", "error");
+        return;
+    }
 
     const btn = document.getElementById('btnFetchSheetInfo');
     const originalText = btn.innerHTML;
