@@ -919,6 +919,11 @@
                     <option value="senior">🏫 高中部</option>
                 </select>
             </div>
+            <div style="margin-bottom:6px; display:flex; gap:8px; align-items:center;">
+                <button onclick="window.billSelectAll(true)" style="padding:4px 12px; font-size:12px; background:#3498db; color:white; border:none; border-radius:4px; cursor:pointer;">☑ 全選</button>
+                <button onclick="window.billSelectAll(false)" style="padding:4px 12px; font-size:12px; background:#95a5a6; color:white; border:none; border-radius:4px; cursor:pointer;">☐ 取消全選</button>
+                <span style="font-size:12px; color:#888;">（僅在未選取比對存檔時有效）</span>
+            </div>
             <div id="courseConfigList"
                 style="max-height:300px; overflow-y:auto; border:1px solid #ddd; padding:10px; margin-bottom:15px;">
             </div>
@@ -1246,7 +1251,7 @@
         </div>
     </div>
 
-    <script type="module" src="admin.js?v=202603102230"></script>
+    <script type="module" src="admin.js?v=202603102245"></script>
 
     <!-- ★★★ Auth Guard：頁面載入時立即驗證管理員身分 ★★★ -->
     <script type="module">

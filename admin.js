@@ -1821,9 +1821,18 @@ window.fetchSheetInfo = async function() {
             if(typeof Swal !== 'undefined') Swal.fire("讀取失敗", result.msg || "未知錯誤", "error");
         }
     } catch(err) {
-        // 防止 Safari 的原始錯誤字串被直接展示給使用者
-        const displayMsg = (err.message && err.message.length < 80) ? err.message : '';
-        const hint = displayMsg && !displayMsg.includes('pattern') ? displayMsg : '請先至《系統設定》確認 GAS Webhook 網址是否完整（需含 https://），否則請檢查網路連線。';
+        // 記錄真正的錯誤以方便診斷
+        console.error('[fetchSheetInfo] 錯誤詳情：', err);
+        const rawMsg = err && err.message ? String(err.message) : '';
+        let hint = '';
+        if (!rawMsg || rawMsg.toLowerCase().includes('pattern') || rawMsg.toLowerCase().includes('script error')) {
+            // Safari 底層錯誤或跨域錯誤
+            hint = '請先至《系統設定》確認 GAS Webhook 網址是否完整（需含 https://）。如 URL 正確仍出錯，可能是 GAS 加載第一次超時，請對 10 秒後再試一次。';
+        } else if (rawMsg.toLowerCase().includes('fail') || rawMsg.toLowerCase().includes('fetch')) {
+            hint = '網路連線失敗，請確認網路後再試。（' + rawMsg + '）';
+        } else {
+            hint = rawMsg;
+        }
         if(typeof Swal !== 'undefined') Swal.fire("載入失敗", hint, "error");
     } finally {
         btn.innerHTML = originalText;
@@ -2245,6 +2254,19 @@ onValue(ref(db, 'print_layouts'), (snapshot) => {
         updatePrintCourseList();
     }
 });
+
+/** 學費單班級全選 / 取消全選 */
+window.billSelectAll = function(checked) {
+    if (window.currentArchiveClassKeys && window.currentArchiveClassKeys.length > 0) {
+        if(typeof Swal !== 'undefined') Swal.fire('提示', '目前已套用存檔鎖定，請先選「不做比對」再全選/取消全選。', 'info');
+        return;
+    }
+    Object.keys(coursesData || {}).forEach(key => {
+        const cb = document.getElementById(`bill_check_${key}`);
+        if (cb && !cb.disabled) cb.checked = checked;
+    });
+    window.processBills();
+};
 
 window.renderCourseConfig = function () {
     const container = document.getElementById('courseConfigList');
