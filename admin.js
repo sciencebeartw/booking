@@ -1456,15 +1456,46 @@ window.clearSelectedClasses = function() {
 
 function renderSelectedClasses() {
     const container = document.getElementById('multiClassTagsContainer');
+    const aliasContainer = document.getElementById('syncAliasMappingContainer');
+    const aliasList = document.getElementById('aliasInputsList');
+
     if (!container) return;
     container.innerHTML = '';
+    if (aliasList) aliasList.innerHTML = '';
+
+    if (multiSelectedClasses.length > 0) {
+        if (aliasContainer) aliasContainer.style.display = 'flex';
+    } else {
+        if (aliasContainer) aliasContainer.style.display = 'none';
+    }
+
     multiSelectedClasses.forEach(id => {
         const c = coursesData[id];
         if (!c) return;
+        
+        // 渲染上方 Tag
         const tag = document.createElement('span');
         tag.className = 'class-tag';
         tag.innerHTML = `[${c.grade}] ${c.subject} ${c.classType || ''} <span class="remove" onclick="window.removeSelectedClass('${id}')">×</span>`;
         container.appendChild(tag);
+        
+        // 渲染下方 Alias Mapping 輸入框
+        if (aliasList) {
+            const defaultName = c.classType || c.subject || c.courseName;
+            const row = document.createElement('div');
+            row.style.display = 'flex';
+            row.style.alignItems = 'center';
+            row.style.gap = '10px';
+            row.style.background = 'rgba(255,255,255,0.7)';
+            row.style.padding = '5px 10px';
+            row.style.borderRadius = '5px';
+            row.innerHTML = `
+                <span style="font-size:14px; min-width:150px; font-weight:bold; color:#333;">${c.courseName}</span>
+                <span style="color:#888;">➡️</span>
+                <input type="text" id="aliasInput_${id}" value="${defaultName}" style="padding:6px; flex:1; border:1px solid #ccc; border-radius:4px;" placeholder="寫入試算表的字眼">
+            `;
+            aliasList.appendChild(row);
+        }
     });
 }
 
@@ -1687,12 +1718,11 @@ window.syncToGoogleSheet = async function() {
         // 只過濾 "已售出" 的學生
         if(b.status !== 'sold') return;
         // 如果有指定班級，過濾班級
-        if(currentSelectedClasses.length > 0 && !currentSelectedClasses.includes(b.courseId)) return;
+        if(multiSelectedClasses.length > 0 && !multiSelectedClasses.includes(b.courseId)) return;
         
-        // 抓出班級代碼 (例如：14, 25)
-        // 假設課程名稱中我們不直接用課程名稱，而是直接抓 c.classType (但這裡原本存了 courseName，也可以只送 courseId 或將 className 切割)
-        // 這裡直接取 c.classType (如週六班)，或者抓取當下的座位前綴。但以使用者需求來說，他們希望填入的是 "25" (班級)。
-        const classStr = coursesData[b.courseId] ? (coursesData[b.courseId].classType || b.courseName) : b.courseName;
+        // 抓取手動定義的 Alias 映射字眼
+        const aliasInput = document.getElementById(`aliasInput_${b.courseId}`);
+        const classStr = aliasInput ? aliasInput.value.trim() : (coursesData[b.courseId] ? (coursesData[b.courseId].classType || b.courseName) : b.courseName);
 
         exportData.push({
             studentName: b.studentName,
