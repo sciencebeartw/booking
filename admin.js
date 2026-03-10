@@ -970,12 +970,12 @@ window.applyAdvancedFilters = function() {
 };
 
 window.clearAdvancedFilters = function() {
-    document.getElementById('filter_status').value = '';
-    document.getElementById('filter_seat').value = '';
-    document.getElementById('filter_name').value = '';
-    document.getElementById('filter_phone').value = '';
-    document.getElementById('filter_isOldStudent').value = '';
-    document.getElementById('filter_email').value = '';
+    if(document.getElementById('filter_status')) document.getElementById('filter_status').value = '';
+    if(document.getElementById('filter_seatId')) document.getElementById('filter_seatId').value = '';
+    if(document.getElementById('filter_studentName')) document.getElementById('filter_studentName').value = '';
+    if(document.getElementById('filter_parentPhone')) document.getElementById('filter_parentPhone').value = '';
+    if(document.getElementById('filter_isOldStudent')) document.getElementById('filter_isOldStudent').value = '';
+    if(document.getElementById('filter_userEmail')) document.getElementById('filter_userEmail').value = '';
     renderTable();
 };
 
@@ -983,12 +983,12 @@ function renderTable() {
     const searchText = document.getElementById('searchInput').value.trim().toLowerCase();
     
     // 進階過濾欄位
-    const filterStatus = document.getElementById('filter_status').value;
-    const filterSeat = document.getElementById('filter_seat').value;
-    const filterName = document.getElementById('filter_name').value.trim().toLowerCase();
-    const filterPhone = document.getElementById('filter_phone').value.trim().toLowerCase();
-    const filterIsOldStudent = document.getElementById('filter_isOldStudent').value;
-    const filterEmail = document.getElementById('filter_email').value.trim().toLowerCase();
+    const filterStatus = document.getElementById('filter_status') ? document.getElementById('filter_status').value : '';
+    const filterSeat = document.getElementById('filter_seatId') ? document.getElementById('filter_seatId').value : '';
+    const filterName = document.getElementById('filter_studentName') ? document.getElementById('filter_studentName').value.trim().toLowerCase() : '';
+    const filterPhone = document.getElementById('filter_parentPhone') ? document.getElementById('filter_parentPhone').value.trim().toLowerCase() : '';
+    const filterIsOldStudent = document.getElementById('filter_isOldStudent') ? document.getElementById('filter_isOldStudent').value : '';
+    const filterEmail = document.getElementById('filter_userEmail') ? document.getElementById('filter_userEmail').value.trim().toLowerCase() : '';
     
     const tbody = document.getElementById('bookingTable');
     tbody.innerHTML = "";
@@ -1576,10 +1576,10 @@ document.getElementById('searchInput').addEventListener('input', renderTable);
 // 進階過濾器的 event listener
 if(document.getElementById('filter_status')) {
     document.getElementById('filter_status').addEventListener('change', window.applyAdvancedFilters);
-    document.getElementById('filter_seat').addEventListener('change', window.applyAdvancedFilters);
-    document.getElementById('filter_name').addEventListener('input', window.applyAdvancedFilters);
-    document.getElementById('filter_phone').addEventListener('input', window.applyAdvancedFilters);
-    document.getElementById('filter_email').addEventListener('input', window.applyAdvancedFilters);
+    if(document.getElementById('filter_seatId')) document.getElementById('filter_seatId').addEventListener('change', window.applyAdvancedFilters);
+    if(document.getElementById('filter_studentName')) document.getElementById('filter_studentName').addEventListener('input', window.applyAdvancedFilters);
+    if(document.getElementById('filter_parentPhone')) document.getElementById('filter_parentPhone').addEventListener('input', window.applyAdvancedFilters);
+    if(document.getElementById('filter_userEmail')) document.getElementById('filter_userEmail').addEventListener('input', window.applyAdvancedFilters);
 }
 
 // 試算表同步相關
