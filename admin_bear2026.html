@@ -75,7 +75,7 @@
                 <select id="classSelector" class="big-selector" style="max-width:300px;">
                     <option value="all">全部課程總覽</option>
                 </select>
-                <button onclick="addSelectClassToMonitor()" class="success" style="padding: 10px 15px; font-size: 14px; margin:0;">➕ 加入檢視</button>
+                <button onclick="window.addSelectedClass()" class="success" style="padding: 10px 15px; font-size: 14px; margin:0;">➕ 加入檢視</button>
                 <button onclick="clearSelectClassMonitor()" class="warning" style="padding: 10px 15px; font-size: 14px; margin:0;">🧹 清除</button>
             </div>
             <div id="multiClassTagsContainer" style="display:flex; flex-wrap:wrap; gap:10px; justify-content:center; margin-bottom:15px; min-height:30px;">
@@ -1172,7 +1172,7 @@
         </div>
     </div>
 
-    <script type="module" src="admin.js?v=202603102020"></script>
+    <script type="module" src="admin.js?v=202603102030"></script>
 
     <!-- ★★★ Auth Guard：頁面載入時立即驗證管理員身分 ★★★ -->
     <script type="module">

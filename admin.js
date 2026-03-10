@@ -971,6 +971,8 @@ window.applyAdvancedFilters = function() {
 
 window.clearAdvancedFilters = function() {
     if(document.getElementById('filter_status')) document.getElementById('filter_status').value = '';
+    if(document.getElementById('filter_courseName')) document.getElementById('filter_courseName').value = '';
+    if(document.getElementById('filter_time')) document.getElementById('filter_time').value = '';
     if(document.getElementById('filter_seatId')) document.getElementById('filter_seatId').value = '';
     if(document.getElementById('filter_studentName')) document.getElementById('filter_studentName').value = '';
     if(document.getElementById('filter_parentPhone')) document.getElementById('filter_parentPhone').value = '';
@@ -984,6 +986,8 @@ function renderTable() {
     
     // 進階過濾欄位
     const filterStatus = document.getElementById('filter_status') ? document.getElementById('filter_status').value : '';
+    const filterCourseName = document.getElementById('filter_courseName') ? document.getElementById('filter_courseName').value : '';
+    const filterTime = document.getElementById('filter_time') ? document.getElementById('filter_time').value : '';
     const filterSeat = document.getElementById('filter_seatId') ? document.getElementById('filter_seatId').value : '';
     const filterName = document.getElementById('filter_studentName') ? document.getElementById('filter_studentName').value.trim().toLowerCase() : '';
     const filterPhone = document.getElementById('filter_parentPhone') ? document.getElementById('filter_parentPhone').value.trim().toLowerCase() : '';
@@ -1002,6 +1006,8 @@ function renderTable() {
         
         // 進階欄位過濾
         if (filterStatus && b.status !== filterStatus) return false;
+        if (filterCourseName && b.courseName !== filterCourseName) return false;
+        if (filterTime && b.time !== filterTime) return false;
         if (filterSeat && b.seatId !== filterSeat) return false;
         if (filterName && !b.studentName.toLowerCase().includes(filterName)) return false;
         if (filterPhone && !b.parentPhone.includes(filterPhone)) return false;
@@ -1094,20 +1100,25 @@ function renderTable() {
 }
 
 function populateAdvancedFilters(list) {
-    const filterSeat = document.getElementById('filter_seatId');
-    if (!filterSeat) return;
-    const currentSeatSel = filterSeat.value;
+    const populateSelect = (id, mapper, labelMapper = null) => {
+        const el = document.getElementById(id);
+        if (!el || el.tagName !== 'SELECT') return;
+        const currentSel = el.value;
+        const uniques = [...new Set(list.map(mapper))].filter(Boolean).sort();
+        el.innerHTML = '<option value="">(全部)</option>';
+        uniques.forEach(val => {
+            const label = labelMapper ? labelMapper(val) : val;
+            el.innerHTML += `<option value="${window.escapeHTML(val)}">${window.escapeHTML(label)}</option>`;
+        });
+        if (uniques.includes(currentSel)) el.value = currentSel;
+    };
+
+    populateSelect('filter_courseName', b => b.courseName);
+    populateSelect('filter_time', b => b.time);
+    populateSelect('filter_seatId', b => b.seatId);
     
-    const uniqueSeats = [...new Set(list.map(b => b.seatId))].filter(Boolean).sort();
-    
-    filterSeat.innerHTML = '<option value="">(全部)</option>';
-    uniqueSeats.forEach(seat => {
-        filterSeat.innerHTML += `<option value="${seat}">${seat}</option>`;
-    });
-    
-    if (uniqueSeats.includes(currentSeatSel)) {
-        filterSeat.value = currentSeatSel;
-    }
+    const statusMap = { 'sold': '已劃位', 'locked': '填寫中', 'deleted': '已釋出' };
+    populateSelect('filter_status', b => b.status, val => statusMap[val] || val);
 }
 
 window.loadVisualMap = function () {
@@ -1577,6 +1588,8 @@ document.getElementById('searchInput').addEventListener('input', renderTable);
 // 進階過濾器的 event listener
 if(document.getElementById('filter_status')) {
     document.getElementById('filter_status').addEventListener('change', window.applyAdvancedFilters);
+    if(document.getElementById('filter_courseName')) document.getElementById('filter_courseName').addEventListener('change', window.applyAdvancedFilters);
+    if(document.getElementById('filter_time')) document.getElementById('filter_time').addEventListener('change', window.applyAdvancedFilters);
     if(document.getElementById('filter_seatId')) document.getElementById('filter_seatId').addEventListener('change', window.applyAdvancedFilters);
     if(document.getElementById('filter_studentName')) document.getElementById('filter_studentName').addEventListener('input', window.applyAdvancedFilters);
     if(document.getElementById('filter_parentPhone')) document.getElementById('filter_parentPhone').addEventListener('input', window.applyAdvancedFilters);
