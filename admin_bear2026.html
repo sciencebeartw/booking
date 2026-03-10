@@ -890,13 +890,23 @@
         <div class="bill-config-area">
             <!-- ▼▼▼ 0. 存檔比對區塊 ▼▼▼ -->
             <h3>0. 選取比對存檔</h3>
-            <div style="display:flex; flex-wrap:wrap; gap:10px; align-items:center; margin-bottom:15px; background:#eaf4fb; padding:12px; border-radius:8px; border-left:4px solid #3498db;">
-                <select id="billArchiveSelector" style="padding:6px 10px; font-size:14px; border:2px solid #3498db; border-radius:5px; min-width:280px;" onchange="window.loadBillArchive()">
-                    <option value="">— 不做比對（直接顯示全部）—</option>
-                </select>
-                <button onclick="window.refreshBillArchives()" class="btn-bear" style="padding:6px 15px; font-size:13px; margin:0;">🔄 重新載入清單</button>
-                <button onclick="window.manualSaveBillArchive()" style="padding:6px 14px; font-size:13px; margin:0; background:#27ae60; color:white; border:none; border-radius:5px; cursor:pointer; font-weight:bold;">💾 手動存檔</button>
-                <button onclick="window.deleteBillArchive()" class="danger" style="padding:6px 12px; font-size:13px; margin:0;">🗑️ 刪除存檔</button>
+            <div style="background:#eaf4fb; padding:14px; border-radius:8px; border-left:4px solid #3498db; margin-bottom:10px;">
+                <!-- 第一行：下拉選單 -->
+                <div style="margin-bottom:10px;">
+                    <select id="billArchiveSelector" style="width:100%; padding:8px 10px; font-size:14px; border:2px solid #3498db; border-radius:5px; box-sizing:border-box;" onchange="window.loadBillArchive()">
+                        <option value="">— 不做比對（直接顯示全部）—</option>
+                    </select>
+                </div>
+                <!-- 第二行：操作按鈕 -->
+                <div style="display:flex; gap:10px; flex-wrap:wrap;">
+                    <button onclick="window.refreshBillArchives()" class="btn-bear" style="flex:1; padding:8px 10px; font-size:13px; margin:0; min-width:120px;">🔄 重新載入清單</button>
+                    <button onclick="window.manualSaveBillArchive()" style="flex:1; padding:8px 10px; font-size:13px; margin:0; min-width:120px; background:#27ae60; color:white; border:none; border-radius:5px; cursor:pointer; font-weight:bold;">💾 手動存檔</button>
+                    <button onclick="window.deleteBillArchive()" class="danger" style="flex:1; padding:8px 10px; font-size:13px; margin:0; min-width:120px;">🗑️ 刪除存檔</button>
+                </div>
+            </div>
+            <!-- 存檔班級鎖定提示 -->
+            <div id="billArchiveLockBanner" style="display:none; background:#fff3cd; border:1px solid #ffc107; padding:10px 14px; border-radius:5px; margin-bottom:8px; font-size:13px; color:#856404;">
+                🔒 已從存檔自動套用班級勾選，其他班級已鎖定。若要重新選擇班級，請先在上方選「不做比對」。
             </div>
             <div id="billArchiveInfo" style="font-size:13px; color:#666; margin-bottom:10px; min-height:20px;"></div>
 
@@ -1236,7 +1246,7 @@
         </div>
     </div>
 
-    <script type="module" src="admin.js?v=202603102200"></script>
+    <script type="module" src="admin.js?v=202603102215"></script>
 
     <!-- ★★★ Auth Guard：頁面載入時立即驗證管理員身分 ★★★ -->
     <script type="module">

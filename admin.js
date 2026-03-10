@@ -2493,6 +2493,48 @@ window.refreshBillArchives = async function() {
 };
 
 /** 當下拉選單選取存檔，把快照載入 window.currentBillArchiveSnapshot */
+/** 輔助：根據存檔的班級清單，自動勾選並鎖定課程 checkbox */
+function applyBillArchiveLock(archiveClasses) {
+    const banner = document.getElementById('billArchiveLockBanner');
+    if (!archiveClasses || archiveClasses.length === 0) {
+        unlockBillClasses();
+        return;
+    }
+    if (banner) banner.style.display = 'block';
+    // 遍歷所有課程 checkbox
+    Object.keys(coursesData || {}).forEach(key => {
+        const cb = document.getElementById(`bill_check_${key}`);
+        if (!cb) return;
+        const c = coursesData[key];
+        const label = c ? `[${c.grade}] ${c.subject}` : key;
+        // 判斷這個科目是否在存檔班級清單中
+        const isInArchive = archiveClasses.some(cl => cl === label || cl.includes(key));
+        cb.checked = isInArchive;
+        cb.disabled = !isInArchive;   // 非本次班級 → 鎖定不可勾
+        const wrapper = cb.closest('label') || cb.parentElement;
+        if (wrapper) {
+            wrapper.style.opacity = isInArchive ? '1' : '0.45';
+            wrapper.style.cursor = isInArchive ? '' : 'not-allowed';
+        }
+    });
+}
+
+/** 輔助：解除所有課程 checkbox 的鎖定 */
+function unlockBillClasses() {
+    const banner = document.getElementById('billArchiveLockBanner');
+    if (banner) banner.style.display = 'none';
+    Object.keys(coursesData || {}).forEach(key => {
+        const cb = document.getElementById(`bill_check_${key}`);
+        if (!cb) return;
+        cb.disabled = false;
+        const wrapper = cb.closest('label') || cb.parentElement;
+        if (wrapper) {
+            wrapper.style.opacity = '';
+            wrapper.style.cursor = '';
+        }
+    });
+}
+
 window.loadBillArchive = async function() {
     const sel = document.getElementById('billArchiveSelector');
     const infoDiv = document.getElementById('billArchiveInfo');
@@ -2500,7 +2542,8 @@ window.loadBillArchive = async function() {
 
     if (!ts) {
         window.currentBillArchiveSnapshot = null;
-        infoDiv.textContent = '未選取存檔，將直接顯示所有學費單（不做比對）。';
+        unlockBillClasses();
+        infoDiv.textContent = '未選取存檔，班級選擇已解鎖，顯示所有學費單（不做比對）。';
         window.processBills();
         return;
     }
@@ -2511,6 +2554,7 @@ window.loadBillArchive = async function() {
         if (!snap.exists()) {
             infoDiv.textContent = '❌ 此存檔已不存在。';
             window.currentBillArchiveSnapshot = null;
+            unlockBillClasses();
             return;
         }
         const archive = snap.val();
@@ -2518,15 +2562,20 @@ window.loadBillArchive = async function() {
         const label = archive.label || dt.toLocaleString('zh-TW', { year: 'numeric', month: '2-digit', day: '2-digit', hour: '2-digit', minute: '2-digit' });
         window.currentBillArchiveSnapshot = archive.students || {};
 
-        const classes = (archive.classes || []).join(', ') || '（無班級資訊）';
+        const archiveClasses = archive.classes || [];
+        const classes = archiveClasses.join(', ') || '（無班級資訊）';
         const studentCount = Object.keys(window.currentBillArchiveSnapshot).length;
-        infoDiv.innerHTML = `✅ 已載入存檔「<strong>${label}</strong>」<br>📚 班級：${classes}<br>👥 快照人數：${studentCount} 人<br><em>現在點選「💾 儲存設定並產生學費單」即可看到比對結果。</em>`;
+        infoDiv.innerHTML = `✅ 已載入存檔「<strong>${label}</strong>」<br>📚 班級：${classes}<br>👥 快照人數：${studentCount} 人<br><em>下方班級已自動鎖定，點選「💾 儲存設定並產生學費單」即可看到比對結果。</em>`;
+
+        // 自動鎖定存檔班級
+        applyBillArchiveLock(archiveClasses);
 
         window.processBills();
     } catch(e) {
         infoDiv.textContent = '❌ 載入快照失敗：' + e.message;
     }
 };
+
 
 /** 刪除目前選取的存檔 */
 window.deleteBillArchive = async function() {
