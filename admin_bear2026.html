@@ -11,6 +11,11 @@
     <script src="https://html2canvas.hertzen.com/dist/html2canvas.min.js"></script>
     <link rel="stylesheet" href="admin.css">
     <script>
+        window.initBillPage = function () {
+            window.renderCourseConfig();
+            window.processBills();
+            window.refreshBillArchives();
+        };
         window.onerror = function (message, source, lineno, colno, error) {
             const errDiv = document.createElement('div');
             errDiv.style.cssText = 'position:fixed;top:0;left:0;right:0;background:red;color:white;z-index:9999;padding:10px;font-size:12px;';
@@ -883,6 +888,17 @@
             <h2 style="margin-top:0; color:#2c3e50;">💰 學費單生成系統</h2>
         </div>
         <div class="bill-config-area">
+            <!-- ▼▼▼ 0. 存檔比對區塊 ▼▼▼ -->
+            <h3>0. 選取比對存檔</h3>
+            <div style="display:flex; flex-wrap:wrap; gap:10px; align-items:center; margin-bottom:15px; background:#eaf4fb; padding:12px; border-radius:8px; border-left:4px solid #3498db;">
+                <select id="billArchiveSelector" style="padding:6px 10px; font-size:14px; border:2px solid #3498db; border-radius:5px; min-width:280px;" onchange="window.loadBillArchive()">
+                    <option value="">— 不做比對（直接顯示全部）—</option>
+                </select>
+                <button onclick="window.refreshBillArchives()" class="btn-bear" style="padding:6px 15px; font-size:13px; margin:0;">🔄 重新載入存檔清單</button>
+                <button onclick="window.deleteBillArchive()" class="danger" style="padding:6px 12px; font-size:13px; margin:0;">🗑️ 刪除此存檔</button>
+            </div>
+            <div id="billArchiveInfo" style="font-size:13px; color:#666; margin-bottom:10px; min-height:20px;"></div>
+
             <h3>1. 參數設定</h3>
             <div style="margin-bottom:15px;">
                 <label>選擇部別：</label>
@@ -1219,7 +1235,7 @@
         </div>
     </div>
 
-    <script type="module" src="admin.js?v=202603102145"></script>
+    <script type="module" src="admin.js?v=202603102150"></script>
 
     <!-- ★★★ Auth Guard：頁面載入時立即驗證管理員身分 ★★★ -->
     <script type="module">

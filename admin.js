@@ -2400,45 +2400,44 @@ window.processBills = function () {
         });
     });
 
-    // --- 比對發送歷史 ---
-    // 取得 bill_sent 節點資料做檢查 (同步執行需要依賴先前 fetch 完的變數，這裡為了簡化我們先直接轉成陣列，
-    // 在 loadBill 渲染時再做比對或提前 await 取資料，因為 processBills 沒宣告成 async。
-    // 這邊把 processBills 宣告成 async 較為方便)
-    
-    // 將 Object.values 轉存
+    // --- 比對選定存檔快照 ---
     const tempBillStudents = Object.values(studentMap);
-    
-    // 如果是 async，我們可以使用 get()，但為了不大幅翻修 processBills，我們可以透過全域物件做快取比對。
-    if (tempBillStudents.length > 0) {
-        get(ref(db, 'bill_sent')).then(snap => {
-            const sentHistory = snap.val() || {};
-            
-            tempBillStudents.forEach(s => {
-                // 將目前這單的商品內容壓縮成字串當版本號
-                const currentVersion = JSON.stringify(s.items);
-                s.currentVersion = currentVersion;
-                
-                // 檢查是否發送過
-                let lastVersion = null;
-                if (sentHistory[s.phone] && sentHistory[s.phone][s.name]) {
-                    lastVersion = sentHistory[s.phone][s.name].last_version;
-                }
-                
-                // 若沒發過、或是版本不一樣，就打勾
-                if (lastVersion !== currentVersion) {
-                    s.selected = true;
-                    s.isChanged = true;
-                } else {
-                    s.selected = false;
-                    s.isChanged = false;
-                }
-            });
-            
-            billStudents = tempBillStudents;
-            loadBill(0);
-        });
+    const archiveSnapshot = window.currentBillArchiveSnapshot || null; // 使用者選取的歷史快照
+
+    tempBillStudents.forEach(s => {
+        const currentVersion = JSON.stringify(s.items);
+        s.currentVersion = currentVersion;
+
+        if (!archiveSnapshot) {
+            // 沒選存檔 → 全部不標記
+            s.selected = false;
+            s.isChanged = false;
+        } else {
+            const key = `${s.phone}___${s.name}`;
+            const prevVersion = archiveSnapshot[key] || null;
+            if (!prevVersion) {
+                // 存檔中沒有此人 → 新增
+                s.selected = true;
+                s.isChanged = true;
+                s.changeLabel = '🆕 新增';
+            } else if (prevVersion !== currentVersion) {
+                // 有舊資料但內容不同 → 異動
+                s.selected = true;
+                s.isChanged = true;
+                s.changeLabel = '✏️ 異動';
+            } else {
+                // 相同
+                s.selected = false;
+                s.isChanged = false;
+                s.changeLabel = '✅ 相同';
+            }
+        }
+    });
+
+    billStudents = tempBillStudents;
+    if (billStudents.length > 0) {
+        loadBill(0);
     } else {
-        billStudents = [];
         document.getElementById('billName').textContent = "無資料";
         document.getElementById('billGrade').textContent = "";
         document.getElementById('billSchool').textContent = "";
@@ -2446,6 +2445,140 @@ window.processBills = function () {
         document.getElementById('billNote').innerText = "";
         document.getElementById('itemsTable').innerHTML = "<tr><td colspan='3' style='text-align:center; padding: 20px;'>此部別目前沒有學費單資料</td></tr>";
         document.getElementById('billCounter').textContent = "0 / 0";
+    }
+};
+
+// ========================
+// 學費單存檔管理 系統
+// ========================
+
+window.currentBillArchiveSnapshot = null; // 目前載入的存檔快照
+
+/** 從 Firebase 載入所有存檔清單，填入下拉選單 */
+window.refreshBillArchives = async function() {
+    const sel = document.getElementById('billArchiveSelector');
+    const infoDiv = document.getElementById('billArchiveInfo');
+    if (!sel) return;
+    sel.innerHTML = '<option value="">— 不做比對（直接顯示全部）—</option>';
+    infoDiv.textContent = '⏳ 載入中...';
+
+    try {
+        const snap = await get(ref(db, 'bill_sent'));
+        const all = snap.val() || {};
+        const keys = Object.keys(all).sort((a, b) => Number(b) - Number(a)); // 最新在前
+
+        if (keys.length === 0) {
+            infoDiv.textContent = '尚無任何存檔紀錄。';
+            return;
+        }
+
+        keys.forEach(ts => {
+            const archive = all[ts];
+            const dt = new Date(Number(ts));
+            const label = archive.label || dt.toLocaleString('zh-TW', { year: 'numeric', month: '2-digit', day: '2-digit', hour: '2-digit', minute: '2-digit' });
+            const classes = (archive.classes || []).join(', ') || '（無班級資訊）';
+            const opt = document.createElement('option');
+            opt.value = ts;
+            opt.textContent = `${label}（${classes.length > 30 ? classes.slice(0, 30) + '…' : classes}）`;
+            sel.appendChild(opt);
+        });
+
+        infoDiv.textContent = `共 ${keys.length} 筆存檔，請從上方下拉選單選取後，重新點選「💾 儲存設定並產生學費單」以套用比對。`;
+    } catch(e) {
+        infoDiv.textContent = '❌ 載入存檔失敗：' + e.message;
+    }
+};
+
+/** 當下拉選單選取存檔，把快照載入 window.currentBillArchiveSnapshot */
+window.loadBillArchive = async function() {
+    const sel = document.getElementById('billArchiveSelector');
+    const infoDiv = document.getElementById('billArchiveInfo');
+    const ts = sel ? sel.value : '';
+
+    if (!ts) {
+        window.currentBillArchiveSnapshot = null;
+        infoDiv.textContent = '未選取存檔，將直接顯示所有學費單（不做比對）。';
+        window.processBills();
+        return;
+    }
+
+    infoDiv.textContent = '⏳ 載入存檔快照...';
+    try {
+        const snap = await get(ref(db, `bill_sent/${ts}`));
+        if (!snap.exists()) {
+            infoDiv.textContent = '❌ 此存檔已不存在。';
+            window.currentBillArchiveSnapshot = null;
+            return;
+        }
+        const archive = snap.val();
+        const dt = new Date(Number(ts));
+        const label = archive.label || dt.toLocaleString('zh-TW', { year: 'numeric', month: '2-digit', day: '2-digit', hour: '2-digit', minute: '2-digit' });
+        window.currentBillArchiveSnapshot = archive.students || {};
+
+        const classes = (archive.classes || []).join(', ') || '（無班級資訊）';
+        const studentCount = Object.keys(window.currentBillArchiveSnapshot).length;
+        infoDiv.innerHTML = `✅ 已載入存檔「<strong>${label}</strong>」<br>📚 班級：${classes}<br>👥 快照人數：${studentCount} 人<br><em>現在點選「💾 儲存設定並產生學費單」即可看到比對結果。</em>`;
+
+        window.processBills();
+    } catch(e) {
+        infoDiv.textContent = '❌ 載入快照失敗：' + e.message;
+    }
+};
+
+/** 刪除目前選取的存檔 */
+window.deleteBillArchive = async function() {
+    const sel = document.getElementById('billArchiveSelector');
+    const ts = sel ? sel.value : '';
+    if (!ts) { alert('請先選取一個存檔再刪除。'); return; }
+
+    const confirmEl = typeof Swal !== 'undefined'
+        ? await Swal.fire({ title: '確定刪除這筆存檔？', icon: 'warning', showCancelButton: true, confirmButtonText: '刪除', cancelButtonText: '取消' })
+        : { isConfirmed: confirm('確定刪除這筆存檔？') };
+    if (!confirmEl.isConfirmed) return;
+
+    try {
+        await remove(ref(db, `bill_sent/${ts}`));
+        window.currentBillArchiveSnapshot = null;
+        document.getElementById('billArchiveInfo').textContent = '✅ 存檔已刪除。';
+        await window.refreshBillArchives();
+        window.processBills();
+    } catch(e) {
+        alert('❌ 刪除失敗：' + e.message);
+    }
+};
+
+/** 一鍵傳送完成後，自動儲存本次快照至 Firebase */
+window.saveBillArchive = async function(sentClasses) {
+    if (!billStudents || billStudents.length === 0) return;
+    const ts = String(Date.now());
+    const dt = new Date();
+    const label = dt.toLocaleString('zh-TW', { year: 'numeric', month: '2-digit', day: '2-digit', hour: '2-digit', minute: '2-digit' }) + ' 傳送存檔';
+
+    // 快照：用 phone___name 作為 key，存目前的 items 版本
+    const students = {};
+    billStudents.forEach(s => {
+        const key = `${s.phone}___${s.name}`;
+        students[key] = JSON.stringify(s.items);
+    });
+
+    const archiveData = {
+        sentAt: Date.now(),
+        label: label,
+        classes: sentClasses || [],
+        students: students
+    };
+
+    try {
+        await set(ref(db, `bill_sent/${ts}`), archiveData);
+        console.log(`[存檔] 已儲存本次傳送快照：${ts}`);
+        // 更新下拉選單
+        await window.refreshBillArchives();
+        // 自動選取剛存的
+        const sel = document.getElementById('billArchiveSelector');
+        if (sel) sel.value = ts;
+        await window.loadBillArchive();
+    } catch(e) {
+        console.warn('[存檔] 儲存失敗：', e.message);
     }
 };
 
@@ -2853,6 +2986,16 @@ window.sendAllBillsToLine = async function () {
     if (billStudents.length > 0) loadBill(0);
 
     if (barText) barText.innerText = `✅ 發送完畢 (${selectedBills.length} / ${selectedBills.length})`;
+
+    // ★★★ 自動儲存本次傳送的存檔快照 ★★★
+    const checkedClasses = Object.keys(coursesData).filter(key => {
+        const cb = document.getElementById(`bill_check_${key}`);
+        return cb && cb.checked;
+    }).map(key => {
+        const c = coursesData[key];
+        return c ? `[${c.grade}] ${c.subject}` : key;
+    });
+    window.saveBillArchive(checkedClasses);
 
     // 發送完成結果報告
     if (typeof Swal !== 'undefined') {
