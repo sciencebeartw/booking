@@ -3159,13 +3159,17 @@ window.sendAllBillsToLine = async function () {
         const s = billStudents[i];
         if (!s.selected) continue; // 略過沒勾選的
         
-        // 更新 UI (若 Swal 存在則更新內文進度)
+        // 更新 UI (直接操作 DOM 避免覆蓋 SVG 動畫)
+        const currentCount = successCount + failedList.length + 1;
         if (typeof Swal !== 'undefined' && Swal.isVisible()) {
-            Swal.update({ html: `正在處理第 <b>${successCount + failedList.length + 1} / ${selectedBills.length}</b> 張學費單 (${s.name})...` });
+            const statusEl = document.getElementById('swal-bill-status');
+            const barEl = document.getElementById('swal-bill-bar');
+            if(statusEl) statusEl.innerHTML = `正在處理第 <b>${currentCount}</b> / ${selectedBills.length} 張學費單 (${s.name})...`;
+            if(barEl) barEl.style.width = `${(currentCount / selectedBills.length) * 100}%`;
         }
 
-        if (barText) barText.innerText = `${successCount + failedList.length + 1} / ${selectedBills.length} (${s.name})`;
-        if (barFill) barFill.style.width = `${((successCount + failedList.length) / selectedBills.length) * 100}%`;
+        if (barText) barText.innerText = `${currentCount} / ${selectedBills.length} (${s.name})`;
+        if (barFill) barFill.style.width = `${(currentCount / selectedBills.length) * 100}%`;
 
         loadBill(i);
         await new Promise(r => setTimeout(r, 600)); // 等待畫面渲染
