@@ -656,6 +656,15 @@
                 <input type="tel" id="parentPhone" placeholder="09XX-XXX-XXX (這是後續發送名額通知的重要依據)" required>
             </div>
 
+            <div class="form-group">
+                <label for="isOldStudent">是否曾為山熊科學學生？ <span style="color:red">*</span></label>
+                <select id="isOldStudent" required style="padding:10px; border:1px solid #bdc3c7; border-radius:5px; font-size:16px;">
+                    <option value="" disabled selected>請選擇...</option>
+                    <option value="是">是，曾經上過本班課程</option>
+                    <option value="否">否，為新生第一次報名</option>
+                </select>
+            </div>
+
             <h2
                 style="color: #2c3e50; border-bottom: 2px solid #eee; padding-bottom: 10px; margin-top: 40px; margin-bottom: 20px;">
                 🎓 試聽志願序選擇</h2>
@@ -1259,7 +1268,7 @@
             let isValid = true;
 
             // 1. 檢查基本資料
-            if (!document.getElementById('studentName').value || !document.getElementById('parentPhone').value) {
+            if (!document.getElementById('studentName').value || !document.getElementById('parentPhone').value || !document.getElementById('isOldStudent').value) {
                 isValid = false;
             }
 
@@ -1291,8 +1300,8 @@
                 Swal.fire({ icon: 'warning', title: '請先同意規則', html: '您必須同意排位規則聲明<br>才能成功送出！' });
                 return;
             }
-            if (!document.getElementById('studentName').value || !document.getElementById('parentPhone').value) {
-                Swal.fire({ icon: 'warning', title: '資料未填齊', text: '請輸入學生姓名與家長手機。' });
+            if (!document.getElementById('studentName').value || !document.getElementById('parentPhone').value || !document.getElementById('isOldStudent').value) {
+                Swal.fire({ icon: 'warning', title: '資料未填齊', text: '請輸入學生姓名、家長手機，並選擇是否為舊生。' });
                 return;
             }
             if (!window.checkFormValidity()) {
@@ -1449,6 +1458,7 @@
             const formData = {
                 studentName: document.getElementById('studentName').value,
                 parentPhone: document.getElementById('parentPhone').value,
+                isOldStudent: document.getElementById('isOldStudent').value,
                 preferences: preferences,
                 clientTimestampMs: msTimestamp,
                 status: 'pending'

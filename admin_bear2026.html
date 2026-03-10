@@ -71,9 +71,16 @@
             <h2 style="margin-top:0; color:#2c3e50;">📊 劃位監控總覽</h2>
             <div style="margin-bottom:10px;">目前檢視：<span id="currentClassName" style="font-weight:bold;">所有課程</span> |
                 已劃位：<span id="totalSold" style="font-weight:bold;">0</span></div>
-            <select id="classSelector" class="big-selector" onchange="loadVisualMap()">
-                <option value="all">全部課程總覽</option>
-            </select>
+            <div style="display:flex; justify-content:center; gap:10px; align-items:center; margin-bottom: 10px;">
+                <select id="classSelector" class="big-selector" style="max-width:300px;">
+                    <option value="all">全部課程總覽</option>
+                </select>
+                <button onclick="addSelectClassToMonitor()" class="success" style="padding: 10px 15px; font-size: 14px; margin:0;">➕ 加入檢視</button>
+                <button onclick="clearSelectClassMonitor()" class="warning" style="padding: 10px 15px; font-size: 14px; margin:0;">🧹 清除</button>
+            </div>
+            <div id="multiClassTagsContainer" style="display:flex; flex-wrap:wrap; gap:10px; justify-content:center; margin-bottom:15px; min-height:30px;">
+                <!-- 所選班級標籤將顯示於此 -->
+            </div>
             <div id="visualMap" class="visual-map-container">
                 <div
                     style="display: flex; justify-content: center; align-items: center; gap: 15px; margin-bottom: 15px;">
@@ -91,11 +98,25 @@
                 <button onclick="generateCourseTestData()" class="dark">🎲 產生測試資料</button>
                 <button onclick="clearCourseTestData()" class="danger">🗑️ 清除測試資料</button>
             </div>
+            
+            <div style="margin-top:10px; padding:15px; background:#fdf2e9; border-radius:8px; border-left:5px solid #e67e22; display:flex; flex-wrap:wrap; gap:10px; justify-content:center; align-items:center;">
+                <input type="text" id="sheetIdInput" placeholder="Google Sheet ID (必填)" style="padding:8px; width:220px;" title="請輸入試算表網址列的 /d/ 到 /edit 之間那串英文數字">
+                <button id="btnFetchSheetInfo" onclick="fetchSheetInfo()" class="btn-bear" style="margin:0; padding:8px 15px;">⬇️ 載入分頁與欄位</button>
+                <input type="text" id="sheetTabInput" list="sheetTabsList" placeholder="分頁名稱 (例如: 學生資料)" style="padding:8px; width:150px;" onchange="updateColumnDatalist()">
+                <datalist id="sheetTabsList"></datalist>
+                <div style="display:flex; flex-wrap:wrap; gap:5px; background:rgba(255,255,255,0.5); padding:5px; border-radius:5px;">
+                    <input type="text" id="matchCol1Input" list="sheetColsList" placeholder="比對欄位1 (預設: 姓名)" style="padding:8px; width:150px; font-size:12px;" title="對應試算表中的尋找欄位，預設為「姓名」">
+                    <input type="text" id="matchCol2Input" list="sheetColsList" placeholder="比對欄位2 (預設: 家長電話)" style="padding:8px; width:160px; font-size:12px;" title="預設為「家長電話」或「電話」">
+                </div>
+                <input type="text" id="sheetColumnInput" list="sheetColsList" placeholder="寫入欄位 (例如: 115國一生物)" style="padding:8px; width:180px;">
+                <datalist id="sheetColsList"></datalist>
+                <button onclick="syncToGoogleSheet()" class="warning" style="margin:0; padding:8px 15px;">🔗 同步至試算表 (GAS)</button>
+            </div>
         </div>
         <div class="table-container">
             <table>
                 <thead>
-                    <tr>
+                    <tr id="tableHeaderRow">
                         <th onclick="sortBookingTable('orderId')">訂單編號 ⇅</th>
                         <th onclick="sortBookingTable('courseName')">課程 ⇅</th>
                         <th onclick="sortBookingTable('time')">時間 ⇅</th>
@@ -103,8 +124,21 @@
                         <th onclick="sortBookingTable('seatId')">座位 ⇅</th>
                         <th onclick="sortBookingTable('studentName')">姓名 ⇅</th>
                         <th onclick="sortBookingTable('parentPhone')">電話 ⇅</th>
+                        <th onclick="sortBookingTable('isOldStudent')">身分 ⇅</th>
                         <th onclick="sortBookingTable('userEmail')">Google 帳號 ⇅</th>
                         <th>操作</th>
+                    </tr>
+                    <tr id="tableFilterRow" style="background:#f4f6f7;">
+                        <th><input type="text" id="filter_orderId" placeholder="篩選..." style="width:90%; padding:2px;" onkeyup="applyAdvancedFilters()"></th>
+                        <th><select id="filter_courseName" style="width:100%; padding:2px;" onchange="applyAdvancedFilters()"><option value="">全部</option></select></th>
+                        <th><select id="filter_time" style="width:100%; padding:2px;" onchange="applyAdvancedFilters()"><option value="">全部</option></select></th>
+                        <th><select id="filter_status" style="width:100%; padding:2px;" onchange="applyAdvancedFilters()"><option value="">全部</option></select></th>
+                        <th><input type="text" id="filter_seatId" placeholder="篩選..." style="width:90%; padding:2px;" onkeyup="applyAdvancedFilters()"></th>
+                        <th><input type="text" id="filter_studentName" placeholder="篩選..." style="width:90%; padding:2px;" onkeyup="applyAdvancedFilters()"></th>
+                        <th><input type="text" id="filter_parentPhone" placeholder="篩選..." style="width:90%; padding:2px;" onkeyup="applyAdvancedFilters()"></th>
+                        <th><select id="filter_isOldStudent" style="width:100%; padding:2px;" onchange="applyAdvancedFilters()"><option value="">全部</option><option value="是">是</option><option value="否">否</option></select></th>
+                        <th><input type="text" id="filter_userEmail" placeholder="篩選..." style="width:90%; padding:2px;" onkeyup="applyAdvancedFilters()"></th>
+                        <th><button onclick="clearAdvancedFilters()" style="padding:2px 5px; font-size:12px; background:#e74c3c; color:white; border:none; cursor:pointer;">清除過濾</button></th>
                     </tr>
                 </thead>
                 <tbody id="bookingTable"></tbody>

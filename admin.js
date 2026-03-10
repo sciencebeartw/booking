@@ -917,6 +917,7 @@ function buildAllBookings() {
                 allBookings.push({
                     courseId, courseName, seatId, status: info.status,
                     studentName: info.studentName || '-', parentPhone: info.parentPhone || '-',
+                    isOldStudent: info.isOldStudent || '-',
                     userEmail: info.userEmail || '-',
                     time: info.soldTime || '-', rawTime: info.timestamp,
                     orderId: info.orderId || '-'
@@ -935,6 +936,7 @@ function buildAllBookings() {
             allBookings.push({
                 courseId, courseName, seatId: info.originalSeatId || '-', status: 'deleted',
                 studentName: info.studentName || '-', parentPhone: info.parentPhone || '-',
+                isOldStudent: info.isOldStudent || '-',
                 userEmail: info.userEmail || '-',
                 time: info.soldTime || '-', rawTime: info.timestamp,
                 orderId: info.orderId || '-', archiveKey: archiveKey
@@ -963,15 +965,49 @@ window.sortBookingTable = function (col) {
     renderTable();
 };
 
+window.applyAdvancedFilters = function() {
+    renderTable();
+};
+
+window.clearAdvancedFilters = function() {
+    document.getElementById('filter_status').value = '';
+    document.getElementById('filter_seat').value = '';
+    document.getElementById('filter_name').value = '';
+    document.getElementById('filter_phone').value = '';
+    document.getElementById('filter_isOldStudent').value = '';
+    document.getElementById('filter_email').value = '';
+    renderTable();
+};
+
 function renderTable() {
-    const filterId = document.getElementById('classSelector').value;
     const searchText = document.getElementById('searchInput').value.trim().toLowerCase();
+    
+    // 進階過濾欄位
+    const filterStatus = document.getElementById('filter_status').value;
+    const filterSeat = document.getElementById('filter_seat').value;
+    const filterName = document.getElementById('filter_name').value.trim().toLowerCase();
+    const filterPhone = document.getElementById('filter_phone').value.trim().toLowerCase();
+    const filterIsOldStudent = document.getElementById('filter_isOldStudent').value;
+    const filterEmail = document.getElementById('filter_email').value.trim().toLowerCase();
+    
     const tbody = document.getElementById('bookingTable');
     tbody.innerHTML = "";
 
     let displayList = allBookings.filter(b => {
-        if (filterId !== 'all' && b.courseId !== filterId) return false;
-        if (searchText && !b.studentName.includes(searchText) && !b.parentPhone.includes(searchText) && !b.orderId.includes(searchText)) return false;
+        // 班級過濾：如果有多選班級，只顯示選中的班級；如果都沒選，預設顯示全部。
+        if (currentSelectedClasses.length > 0 && !currentSelectedClasses.includes(b.courseId)) return false;
+        
+        // 全域搜尋過濾
+        if (searchText && !b.studentName.toLowerCase().includes(searchText) && !b.parentPhone.includes(searchText) && !b.orderId.toLowerCase().includes(searchText)) return false;
+        
+        // 進階欄位過濾
+        if (filterStatus && b.status !== filterStatus) return false;
+        if (filterSeat && b.seatId !== filterSeat) return false;
+        if (filterName && !b.studentName.toLowerCase().includes(filterName)) return false;
+        if (filterPhone && !b.parentPhone.includes(filterPhone)) return false;
+        if (filterIsOldStudent && b.isOldStudent !== filterIsOldStudent) return false;
+        if (filterEmail && !b.userEmail.toLowerCase().includes(filterEmail)) return false;
+
         return true;
     });
 
@@ -988,11 +1024,13 @@ function renderTable() {
     });
 
     const nameCounts = {};
-    // 只計算 sold（已劃位）的紀錄，排除 deleted（已釋出）
+    // ✅ 新增邏輯：跨班級抓取重複報名的學生，只要是 sold 都計數
     displayList.forEach(b => {
         if (b.status === 'sold') {
-            const stuKey = b.courseId + '_' + b.studentName;
-            nameCounts[stuKey] = (nameCounts[stuKey] || 0) + 1;
+            // 如果是多選班級，我們計算「名字出現幾次」來抓出同時報名多班的家長
+            // 否則，同一班級內通常不允許名字重複，但可以維持原本邏輯加上 courseId
+            const countKey = currentSelectedClasses.length > 1 ? b.studentName : (b.courseId + '_' + b.studentName);
+            nameCounts[countKey] = (nameCounts[countKey] || 0) + 1;
         }
     });
 
@@ -1015,10 +1053,18 @@ function renderTable() {
         let recoverBtnHtml = '';
         if (b.status === 'sold') {
             statusBadge = '<span class="badge sold">已劃位</span>';
-            const stuKey = b.courseId + '_' + b.studentName;
-            if (nameCounts[stuKey] > 1) {
-                const rowColor = getColorForName(b.studentName);
-                tr.style.backgroundColor = rowColor;
+            const countKey = currentSelectedClasses.length > 1 ? b.studentName : (b.courseId + '_' + b.studentName);
+            
+            if (nameCounts[countKey] > 1) {
+                // 如果是多個班級且偵測到重複，使用高亮黃色並加上粗體提示，否則使用預設調色盤
+                if (currentSelectedClasses.length > 1) {
+                    tr.style.backgroundColor = '#fff3cd'; // 醒目的黃底色
+                    tr.style.fontWeight = 'bold';
+                    tr.style.border = '2px solid #ffeeba';
+                } else {
+                    const rowColor = getColorForName(b.studentName);
+                    tr.style.backgroundColor = rowColor;
+                }
             }
         } else if (b.status === 'locked') {
             statusBadge = '<span class="badge locked">填寫中</span>';
@@ -1030,7 +1076,7 @@ function renderTable() {
             recoverBtnHtml = `<button class="success" style="padding:5px 10px; font-size:12px; margin-right:5px;" onclick="window.recoverSeat('${b.courseId}', '${b.seatId}', '${b.studentName}', '${b.archiveKey || ""}')">恢復劃位</button>`;
         }
 
-        tr.innerHTML = `<td>${b.orderId}</td><td class=\"wrap-text\">${b.courseName}</td><td>${window.formatTimeWithMs(b.rawTime, b.time)}</td><td>${statusBadge}</td><td>${b.seatId}</td><td>${window.escapeHTML(b.studentName)}</td><td>${window.escapeHTML(b.parentPhone)}</td><td>${window.escapeHTML(b.userEmail)}</td>
+        tr.innerHTML = `<td>${b.orderId}</td><td class=\"wrap-text\">${b.courseName}</td><td>${window.formatTimeWithMs(b.rawTime, b.time)}</td><td>${statusBadge}</td><td>${b.seatId}</td><td>${window.escapeHTML(b.studentName)}</td><td>${window.escapeHTML(b.parentPhone)}</td><td>${window.escapeHTML(b.isOldStudent || '-')}</td><td>${window.escapeHTML(b.userEmail)}</td>
                 <td>
                     ${recoverBtnHtml}
                     <button class="warning" style="padding:5px 10px; font-size:12px;" onclick="window.editOrder('${b.courseId}', '${b.seatId}', '${b.parentPhone}', '${b.orderId}', '${b.studentName}')">編輯</button>
@@ -1038,20 +1084,46 @@ function renderTable() {
                 </td>`;
         tbody.appendChild(tr);
     });
+    
+    populateAdvancedFilters(allBookings.filter(b => {
+        // 更新過濾選項內容時，只看目前選中的班級
+        if (currentSelectedClasses.length > 0 && !currentSelectedClasses.includes(b.courseId)) return false;
+        if (searchText && !b.studentName.toLowerCase().includes(searchText) && !b.parentPhone.includes(searchText) && !b.orderId.toLowerCase().includes(searchText)) return false;
+        return true;
+    }));
+}
+
+function populateAdvancedFilters(list) {
+    const filterSeat = document.getElementById('filter_seat');
+    const currentSeatSel = filterSeat.value;
+    
+    const uniqueSeats = [...new Set(list.map(b => b.seatId))].filter(Boolean).sort();
+    
+    filterSeat.innerHTML = '<option value="">(全部)</option>';
+    uniqueSeats.forEach(seat => {
+        filterSeat.innerHTML += `<option value="${seat}">${seat}</option>`;
+    });
+    
+    if (uniqueSeats.includes(currentSeatSel)) {
+        filterSeat.value = currentSeatSel;
+    }
 }
 
 window.loadVisualMap = function () {
-    const courseId = document.getElementById('classSelector').value;
     const mapContainer = document.getElementById('visualMap');
     const mapContent = document.getElementById('mapContent');
 
-    if (courseId === 'all' || !coursesData[courseId]) {
+    // 視覺地圖只在「剛好選取 1 個班級」的時候才會正常顯示圖形！
+    // 多選的時候我們就把地圖隱藏，因為教室座位不相容！
+    if (currentSelectedClasses.length !== 1 || !coursesData[currentSelectedClasses[0]]) {
         mapContainer.style.display = 'none';
         return;
     }
 
+    const courseId = currentSelectedClasses[0];
     mapContainer.style.display = 'block';
     mapContent.innerHTML = "";
+
 
     const c = coursesData[courseId];
     let layoutToRender = [];
@@ -1285,6 +1357,8 @@ window.confirmOpSell = function () {
     }).catch(err => alert("失敗：" + err.message));
 };
 
+let currentSelectedClasses = [];
+
 function updateClassSelector() {
     const optionsData = Object.keys(coursesData).map(k => `${k}-${coursesData[k].grade}-${coursesData[k].subject}-${coursesData[k].classType}`).join('|');
     if (currentClassSelectorStr === optionsData) return;
@@ -1292,7 +1366,7 @@ function updateClassSelector() {
 
     const selector = document.getElementById('classSelector');
     const currentVal = selector.value;
-    selector.innerHTML = '<option value="all">全部課程總覽</option>';
+    selector.innerHTML = '<option value="all">選擇班級加入監看...</option>';
     Object.keys(coursesData).forEach(key => {
         const c = coursesData[key];
         const option = document.createElement('option');
@@ -1301,6 +1375,50 @@ function updateClassSelector() {
         selector.appendChild(option);
     });
     selector.value = currentVal;
+}
+
+window.addSelectedClass = function() {
+    const selector = document.getElementById('classSelector');
+    const courseId = selector.value;
+    if (courseId !== 'all' && !currentSelectedClasses.includes(courseId)) {
+        if (currentSelectedClasses.length >= 5) {
+            alert("⚠️ 最多只能同時監看 5 個班級！");
+            return;
+        }
+        currentSelectedClasses.push(courseId);
+        renderSelectedClasses();
+        renderTable();
+        loadVisualMap();
+    }
+    selector.value = 'all'; // 重置選單
+};
+
+window.removeSelectedClass = function(courseId) {
+    currentSelectedClasses = currentSelectedClasses.filter(id => id !== courseId);
+    renderSelectedClasses();
+    renderTable();
+    loadVisualMap();
+};
+
+window.clearSelectedClasses = function() {
+    currentSelectedClasses = [];
+    renderSelectedClasses();
+    renderTable();
+    loadVisualMap();
+};
+
+function renderSelectedClasses() {
+    const container = document.getElementById('selectedClassesContainer');
+    if (!container) return;
+    container.innerHTML = '';
+    currentSelectedClasses.forEach(id => {
+        const c = coursesData[id];
+        if (!c) return;
+        const tag = document.createElement('span');
+        tag.className = 'class-tag';
+        tag.innerHTML = `[${c.grade}] ${c.subject} ${c.classType || ''} <span class="remove" onclick="window.removeSelectedClass('${id}')">×</span>`;
+        container.appendChild(tag);
+    });
 }
 
 window.releaseSeat = async function (courseId, seatId, currentStatus, archiveKey) {
@@ -1413,10 +1531,9 @@ function updateStats() {
 }
 
 window.exportBookingCSV = function () {
-    const filterId = document.getElementById('classSelector').value;
     let csv = "\uFEFF訂單編號,課程,時間,狀態,座位,姓名,電話,Google 帳號\n";
     allBookings.forEach(b => {
-        if (filterId !== 'all' && b.courseId !== filterId) return;
+        if (currentSelectedClasses.length > 0 && !currentSelectedClasses.includes(b.courseId)) return;
         let statusText = b.status === 'sold' ? '已劃位' : (b.status === 'deleted' ? '已釋出' : '填寫中');
         csv += `'${b.orderId},${b.courseName},${b.time},${statusText},${b.seatId},${b.studentName},'${b.parentPhone},'${b.userEmail}\n`;
     });
@@ -1453,13 +1570,214 @@ function downloadCSV(content, fileName) {
     link.click();
 }
 
-document.getElementById('classSelector').addEventListener('change', () => {
-    const sel = document.getElementById('classSelector');
-    document.getElementById('currentClassName').textContent = sel.options[sel.selectedIndex].text;
-    renderTable();
-    loadVisualMap();
-});
+// 監聽 Class Selector 的 change 不再直接 render，而是給 Add 按鈕觸發
+// 不過為了防止使用者操作有誤，不綁定 onchange，依賴 Add 按鈕
 document.getElementById('searchInput').addEventListener('input', renderTable);
+// 進階過濾器的 event listener
+if(document.getElementById('filter_status')) {
+    document.getElementById('filter_status').addEventListener('change', window.applyAdvancedFilters);
+    document.getElementById('filter_seat').addEventListener('change', window.applyAdvancedFilters);
+    document.getElementById('filter_name').addEventListener('input', window.applyAdvancedFilters);
+    document.getElementById('filter_phone').addEventListener('input', window.applyAdvancedFilters);
+    document.getElementById('filter_email').addEventListener('input', window.applyAdvancedFilters);
+}
+
+// 試算表同步相關
+document.addEventListener('DOMContentLoaded', () => {
+    if(document.getElementById('sheetIdInput')) {
+        document.getElementById('sheetIdInput').value = localStorage.getItem('bear_sync_sheetId') || '';
+        document.getElementById('sheetTabInput').value = localStorage.getItem('bear_sync_tabName') || '';
+        document.getElementById('sheetColumnInput').value = localStorage.getItem('bear_sync_columnName') || '';
+        document.getElementById('matchCol1Input').value = localStorage.getItem('bear_sync_matchCol1') || '';
+        document.getElementById('matchCol2Input').value = localStorage.getItem('bear_sync_matchCol2') || '';
+    }
+});
+
+window.syncToGoogleSheet = async function() {
+    const sheetId = document.getElementById('sheetIdInput').value.trim();
+    const tabName = document.getElementById('sheetTabInput').value.trim();
+    const columnName = document.getElementById('sheetColumnInput').value.trim();
+    const compareCol1 = document.getElementById('matchCol1Input').value.trim();
+    const compareCol2 = document.getElementById('matchCol2Input').value.trim();
+
+    if(!sheetId || !tabName || !columnName) {
+        if(typeof Swal !== 'undefined') {
+            Swal.fire("錯誤", "試算表 ID、分頁名稱 與 寫入欄位 均為必填！", "warning");
+        } else {
+            alert("試算表 ID、分頁名稱 與 寫入欄位 均為必填！");
+        }
+        return;
+    }
+
+    // 儲存至 localStorage 方便下次使用
+    localStorage.setItem('bear_sync_sheetId', sheetId);
+    localStorage.setItem('bear_sync_tabName', tabName);
+    localStorage.setItem('bear_sync_columnName', columnName);
+    localStorage.setItem('bear_sync_matchCol1', compareCol1);
+    localStorage.setItem('bear_sync_matchCol2', compareCol2);
+
+
+    if(!gasWebhookUrl) {
+        if(typeof Swal !== 'undefined') {
+            Swal.fire("發送失敗", "尚未設定 GAS Webhook API 網址，請先至下方【系統設定】設定！", "error");
+        } else {
+            alert("尚未設定 GAS Webhook API 網址！");
+        }
+        return;
+    }
+
+    // 蒐集名單資料
+    let exportData = [];
+    allBookings.forEach(b => {
+        // 只過濾 "已售出" 的學生
+        if(b.status !== 'sold') return;
+        // 如果有指定班級，過濾班級
+        if(currentSelectedClasses.length > 0 && !currentSelectedClasses.includes(b.courseId)) return;
+        
+        // 抓出班級代碼 (例如：14, 25)
+        // 假設課程名稱中我們不直接用課程名稱，而是直接抓 c.classType (但這裡原本存了 courseName，也可以只送 courseId 或將 className 切割)
+        // 這裡直接取 c.classType (如週六班)，或者抓取當下的座位前綴。但以使用者需求來說，他們希望填入的是 "25" (班級)。
+        const classStr = coursesData[b.courseId] ? (coursesData[b.courseId].classType || b.courseName) : b.courseName;
+
+        exportData.push({
+            studentName: b.studentName,
+            parentPhone: b.parentPhone,
+            className: classStr // 將供 GAS 使用填入對應欄位
+        });
+    });
+
+    if(exportData.length === 0) {
+        if(typeof Swal !== 'undefined') Swal.fire("無資料", "目前選取的條件下沒有已劃位的名單可供同步！", "info");
+        else alert("無資料同步");
+        return;
+    }
+
+    if(!confirm(`確定要將 ${exportData.length} 筆資料同步至試算表 [${tabName}] 的 [${columnName}] 欄位嗎？`)) return;
+
+
+
+    if(typeof Swal !== 'undefined') {
+        Swal.fire({
+            title: '同步至 Google 試算表中...',
+            html: '這可能需要幾十秒鐘，請耐心等候',
+            allowOutsideClick: false,
+            didOpen: () => { Swal.showLoading(); }
+        });
+    }
+
+    try {
+        const payload = {
+            action: 'sync_to_sheet',
+            sheetId: sheetId,
+            tabName: tabName,
+            columnName: columnName,
+            compareCol1: compareCol1,
+            compareCol2: compareCol2,
+            records: exportData
+        };
+
+        const response = await fetch(gasWebhookUrl, {
+            method: 'POST',
+            body: JSON.stringify(payload),
+            headers: { 'Content-Type': 'text/plain;charset=utf-8' }
+        });
+
+        const resData = await response.json();
+
+        if (typeof Swal !== 'undefined') {
+            if (resData.success) {
+                Swal.fire("同步成功！", `成功更新 ${resData.updatedCount} 筆舊生資料，新增 ${resData.addedCount} 筆新生資料！`, "success");
+            } else {
+                Swal.fire("同步失敗", resData.msg, "error");
+            }
+        } else {
+            alert(resData.success ? `同步成功！\n更新 ${resData.updatedCount}，新增 ${resData.addedCount}` : "同步失敗：\n" + resData.msg);
+        }
+    } catch (e) {
+        console.error(e);
+        if(typeof Swal !== 'undefined') Swal.fire("例外錯誤", e.message, "error");
+        else alert("錯誤: " + e.message);
+    }
+};
+
+window.fetchedSheetData = null;
+
+window.fetchSheetInfo = async function() {
+    const sheetId = document.getElementById('sheetIdInput').value.trim();
+    if(!sheetId) {
+        if(typeof Swal !== 'undefined') Swal.fire("錯誤", "請先輸入 Google Sheet ID！", "warning");
+        return;
+    }
+    if(!gasWebhookUrl) {
+        if(typeof Swal !== 'undefined') Swal.fire("錯誤", "尚未設定 GAS Webhook API 網址，請先至下方【系統設定】設定！", "error");
+        return;
+    }
+
+    const btn = document.getElementById('btnFetchSheetInfo');
+    const originalText = btn.innerHTML;
+    btn.innerHTML = "⏳ 載入中...";
+    btn.disabled = true;
+
+    try {
+        const payload = {
+            action: 'get_sheet_info',
+            sheetId: sheetId
+        };
+        const response = await fetch(gasWebhookUrl, {
+            method: 'POST',
+            body: JSON.stringify(payload)
+        });
+        const result = await response.json();
+        if(result.success) {
+            window.fetchedSheetData = result.data;
+            
+            const tabsList = document.getElementById('sheetTabsList');
+            tabsList.innerHTML = '';
+            result.data.tabs.forEach(tab => {
+                const opt = document.createElement('option');
+                opt.value = tab.name;
+                tabsList.appendChild(opt);
+            });
+            
+            if(typeof Swal !== 'undefined') {
+                Swal.fire({
+                    icon: 'success',
+                    title: '讀取成功',
+                    text: `成功讀取 ${result.data.tabs.length} 個分頁。請輸入或選擇分頁，系統將自動載入該分頁的欄位。`,
+                    timer: 2000,
+                    showConfirmButton: false
+                });
+            }
+            
+            updateColumnDatalist();
+        } else {
+            if(typeof Swal !== 'undefined') Swal.fire("讀取失敗", result.msg || "未知錯誤", "error");
+        }
+    } catch(err) {
+        if(typeof Swal !== 'undefined') Swal.fire("發生錯誤", err.message, "error");
+    } finally {
+        btn.innerHTML = originalText;
+        btn.disabled = false;
+    }
+};
+
+window.updateColumnDatalist = function() {
+    if(!window.fetchedSheetData) return;
+    const currentTab = document.getElementById('sheetTabInput').value.trim();
+    const colsList = document.getElementById('sheetColsList');
+    colsList.innerHTML = '';
+    
+    const tabObj = window.fetchedSheetData.tabs.find(t => t.name === currentTab);
+    if(tabObj && tabObj.headers) {
+        tabObj.headers.forEach(h => {
+            if(h) {
+                const opt = document.createElement('option');
+                opt.value = h;
+                colsList.appendChild(opt);
+            }
+        });
+    }
+};
 
 const bannersRef = ref(db, 'banners');
 const trialBannersRef = ref(db, 'trial_banners');
@@ -1987,7 +2305,8 @@ window.processBills = function () {
                         items: [],
                         total: 0,
                         grade: inferGrade(c.grade),
-                        school: schoolMap[name] || ""
+                        school: schoolMap[name] || "",
+                        selected: false // 加入發送勾選預設狀態
                     };
                 }
 
@@ -2004,7 +2323,7 @@ window.processBills = function () {
 
                 studentMap[name].items.push({
                     name: c.subject,
-                    seatInfo: (c.classType ? `${c.classType} · ` : '') + `座位 ${seatId}`,
+                    seatInfo: "", // 應要求：拿掉學費單備註中顯示的座位號碼
                     dateHtml: formatBillDate(dateVal, countVal),
                     price: price,
                     note: noteVal
@@ -2014,10 +2333,45 @@ window.processBills = function () {
         });
     });
 
-    billStudents = Object.values(studentMap);
-    if (billStudents.length > 0) {
-        loadBill(0);
+    // --- 比對發送歷史 ---
+    // 取得 bill_sent 節點資料做檢查 (同步執行需要依賴先前 fetch 完的變數，這裡為了簡化我們先直接轉成陣列，
+    // 在 loadBill 渲染時再做比對或提前 await 取資料，因為 processBills 沒宣告成 async。
+    // 這邊把 processBills 宣告成 async 較為方便)
+    
+    // 將 Object.values 轉存
+    const tempBillStudents = Object.values(studentMap);
+    
+    // 如果是 async，我們可以使用 get()，但為了不大幅翻修 processBills，我們可以透過全域物件做快取比對。
+    if (tempBillStudents.length > 0) {
+        get(ref(db, 'bill_sent')).then(snap => {
+            const sentHistory = snap.val() || {};
+            
+            tempBillStudents.forEach(s => {
+                // 將目前這單的商品內容壓縮成字串當版本號
+                const currentVersion = JSON.stringify(s.items);
+                s.currentVersion = currentVersion;
+                
+                // 檢查是否發送過
+                let lastVersion = null;
+                if (sentHistory[s.phone] && sentHistory[s.phone][s.name]) {
+                    lastVersion = sentHistory[s.phone][s.name].last_version;
+                }
+                
+                // 若沒發過、或是版本不一樣，就打勾
+                if (lastVersion !== currentVersion) {
+                    s.selected = true;
+                    s.isChanged = true;
+                } else {
+                    s.selected = false;
+                    s.isChanged = false;
+                }
+            });
+            
+            billStudents = tempBillStudents;
+            loadBill(0);
+        });
     } else {
+        billStudents = [];
         document.getElementById('billName').textContent = "無資料";
         document.getElementById('billGrade').textContent = "";
         document.getElementById('billSchool').textContent = "";
@@ -2073,7 +2427,13 @@ window.loadBill = function (index) {
     currentBillIndex = index;
     const s = billStudents[index];
 
-    document.getElementById('billCounter').textContent = `${index + 1} / ${billStudents.length}`;
+    // 動態在標題旁插入這個學費單發送的打勾選項
+    let cbHtml = `<label style="display:inline-flex; align-items:center; gap:5px; margin-left:15px; background:${s.selected ? '#e8f6e9' : '#fff3e0'}; padding:2px 10px; border-radius:15px; font-size:14px; cursor:pointer; font-weight:normal;">
+                    <input type="checkbox" id="billCheck_${index}" ${s.selected ? 'checked' : ''} onchange="window.toggleBillSelection(${index})">
+                    ${s.isChanged ? '<span style="color:#27ae60;">✨資料有異動/新開立</span>' : '<span style="color:#d35400;">✓ 已發過此版本</span>'}
+                  </label>`;
+
+    document.getElementById('billCounter').innerHTML = `${index + 1} / ${billStudents.length} ${cbHtml}`;
     document.getElementById('billName').textContent = s.name;
     document.getElementById('billGrade').textContent = s.grade;
     document.getElementById('billSchool').textContent = s.school;
@@ -2090,7 +2450,7 @@ window.loadBill = function (index) {
     let notes = [];
     s.items.forEach(item => {
         let parts = [];
-        if (item.seatInfo) parts.push(item.seatInfo);
+        if (item.seatInfo) parts.push(item.seatInfo); // 原本是座位，現在已設為空字串，所以不會加入
         if (item.note) parts.push(item.note);
         if (parts.length > 0) {
             notes.push(`【${item.name}】\n${parts.join('\n')}`);
@@ -2128,10 +2488,27 @@ window.createManualBill = function () {
         grade: "",
         school: "",
         total: 0,
-        items: [{ name: "科目名稱", dateHtml: "日期", price: 0 }]
+        items: [{ name: "科目名稱", dateHtml: "日期", price: 0 }],
+        selected: true,
+        isChanged: true
     };
     billStudents.push(emptyStudent);
     loadBill(billStudents.length - 1);
+};
+
+window.toggleBillSelection = function(index) {
+    const cb = document.getElementById(`billCheck_${index}`);
+    if (billStudents[index]) {
+        billStudents[index].selected = cb.checked;
+        
+        // 更新 label 顏色
+        const label = cb.closest('label');
+        if (cb.checked) {
+            label.style.background = '#e8f6e9';
+        } else {
+            label.style.background = '#fff3e0';
+        }
+    }
 };
 
 window.downloadCurrentBill = function () {
@@ -2229,11 +2606,23 @@ window.sendBillToLine = async function () {
 
         if (typeof Swal !== 'undefined') {
             if (resData.success) {
+                // 發送成功後，將此次版本記錄進 Firebase
+                await set(ref(db, `bill_sent/${s.phone}/${s.name}/last_version`), s.currentVersion);
+                
+                // 動態更新當前畫面狀態
+                s.isChanged = false;
+                loadBill(currentBillIndex);
+                
                 Swal.fire("發送成功！", resData.msg, "success");
             } else {
                 Swal.fire("發送失敗", resData.msg, "error");
             }
         } else {
+            if (resData.success) {
+                await set(ref(db, `bill_sent/${s.phone}/${s.name}/last_version`), s.currentVersion);
+                s.isChanged = false;
+                loadBill(currentBillIndex);
+            }
             alert(resData.success ? "發送成功！\n" + resData.msg : "發送失敗：\n" + resData.msg);
         }
     } catch (error) {
@@ -2285,11 +2674,22 @@ window.sendAllBillsToLine = async function () {
         return;
     }
 
+    const selectedBills = billStudents.filter(s => s.selected);
+    
+    if (selectedBills.length === 0) {
+        if (typeof Swal !== 'undefined') {
+            Swal.fire("發送失敗", "目前沒有勾選任何需要發送的學費單！", "warning");
+        } else {
+            alert("發送失敗：目前沒有勾選任何需要發送的學費單！");
+        }
+        return;
+    }
+
     let userConfirmed = true;
     if (typeof Swal !== 'undefined') {
         const result = await Swal.fire({
-            title: `確認一鍵發送 ${billStudents.length} 張學費單？`,
-            html: `這將會逐一產生圖片並發送到對應家長的 LINE。<br><br>請準備好等候幾十秒鐘。`,
+            title: `確認一鍵發送 ${selectedBills.length} 張學費單？`,
+            html: `只會發送目前畫面上【有勾選】的學費單。<br><br>這將會逐一產生圖片並發送到對應家長的 LINE。<br>請準備好等候幾十秒鐘。`,
             icon: 'warning',
             showCancelButton: true,
             confirmButtonColor: '#27ae60',
@@ -2299,7 +2699,7 @@ window.sendAllBillsToLine = async function () {
         });
         userConfirmed = result.isConfirmed;
     } else {
-        userConfirmed = confirm(`確認一鍵發送 ${billStudents.length} 張學費單？\n\n這將會逐一產生圖片並發送到對應家長的 LINE。\n會花費數十秒鐘，請按確定後耐心等待。`);
+        userConfirmed = confirm(`確認一鍵發送 ${selectedBills.length} 張學費單？\n\n只會發送有勾選的學費單。\n會花費數十秒鐘，請按確定後耐心等待。`);
     }
 
     if (!userConfirmed) return;
@@ -2323,7 +2723,7 @@ window.sendAllBillsToLine = async function () {
 
     if (barArea) {
         barArea.style.display = 'block';
-        if (barText) barText.innerText = `0 / ${billStudents.length}`;
+        if (barText) barText.innerText = `0 / ${selectedBills.length}`;
         if (barFill) barFill.style.width = `0%`;
     }
     if (reportEl) {
@@ -2332,18 +2732,20 @@ window.sendAllBillsToLine = async function () {
     }
 
     for (let i = 0; i < billStudents.length; i++) {
+        const s = billStudents[i];
+        if (!s.selected) continue; // 略過沒勾選的
+        
         // 更新 UI (若 Swal 存在則更新內文進度)
         if (typeof Swal !== 'undefined' && Swal.isVisible()) {
-            Swal.update({ html: `正在處理第 <b>${i + 1} / ${billStudents.length}</b> 張學費單 (${billStudents[i].name})...` });
+            Swal.update({ html: `正在處理第 <b>${successCount + failedList.length + 1} / ${selectedBills.length}</b> 張學費單 (${s.name})...` });
         }
 
-        if (barText) barText.innerText = `${i + 1} / ${billStudents.length} (${billStudents[i].name})`;
-        if (barFill) barFill.style.width = `${((i) / billStudents.length) * 100}%`;
+        if (barText) barText.innerText = `${successCount + failedList.length + 1} / ${selectedBills.length} (${s.name})`;
+        if (barFill) barFill.style.width = `${((successCount + failedList.length) / selectedBills.length) * 100}%`;
 
         loadBill(i);
         await new Promise(r => setTimeout(r, 600)); // 等待畫面渲染
 
-        const s = billStudents[i];
         const courseName = s.items.map(item => item.name).filter(n => n && n !== '科目名稱').join('、') || "科學課程";
         const element = document.getElementById('billArea');
         const studentName = document.getElementById('billName').textContent || s.name || "未知姓名";
@@ -2365,6 +2767,10 @@ window.sendAllBillsToLine = async function () {
 
             if (resData.success) {
                 successCount++;
+                // 發送成功後，將此次版本記錄進 Firebase
+                await set(ref(db, `bill_sent/${s.phone}/${s.name}/last_version`), s.currentVersion);
+                s.isChanged = false;
+                s.selected = false; // 發送完畢關閉勾選
             } else {
                 failedList.push({ name: studentName, reason: resData.msg });
             }
@@ -2373,10 +2779,13 @@ window.sendAllBillsToLine = async function () {
             failedList.push({ name: studentName, reason: error.message || '網路傳輸錯誤' });
         }
 
-        if (barFill) barFill.style.width = `${((i + 1) / billStudents.length) * 100}%`;
+        if (barFill) barFill.style.width = `${((successCount + failedList.length) / selectedBills.length) * 100}%`;
     }
 
-    if (barText) barText.innerText = `✅ 發送完畢 (${billStudents.length} / ${billStudents.length})`;
+    // 將畫面還原到最後處理的狀態或回到第一張以更新選取狀態
+    if (billStudents.length > 0) loadBill(0);
+
+    if (barText) barText.innerText = `✅ 發送完畢 (${selectedBills.length} / ${selectedBills.length})`;
 
     // 發送完成結果報告
     if (typeof Swal !== 'undefined') {

@@ -879,6 +879,14 @@
                     <label>家長手機</label>
                     <input type="tel" id="parentPhone" placeholder="例如：0912345678" maxlength="10" required>
                 </div>
+                <div class="form-group">
+                    <label>是否曾為山熊科學學生？ <span style="color:red">*</span></label>
+                    <select id="isOldStudent" required style="padding:10px; border:1px solid #bdc3c7; border-radius:5px; font-size:16px;">
+                        <option value="" disabled selected>請選擇...</option>
+                        <option value="是">是，曾經上過本班課程</option>
+                        <option value="否">否，為新生第一次報名</option>
+                    </select>
+                </div>
                 <div class="warning-text">
                     ⚠️ 請在倒數時間內完成資訊，送出才算劃位完成。<br>
                     ⚠️ 學生姓名送出後即無法更改，請確認後再送出。<br>
@@ -918,6 +926,14 @@
                 <div class="form-group">
                     <label>家長手機</label>
                     <input type="tel" id="w_parentPhone" placeholder="例如：0912345678" maxlength="10" required>
+                </div>
+                <div class="form-group">
+                    <label>是否曾為山熊科學學生？ <span style="color:red">*</span></label>
+                    <select id="w_isOldStudent" required style="padding:10px; border:1px solid #bdc3c7; border-radius:5px; font-size:16px;">
+                        <option value="" disabled selected>請選擇...</option>
+                        <option value="是">是，曾經上過本班課程</option>
+                        <option value="否">否，為新生第一次報名</option>
+                    </select>
                 </div>
                 <div class="form-group">
                     <label>備註</label>
@@ -1449,11 +1465,12 @@
             const name = document.getElementById('w_studentName').value.trim();
             const phone = document.getElementById('w_parentPhone').value.trim();
             const note = document.getElementById('w_note').value.trim();
+            const isOldStudent = document.getElementById('w_isOldStudent').value;
 
-            if (!name || !phone) {
+            if (!name || !phone || !isOldStudent) {
                 Swal.fire({
                     icon: 'warning',
-                    title: '請填寫完整資料！',
+                    title: '請填寫完整資料並選擇身分！',
                     showClass: {
                         popup: 'animate__animated animate__shakeX'
                     },
@@ -1470,6 +1487,7 @@
             set(waitlistRef, {
                 studentName: name,
                 parentPhone: phone,
+                isOldStudent: isOldStudent,
                 note: note,
                 userEmail: myUserEmail,
                 uid: myUserId,
@@ -1660,10 +1678,12 @@
 
             const name = nameInput.value.trim();
             const phone = phoneInput.value.trim();
-            if (!name || !phone) {
+            const isOldStudent = document.getElementById('isOldStudent').value;
+
+            if (!name || !phone || !isOldStudent) {
                 Swal.fire({
                     icon: 'warning',
-                    title: '請填寫完整資料！',
+                    title: '請填寫完整資料並選擇身分！',
                     showClass: {
                         popup: 'animate__animated animate__shakeX'
                     },
@@ -1684,6 +1704,7 @@
                 status: 'sold',
                 studentName: name,
                 parentPhone: phone,
+                isOldStudent: isOldStudent,
                 soldTime: timestamp,
                 timestamp: timestampMs, // ★ 修復：後台時間顯示需要數字 timestamp
                 orderId: orderId,
@@ -1696,6 +1717,7 @@
                 seatId: currentSeatId,
                 studentName: name,
                 parentPhone: phone,
+                isOldStudent: isOldStudent,
                 userEmail: myUserEmail,
                 uid: myUserId,
                 timestamp: serverTimestamp(),
