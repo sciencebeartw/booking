@@ -1152,12 +1152,7 @@
             // ==========================================
             // === 點擊按鈕：前往劃位 / 前往報名 ===
             // ==========================================
-            // Ensure we don't bind multiple listeners if startTimer is called repeatedly
-            const newBtn = btn.cloneNode(true);
-            btn.parentNode.replaceChild(newBtn, btn);
-            const activeBtn = newBtn;
-            
-            activeBtn.addEventListener('click', async (e) => {
+            btn.onclick = async (e) => {
                 e.preventDefault();
 
                 if (!auth.currentUser) {
@@ -1170,7 +1165,7 @@
                     return;
                 }
 
-                if (activeBtn.classList.contains("btn-disabled")) return;
+                if (btn.classList.contains("btn-disabled")) return;
 
                 // ★★★ 新增：進入前的 App Check 驗證與摩擦力機制 ★★★
                 let isBotSuspected = false;
@@ -1245,7 +1240,7 @@
                     // 真人高分，無感直通
                     proceedToNextPage();
                 }
-            });
+            };
 
             timerInterval = setInterval(update, 1000);
             update();
