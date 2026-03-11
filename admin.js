@@ -65,6 +65,20 @@ window.formatTimeWithMs = function (ms, fallback = '') {
     return `${yr}/${mo}/${da} ${hr}:${mi}:${se}.<span style="color:#aaa;font-size:10px;">${mss}</span>`;
 };
 
+// 純文字版時間格式化（用於 CSV 匯出，無 HTML 標籤）
+window.formatTimePlain = function (ms, fallback = '') {
+    if (!ms) return fallback || '-';
+    const d = new Date(ms);
+    const yr = d.getFullYear();
+    const mo = String(d.getMonth() + 1).padStart(2, '0');
+    const da = String(d.getDate()).padStart(2, '0');
+    const hr = String(d.getHours()).padStart(2, '0');
+    const mi = String(d.getMinutes()).padStart(2, '0');
+    const se = String(d.getSeconds()).padStart(2, '0');
+    const mss = String(d.getMilliseconds()).padStart(3, '0');
+    return `${yr}/${mo}/${da} ${hr}:${mi}:${se}.${mss}`;
+};
+
 // ★★★ 防偷跑與時間校準 ★★★
 let serverTimeOffset = 0;
 onValue(ref(db, ".info/serverTimeOffset"), (snap) => {
@@ -1666,7 +1680,8 @@ window.exportBookingCSV = function () {
     let csv = "\uFEFF訂單編號,課程,時間,狀態,座位,姓名,電話,Google 帳號\n";
     window.currentBookingDisplayList.forEach(b => {
         let statusText = b.status === 'sold' ? '已劃位' : (b.status === 'deleted' ? '已釋出' : '填寫中');
-        csv += `'${b.orderId},${b.courseName},${b.time},${statusText},${b.seatId},${b.studentName},'${b.parentPhone},'${b.userEmail}\n`;
+        const timeStr = window.formatTimePlain(b.rawTime, b.time);
+        csv += `'${b.orderId},${b.courseName},${timeStr},${statusText},${b.seatId},${b.studentName},'${b.parentPhone},'${b.userEmail}\n`;
     });
     downloadCSV(csv, "booking_data.csv");
 };
@@ -1682,7 +1697,8 @@ window.exportWaitlistCSV = function () {
     waitlistDisplayList.forEach(w => {
         let seq = window.currentWaitlistRankMap ? (window.currentWaitlistRankMap[w.key] || '-') : '-';
         let statusText = w.status === 'deleted' ? '已刪除' : '候補中';
-        csv += `${w.courseName},${window.formatTimeWithMs(w.timestamp)},${statusText},${seq},${w.studentName},'${w.parentPhone},${w.note || ''}\n`;
+        const timeStr = window.formatTimePlain(w.timestamp);
+        csv += `${w.courseName},${timeStr},${statusText},${seq},${w.studentName},'${w.parentPhone},${w.note || ''}\n`;
     });
     downloadCSV(csv, "waitlist_data.csv");
 };
