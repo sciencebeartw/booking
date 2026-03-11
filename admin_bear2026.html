@@ -561,6 +561,19 @@
                     style="font-size:12px; padding:5px 10px;">↺ 重置為預設範本</button>
             </div>
 
+            <!-- 梯次數量設定 -->
+            <div style="background:#e8f8f5; padding:15px; border-radius:8px; margin-bottom:15px; border-left:4px solid #1abc9c;">
+                <h4 style="margin-top:0; color:#16a085;">⚡ 開放梯次數量</h4>
+                <div class="form-group">
+                    <label>請選擇此課程開放的梯次總數</label>
+                    <select id="c_phase_count" onchange="togglePhaseFields()" style="width:100%; padding:8px; border-radius:4px; border:1px solid #ccc;">
+                        <option value="1">1 梯次 (僅一階與二階)</option>
+                        <option value="2">2 梯次 (共四階段)</option>
+                        <option value="3" selected>3 梯次 (共六階段)</option>
+                    </select>
+                </div>
+            </div>
+
             <!-- 第一梯次 -->
             <div
                 style="background:#eef7f9; padding:15px; border-radius:8px; margin-bottom:15px; border-left:4px solid #3498db;">
@@ -598,9 +611,9 @@
             </div>
 
             <!-- 第二梯次 -->
-            <div
+            <div id="phase2_container"
                 style="background:#fef9e7; padding:15px; border-radius:8px; margin-bottom:15px; border-left:4px solid #f1c40f;">
-                <h4 style="margin-top:0; color:#d4ac0d;">👑 第二梯次設定 (選填)</h4>
+                <h4 style="margin-top:0; color:#d4ac0d;">👑 第二梯次設定 (依數量開放)</h4>
                 <div class="form-row" style="margin-bottom:10px;">
                     <div class="form-group">
                         <label>選擇第二梯次日期</label>
@@ -634,9 +647,9 @@
             </div>
 
             <!-- 第三梯次 -->
-            <div
+            <div id="phase3_container"
                 style="background:#fdedec; padding:15px; border-radius:8px; margin-bottom:15px; border-left:4px solid #e74c3c;">
-                <h4 style="margin-top:0; color:#c0392b;">👑 第三梯次設定 (選填)</h4>
+                <h4 style="margin-top:0; color:#c0392b;">👑 第三梯次設定 (依數量開放)</h4>
                 <div class="form-row" style="margin-bottom:10px;">
                     <div class="form-group">
                         <label>選擇第三梯次日期</label>

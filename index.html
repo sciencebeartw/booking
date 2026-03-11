@@ -1207,11 +1207,13 @@
                 const p3e1 = seatSettings.t3_end1 || pStr(c.t3_end1);
                 const p3s2 = seatSettings.t3_start2 || pStr(c.t3_start2);
                 const p3e2 = seatSettings.t3_end2 || pStr(c.t3_end2);
-                const phases = [
-                    { s1: p1s1, e1: p1e1, s2: p1s2, e2: p1e2 },
-                    { s1: p2s1, e1: p2e1, s2: p2s2, e2: p2e2 },
-                    { s1: p3s1, e1: p3e1, s2: p3s2, e2: p3e2 }
-                ];
+
+                const phases = [];
+                const maxTime = 9999999999999;
+                
+                if (p1s1 < maxTime) phases.push({ s1: p1s1, e1: p1e1, s2: p1s2, e2: p1e2 });
+                if (p2s1 < maxTime) phases.push({ s1: p2s1, e1: p2e1, s2: p2s2, e2: p2e2 });
+                if (p3s1 < maxTime) phases.push({ s1: p3s1, e1: p3e1, s2: p3s2, e2: p3e2 });
 
                 let finalEndTime = 0;
                 let activePhaseIdx = -1;
@@ -1220,36 +1222,35 @@
                 let isFinalConfiguredStage = false;
 
                 // 尋找出「最後一個有設定的階段」以判斷是否該出現候補按鈕
-                let lastPhaseIdx = -1;
-                let lastStageNum = 1;
-                for (let i = 0; i < phases.length; i++) {
-                    if (phases[i].s1 && phases[i].s1 < 9999999999999) {
-                        lastPhaseIdx = i;
-                        lastStageNum = (phases[i].s2 && phases[i].s2 < 9999999999999) ? 2 : 1;
-                    }
+                // 現在 phases 只有真正設定時間的會進入陣列，所以直接取長度
+                if (phases.length > 0) {
+                    const lastP = phases[phases.length - 1];
+                    const lastStageNum = (lastP.s2 && lastP.s2 < maxTime) ? 2 : 1;
+                    
+                    // 標記在最後一個梯次中的哪一階才是真正結局階段
+                    phases[phases.length - 1].finalStageNum = lastStageNum;
                 }
 
                 // 判斷目前狀態
                 for (let i = 0; i < phases.length; i++) {
                     const p = phases[i];
-                    if (!p.s1 || p.s1 >= 9999999999999) continue;
-
+                    
                     const s1 = p.s1;
-                    const e1 = p.e1 || 9999999999999;
-                    const s2 = p.s2 || 9999999999999;
-                    const e2 = p.e2 || 9999999999999;
-                    const hasS2 = s2 < 9999999999999;
+                    const e1 = p.e1 || maxTime;
+                    const s2 = p.s2 || maxTime;
+                    const e2 = p.e2 || maxTime;
+                    const hasS2 = s2 < maxTime;
 
                     finalEndTime = Math.max(finalEndTime, hasS2 ? e2 : e1);
 
                     if (now >= s1 && now < e1) {
                         activePhaseIdx = i;
                         activeStage = 1;
-                        if (i === lastPhaseIdx && lastStageNum === 1) isFinalConfiguredStage = true;
+                        if (p.finalStageNum === 1) isFinalConfiguredStage = true;
                     } else if (hasS2 && now >= s2 && now < e2) {
                         activePhaseIdx = i;
                         activeStage = 2;
-                        if (i === lastPhaseIdx && lastStageNum === 2) isFinalConfiguredStage = true;
+                        if (p.finalStageNum === 2) isFinalConfiguredStage = true;
                     } else if (hasS2 && now >= e1 && now < s2) {
                         isPreparing = true; // 階段一結束但階段二還沒開始
                     }

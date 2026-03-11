@@ -376,6 +376,35 @@ window.autoFillTime = function () {
         timeInput.value = `${day} 18:30-21:30`;
     }
 };
+// ========================
+// 梯次欄位顯示/隱藏切換
+// ========================
+window.togglePhaseFields = function () {
+    const count = parseInt(document.getElementById('c_phase_count').value);
+    const p2 = document.getElementById('phase2_container');
+    const p3 = document.getElementById('phase3_container');
+
+    if (count === 1) {
+        p2.style.display = 'none';
+        p3.style.display = 'none';
+        // Clear inputs immediately
+        ['c_phase2_date', 'c_phase2_text', 'c_t2_start1', 'c_t2_end1', 'c_t2_start2', 'c_t2_end2',
+         'c_phase3_date', 'c_phase3_text', 'c_t3_start1', 'c_t3_end1', 'c_t3_start2', 'c_t3_end2'].forEach(id => {
+             document.getElementById(id).value = "";
+         });
+    } else if (count === 2) {
+        p2.style.display = 'block';
+        p3.style.display = 'none';
+        // Clear phase 3 inputs
+        ['c_phase3_date', 'c_phase3_text', 'c_t3_start1', 'c_t3_end1', 'c_t3_start2', 'c_t3_end2'].forEach(id => {
+             document.getElementById(id).value = "";
+         });
+    } else {
+        p2.style.display = 'block';
+        p3.style.display = 'block';
+    }
+};
+
 window.formatPrice = function (input) { let val = input.value.replace(/[^0-9]/g, ''); if (val) input.value = "$" + parseInt(val).toLocaleString(); };
 window.formatDate = function (input) { const val = input.value.trim(); if (/^\d{1,2}\/\d{1,2}$/.test(val)) { const [m, d] = val.split('/'); const date = new Date(2026, m - 1, d); const weekDay = ['日', '一', '二', '三', '四', '五', '六'][date.getDay()]; const mm = m.padStart(2, '0'); const dd = d.padStart(2, '0'); input.value = `2026/${mm}/${dd} (${weekDay})`; } };
 
@@ -639,6 +668,15 @@ window.editCourse = function (key) {
     document.getElementById('formTitle').textContent = "✏️ 編輯課程";
     document.getElementById('btnSave').textContent = "確認更新課程";
 
+    // Determine Phase Count for dropdown
+    let phaseCount = 1;
+    if (c.t3_start1) {
+        phaseCount = 3;
+    } else if (c.t2_start1) {
+        phaseCount = 2;
+    }
+    document.getElementById('c_phase_count').value = phaseCount;
+
     document.getElementById('c_id').value = key;
     document.getElementById('c_grade').value = c.grade;
     document.getElementById('c_subject').value = c.subject;
@@ -666,6 +704,8 @@ window.editCourse = function (key) {
     document.getElementById('c_t3_end1').value = c.t3_end1 || "";
     document.getElementById('c_t3_start2').value = c.t3_start2 || "";
     document.getElementById('c_t3_end2').value = c.t3_end2 || "";
+    
+    window.togglePhaseFields();
 
     document.getElementById('c_price').value = c.price;
     document.getElementById('c_lessons').value = c.lessons || "12";
@@ -719,6 +759,9 @@ window.resetForm = function () {
     document.getElementById('c_price').value = "21600";
     document.getElementById('c_waitlist_enabled').checked = false;
     document.getElementById('c_waitlist_limit').value = "0";
+
+    document.getElementById('c_phase_count').value = 3; // 預設新增三階段開啟
+    window.togglePhaseFields();
 
     // ★★★ 核心修改：載入正式課程預設完美版文案 ★★★
     if (tinymce.get('c_desc')) {
