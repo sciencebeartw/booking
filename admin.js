@@ -1672,17 +1672,16 @@ window.exportBookingCSV = function () {
 };
 
 window.exportWaitlistCSV = function () {
-    if (!window.waitlistDisplayList || window.waitlistDisplayList.length === 0) {
+    if (!waitlistDisplayList || waitlistDisplayList.length === 0) {
         alert("目前畫面上無任何可以匯出的候補資料！");
         return;
     }
 
     let csv = "\uFEFF課程,登記時間,狀態,序號,姓名,電話,備註\n";
 
-    window.waitlistDisplayList.forEach(w => {
+    waitlistDisplayList.forEach(w => {
         let seq = window.currentWaitlistRankMap ? (window.currentWaitlistRankMap[w.key] || '-') : '-';
         let statusText = w.status === 'deleted' ? '已刪除' : '候補中';
-        // 若排序模式為序號排序，匯出可以參照顯示
         csv += `${w.courseName},${window.formatTimeWithMs(w.timestamp)},${statusText},${seq},${w.studentName},'${w.parentPhone},${w.note || ''}\n`;
     });
     downloadCSV(csv, "waitlist_data.csv");
