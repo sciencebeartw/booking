@@ -194,13 +194,13 @@
         }
 
         .timer-text {
-            font-size: 28px;
+            font-size: clamp(22px, 6vw, 28px);
             font-weight: bold;
             color: #d35400;
             font-family: monospace;
-            white-space: normal;
-            /* Allow wrap */
-            word-break: break-all;
+            white-space: nowrap;
+            overflow: hidden;
+            text-overflow: ellipsis;
         }
 
         .btn-action {
@@ -1111,7 +1111,7 @@
                                     const diff = p.s2 - now;
                                     timerLabel.textContent = "系統整理中 (暫停開放)";
                                     const stageLabel = phases.length > 1 ? `第 ${i + 1} 梯次二階` : "二階";
-                                    timerText.innerHTML = `距離${stageLabel}還有：<br><span style="font-size:32px;">${formatTime(diff)}</span>`;
+                                    timerText.innerHTML = `<div style="font-size: clamp(16px, 5vw, 24px); white-space: nowrap; padding-bottom: 5px;">距離${stageLabel}還有：</div><span style="font-size:32px;">${formatTime(diff)}</span>`;
                                     btn.textContent = "暫停開放"; btn.className = "btn-action btn-disabled";
                                     break;
                                 }
@@ -1142,7 +1142,7 @@
                                 if (now >= phaseEnd && nextPhase && now < nextPhase.s1) {
                                     const diff = nextPhase.s1 - now;
                                     timerLabel.textContent = `第 ${i + 1} 梯次已結束`;
-                                    timerText.innerHTML = `距離第 ${i + 2} 梯次開放還有：<br><span style="font-size:32px;">${formatTime(diff)}</span>`;
+                                    timerText.innerHTML = `<div style="font-size: clamp(16px, 4.5vw, 24px); white-space: nowrap; padding-bottom: 5px;">距離第 ${i + 2} 梯次開放還有：</div><span style="font-size:32px;">${formatTime(diff)}</span>`;
                                     btn.textContent = "等待下一梯次"; btn.className = "btn-action btn-disabled";
                                     break;
                                 }
