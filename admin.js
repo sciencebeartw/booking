@@ -1037,6 +1037,7 @@ window.clearAdvancedFilters = function(isMulti = false) {
     renderTable();
 };
 
+window.currentBookingDisplayList = [];
 function renderTable() {
     const isMultiMode = window.currentTabId === 'multisync';
     const activeClasses = isMultiMode ? multiSelectedClasses : (() => {
@@ -1152,6 +1153,9 @@ function renderTable() {
                 </td>`;
         tbody.appendChild(tr);
     });
+
+    // 儲存最新的畫面顯示名單，供匯出功能使用
+    window.currentBookingDisplayList = displayList;
     
     populateAdvancedFilters(allBookings.filter(b => {
         if (activeClasses.length > 0 && !activeClasses.includes(b.courseId)) return false;
@@ -1654,9 +1658,13 @@ function updateStats() {
 }
 
 window.exportBookingCSV = function () {
+    if (!window.currentBookingDisplayList || window.currentBookingDisplayList.length === 0) {
+        alert("目前畫面上無任何資料可以匯出！");
+        return;
+    }
+
     let csv = "\uFEFF訂單編號,課程,時間,狀態,座位,姓名,電話,Google 帳號\n";
-    allBookings.forEach(b => {
-        if (multiSelectedClasses.length > 0 && !multiSelectedClasses.includes(b.courseId)) return;
+    window.currentBookingDisplayList.forEach(b => {
         let statusText = b.status === 'sold' ? '已劃位' : (b.status === 'deleted' ? '已釋出' : '填寫中');
         csv += `'${b.orderId},${b.courseName},${b.time},${statusText},${b.seatId},${b.studentName},'${b.parentPhone},'${b.userEmail}\n`;
     });
@@ -1664,22 +1672,17 @@ window.exportBookingCSV = function () {
 };
 
 window.exportWaitlistCSV = function () {
-    const filterId = document.getElementById('waitlistSelector').value;
+    if (!window.waitlistDisplayList || window.waitlistDisplayList.length === 0) {
+        alert("目前畫面上無任何可以匯出的候補資料！");
+        return;
+    }
+
     let csv = "\uFEFF課程,登記時間,狀態,序號,姓名,電話,備註\n";
 
-    const list = waitlistData[filterId] || {};
-    const c = coursesData[filterId];
-    const courseName = c ? `[${c.grade}] ${c.subject} ${c.classType || ''}` : filterId;
-
-    let exportList = Object.keys(list).map(key => ({ ...list[key], key, courseName }));
-    const activeItems = exportList.filter(w => w.status !== 'deleted');
-    activeItems.sort((a, b) => a.timestamp - b.timestamp);
-    const rankMap = {};
-    activeItems.forEach((item, index) => { rankMap[item.key] = index + 1; });
-
-    exportList.forEach(w => {
-        let seq = rankMap[w.key] || '-';
+    window.waitlistDisplayList.forEach(w => {
+        let seq = window.currentWaitlistRankMap ? (window.currentWaitlistRankMap[w.key] || '-') : '-';
         let statusText = w.status === 'deleted' ? '已刪除' : '候補中';
+        // 若排序模式為序號排序，匯出可以參照顯示
         csv += `${w.courseName},${window.formatTimeWithMs(w.timestamp)},${statusText},${seq},${w.studentName},'${w.parentPhone},${w.note || ''}\n`;
     });
     downloadCSV(csv, "waitlist_data.csv");
@@ -2087,6 +2090,8 @@ window.sortWaitlistTable = function (col) {
     renderWaitlistTable();
 };
 
+window.currentWaitlistRankMap = {};
+
 window.renderWaitlistTable = function () {
     const filterId = document.getElementById('waitlistSelector').value;
     const searchKeyword = (document.getElementById('waitlistSearchInput')?.value || "").toLowerCase();
@@ -2218,6 +2223,9 @@ window.renderWaitlistTable = function () {
                     </td>`;
         tbody.appendChild(tr);
     });
+
+    // 儲存最新的序號對應，供匯出功能使用
+    window.currentWaitlistRankMap = rankMap;
 }
 
 window.deleteWaitlist = function (courseId, waitlistId, currentStatus) {
