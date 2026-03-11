@@ -2567,7 +2567,8 @@ window.processBills = function () {
     const archiveSnapshot = window.currentBillArchiveSnapshot || null; // 使用者選取的歷史快照
 
     tempBillStudents.forEach(s => {
-        const currentVersion = JSON.stringify(s.items);
+        // 比對時排除備註欄位（各科 note），只比對科目名稱、日期堂數、金額
+        const currentVersion = JSON.stringify(s.items.map(item => ({ name: item.name, dateHtml: item.dateHtml, price: item.price })));
         s.currentVersion = currentVersion;
 
         if (!archiveSnapshot) {
@@ -2705,6 +2706,9 @@ window.loadBillArchive = async function() {
         window.currentBillArchiveSnapshot = null;
         window.currentArchiveClassKeys = [];
         unlockBillClasses();
+        // 清空總備註（不做比對時還原為空）
+        const globalNoteEl = document.getElementById('billGlobalNote');
+        if (globalNoteEl) globalNoteEl.value = '';
         infoDiv.textContent = '未選取存檔，班級選擇已解鎖，顯示所有學費單（不做比對）。';
         window.processBills();
         return;
@@ -2731,6 +2735,10 @@ window.loadBillArchive = async function() {
         const classes = archiveClasses.join(', ') || '（無班級資訊）';
         const studentCount = Object.keys(window.currentBillArchiveSnapshot).length;
         infoDiv.innerHTML = `✅ 已載入存檔「<strong>${label}</strong>」<br>📚 班級：${classes}<br>👥 快照人數：${studentCount} 人<br><em>下方班級已自動鎖定，點選「💾 儲存設定並產生學費單」即可看到比對結果。</em>`;
+
+        // 還原總備註（若存檔中有儲存）
+        const globalNoteEl = document.getElementById('billGlobalNote');
+        if (globalNoteEl) globalNoteEl.value = archive.globalNote || '';
 
         // 自動鎖定存檔班級（使用 key）
         applyBillArchiveLock(window.currentArchiveClassKeys);
@@ -2777,12 +2785,16 @@ window.saveBillArchive = async function(sentClasses, customLabel, sentKeys) {
         students[key] = JSON.stringify(s.items);
     });
 
+    const globalNoteEl = document.getElementById('billGlobalNote');
+    const globalNote = globalNoteEl ? globalNoteEl.value.trim() : '';
+
     const archiveData = {
         sentAt: Date.now(),
         label: customLabel || defaultLabel,
         classes: sentClasses || [],
         classKeys: sentKeys || [],
-        students: students
+        students: students,
+        globalNote: globalNote
     };
 
     try {
@@ -2913,6 +2925,10 @@ window.loadBill = function (index) {
         billNoteEl.classList.remove('high-school');
     }
 
+    // 總備註（凌駕所有科目備註之上）
+    const globalNoteEl = document.getElementById('billGlobalNote');
+    const globalNote = globalNoteEl ? globalNoteEl.value.trim() : '';
+
     let notes = [];
     s.items.forEach(item => {
         let parts = [];
@@ -2922,7 +2938,12 @@ window.loadBill = function (index) {
             notes.push(`【${item.name}】\n${parts.join('\n')}`);
         }
     });
-    document.getElementById('billNote').innerText = notes.join("\n\n");
+
+    // 組合：全班總備註在最前，各科備註在後
+    const allNoteParts = [];
+    if (globalNote) allNoteParts.push(globalNote);
+    if (notes.length > 0) allNoteParts.push(notes.join("\n\n"));
+    document.getElementById('billNote').innerText = allNoteParts.join("\n\n");
 
     const tbody = document.getElementById('itemsTable');
     tbody.innerHTML = "";

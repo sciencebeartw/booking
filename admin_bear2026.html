@@ -956,6 +956,12 @@
                 <div style="font-size:12px; color:#666; margin-top:5px;">系統會自動尋找標題列中的「學校」與「姓名」欄位</div>
             </div>
 
+            <h3>3. 總備註（顯示在所有學生的學費單上）</h3>
+            <div style="margin-bottom:15px;">
+                <textarea id="billGlobalNote" placeholder="選填。此備註將優先顯示在所有學費單的備註欄最上方，凌駕於各科目備註之上。" style="width:100%; min-height:70px; padding:8px; font-size:14px; border:2px solid #e67e22; border-radius:6px; box-sizing:border-box; resize:vertical;"></textarea>
+                <div style="font-size:12px; color:#e67e22; margin-top:4px;">⚠️ 此為本次批次的全班總備註，不會儲存至 Firebase，每次產生學費單後需重新輸入。</div>
+            </div>
+
             <div style="display:flex; gap:10px;">
                 <button onclick="saveAllBillConfigs()" class="success" style="flex:1;">💾 儲存設定並產生學費單</button>
                 <button onclick="createManualBill()" class="dark" style="flex:1;">➕ 新增空白單</button>
