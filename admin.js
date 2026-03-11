@@ -1613,7 +1613,7 @@ function updateStats() {
 window.exportBookingCSV = function () {
     let csv = "\uFEFF訂單編號,課程,時間,狀態,座位,姓名,電話,Google 帳號\n";
     allBookings.forEach(b => {
-        if (currentSelectedClasses.length > 0 && !currentSelectedClasses.includes(b.courseId)) return;
+        if (multiSelectedClasses.length > 0 && !multiSelectedClasses.includes(b.courseId)) return;
         let statusText = b.status === 'sold' ? '已劃位' : (b.status === 'deleted' ? '已釋出' : '填寫中');
         csv += `'${b.orderId},${b.courseName},${b.time},${statusText},${b.seatId},${b.studentName},'${b.parentPhone},'${b.userEmail}\n`;
     });
@@ -2351,7 +2351,7 @@ window.renderCourseConfig = function () {
         div.innerHTML = `
                     <div style="display:flex; align-items:center; flex: 1 1 100%; min-width:200px; margin-bottom:5px;">
                         <input type="checkbox" id="bill_check_${key}" style="margin-right:10px;" checked onchange="window.processBills()">
-                        <span style="font-weight:bold; word-break:break-word;">${c.subject}</span>
+                        <span style="font-weight:bold; word-break:break-word;">${c.subject} <span style="color:#e67e22; font-size:12px; margin-left:5px;">${c.classType || ''}</span></span>
                     </div>
                     <input type="text" id="bill_date_${key}" placeholder="日期 (如 3/5)" style="width:80px; flex: 1 1 80px;" value="${c.billDate || ''}">
                     <input type="text" id="bill_count_${key}" placeholder="堂數 (如 12)" style="width:60px; flex: 1 1 60px;" value="${c.billCount || ''}">
@@ -2485,7 +2485,7 @@ window.processBills = function () {
                 let noteVal = noteInput ? noteInput.value : (c.billNote || "");
 
                 studentMap[name].items.push({
-                    name: c.subject,
+                    name: c.subject + (c.classType ? ' ' + c.classType : ''),
                     seatInfo: "", // 應要求：拿掉學費單備註中顯示的座位號碼
                     dateHtml: formatBillDate(dateVal, countVal),
                     price: price,
