@@ -1014,11 +1014,13 @@
 
             if (!c.isTrialEvent) {
                 const p1 = { s1: parseDate(c.start1), e1: parseDate(c.end1), s2: parseDate(c.start2), e2: parseDate(c.end2) };
-                phases.push(p1);
+                if (p1.s1 < INF) phases.push(p1);
+                
                 if (c.t2_start1) {
                     const p2 = { s1: parseDate(c.t2_start1), e1: parseDate(c.t2_end1), s2: parseDate(c.t2_start2), e2: parseDate(c.t2_end2) };
                     if (p2.s1 < INF) phases.push(p2);
                 }
+                
                 if (c.t3_start1) {
                     const p3 = { s1: parseDate(c.t3_start1), e1: parseDate(c.t3_end1), s2: parseDate(c.t3_start2), e2: parseDate(c.t3_end2) };
                     if (p3.s1 < INF) phases.push(p3);
@@ -1118,10 +1120,17 @@
                                 if (hasS2 && now >= p.s2 && now < p.e2) {
                                     timerLabel.textContent = "🔥 目前狀態";
                                     let stageLabel;
-                                    if (phases.length > 1) {
-                                        stageLabel = `第 ${i + 1} 梯次 二階開放中`;
+                                    if (phases.length === 1) {
+                                        // 只有一個梯次，第二階段即最後一階段 (含候補)
+                                        stageLabel = "第二階段開放中（含候補）";
+                                    } else if (phases.length === 2 && i === 1) {
+                                        // 有兩個梯次，目前是第二梯次，則是最後一階段 (含候補)
+                                        stageLabel = "第二梯次第二階段（含候補）";
+                                    } else if (phases.length === 3 && i === 2) {
+                                        // 有三個梯次，目前是第三梯次，則是最後一階段 (含候補)
+                                        stageLabel = "第三梯次第二階段（含候補）";
                                     } else {
-                                        stageLabel = isLastPhase ? "第二階段開放中（含候補）" : "第二階段開放中";
+                                        stageLabel = `第 ${i + 1} 梯次 二階開放中`;
                                     }
                                     timerText.textContent = stageLabel;
                                     btn.textContent = "前往劃位 ➜"; btn.className = "btn-action btn-active";
