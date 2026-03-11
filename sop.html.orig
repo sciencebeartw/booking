@@ -1,0 +1,416 @@
+<!-- 檔案：sop.html -->
+<!-- 版本：V36.2 (堅如磐石防護版) -->
+<!DOCTYPE html>
+<html lang="zh-TW">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>劃位須知 - 山熊科學</title>
+
+    <link rel="icon" href="icon.png" type="image/png">
+    <link rel="apple-touch-icon" href="icon.png">
+
+    <style>
+        body {
+            font-family: "Microsoft JhengHei", sans-serif;
+            background-color: #f8f9fa;
+            margin: 0;
+            padding: 0;
+            line-height: 1.6;
+        }
+
+        header {
+            background: #2c3e50;
+            box-shadow: 0 2px 5px rgba(0, 0, 0, 0.1);
+            position: sticky;
+            top: 0;
+            z-index: 1000;
+        }
+
+        .header-container {
+            max-width: 1200px;
+            margin: 0 auto;
+            padding: 10px 20px;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            gap: 20px;
+        }
+
+        .header-container img {
+            height: 60px;
+        }
+
+        .header-container h1 {
+            margin: 0;
+            font-size: 24px;
+            letter-spacing: 1px;
+            color: white;
+        }
+
+        .container {
+            max-width: 800px;
+            margin: 40px auto;
+            background: white;
+            padding: 40px;
+            border-radius: 15px;
+            box-shadow: 0 5px 20px rgba(0, 0, 0, 0.1);
+            position: relative;
+        }
+
+        h1.page-title {
+            color: #2c3e50;
+            text-align: center;
+            border-bottom: 2px solid #e74c3c;
+            padding-bottom: 15px;
+            margin-top: 0;
+        }
+
+        h3 {
+            color: #2c3e50;
+            margin-top: 30px;
+            border-left: 5px solid #e74c3c;
+            padding-left: 10px;
+        }
+
+        ul {
+            padding-left: 20px;
+        }
+
+        li {
+            margin-bottom: 10px;
+            color: #555;
+        }
+
+        .highlight {
+            color: #d35400;
+            font-weight: bold;
+        }
+
+        .important-box {
+            background-color: #fff3cd;
+            border: 1px solid #ffeeba;
+            color: #856404;
+            padding: 15px;
+            border-radius: 8px;
+            margin-bottom: 20px;
+        }
+
+        .info-box {
+            background-color: #e8f6f3;
+            border: 1px solid #d1f2eb;
+            color: #0e6655;
+            padding: 15px;
+            border-radius: 8px;
+            margin-bottom: 20px;
+        }
+
+        .warning-box {
+            background-color: #f8d7da;
+            border: 1px solid #f5c6cb;
+            color: #721c24;
+            padding: 15px;
+            border-radius: 8px;
+            margin-bottom: 20px;
+        }
+
+        /* 資安嚇阻專用樣式 */
+        .deterrence-box {
+            background-color: #f4f6f7;
+            border: 2px solid #2c3e50;
+            color: #2c3e50;
+            padding: 20px;
+            border-radius: 10px;
+            margin-bottom: 30px;
+        }
+
+        .back-btn {
+            display: inline-block;
+            margin-bottom: 20px;
+            color: #3498db;
+            text-decoration: none;
+            font-size: 16px;
+            font-weight: bold;
+            border: 1px solid #3498db;
+            padding: 8px 20px;
+            border-radius: 20px;
+            transition: 0.3s;
+        }
+
+        .back-btn:hover {
+            background: #3498db;
+            color: white;
+        }
+
+        footer {
+            text-align: center;
+            padding: 40px;
+            color: #999;
+            font-size: 14px;
+            background-color: #2c3e50;
+            color: white;
+            margin-top: 80px;
+        }
+
+        .float-line-container {
+            position: fixed;
+            bottom: 20px;
+            right: 20px;
+            display: flex;
+            flex-direction: column;
+            gap: 15px;
+            z-index: 9999;
+            align-items: center;
+        }
+
+        .line-btn {
+            width: 65px;
+            height: 65px;
+            border-radius: 50%;
+            box-shadow: 0 4px 12px rgba(0, 0, 0, 0.3);
+            cursor: pointer;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            text-decoration: none;
+            color: white;
+            font-family: Arial, sans-serif;
+            transition: transform 0.2s;
+            animation: bounce 2s ease-in-out infinite;
+        }
+
+        .line-btn:active {
+            transform: scale(0.9);
+            animation: none;
+        }
+
+        .line-btn span.small {
+            font-size: 10px;
+            font-weight: bold;
+            margin-bottom: 2px;
+            letter-spacing: 0px;
+        }
+
+        .line-btn span.large {
+            font-size: 18px;
+            font-weight: 900;
+            letter-spacing: 1px;
+        }
+
+        .btn-bear {
+            background-color: #06C755;
+        }
+
+        .btn-high {
+            background-color: #0077CC;
+            animation-delay: 1s;
+        }
+
+        @keyframes bounce {
+
+            0%,
+            20%,
+            50%,
+            80%,
+            100% {
+                transform: translateY(0);
+            }
+
+            40% {
+                transform: translateY(-10px);
+            }
+
+            60% {
+                transform: translateY(-5px);
+            }
+        }
+
+        @media (max-width: 768px) {
+            .container {
+                padding: 20px;
+                margin: 20px auto;
+            }
+
+            h1.page-title {
+                font-size: 22px;
+            }
+        }
+    </style>
+</head>
+
+<body>
+
+    <header>
+        <a href="index.html" class="header-container"
+            style="display: flex; align-items: center; justify-content: center; gap: 20px; color: white; text-decoration: none;">
+            <img src="logo1.png" alt="山熊科學">
+            <h1>山熊科學 / 山熊升大</h1>
+            <img src="logo2.png" alt="山熊升大">
+        </a>
+    </header>
+
+    <div class="container">
+        <p><a class="back-btn" href="index.html">⬅ 回首頁</a></p>
+        <h1 class="page-title">📜 試聽報名、正式劃位須知</h1>
+        <div class="deterrence-box">
+            <div style="font-size: 18px; font-weight: bold; margin-bottom: 10px;">🛡️ 公平劃位環境維護聲明</div>
+            <div style="font-size: 14px; line-height: 1.8;">為確保每位家長享有公平的劃位權益，本系統導入了 <strong>AI
+                    行為特徵偵測技術</strong>，並採取以下安全防護：
+                <ul style="margin-top: 10px;">
+                    <li>系統會即時分析操作路徑，任何由自動化程式、外掛腳本發出的「非自然操作」，將立即觸發安全防護機制。</li>
+                    <li>被判定為高風險或疑似腳本的操作，將被隱形防護網強制施加<strong>「5 秒鐘強制冷卻鎖定」</strong>。在此期間您將暫時無法操作。</li>
+                </ul>
+            </div>
+        </div>
+        <div class="important-box" style="background: #e8f6f3; border-color: #1abc9c; color: #0e6655;"><strong>📖
+                進入前請先閱讀須知！</strong><br>首頁入口的兩個選擇按鈕下方，有一個橙色發光的「📖 報名/劃位須知」按鈕，可在劃位或報名前再次點進來閱讀本文，了解重要規則！</div>
+        <div class="important-box"><strong>🔥&nbsp;<strong
+                    style="color: #c0392b; font-size: 18px;">關鍵技巧：</strong></strong><br>為了讓系統快速辨識您是「真人」，<span
+                class="highlight">請勿使用「無痕模式」或「私密瀏覽」！</span><br><br><strong style="color: #c0392b; font-size: 18px;">🛑
+                請避開 LINE
+                內建瀏覽器！</strong><br>如果您是直接在 LINE 聊天室點開網址，極容易被 Google 安全系統誤判為機器人，導致彈出「5 秒強制冷卻鎖定」！<br>👉
+            <strong>正確作法：</strong>點開網址後，請務必點擊畫面右上角（或右下角）的 [ ⋮ ] 或 [ ⋯ ] 選單按鈕，選擇<strong>「以 Safari 或 Chrome (預設瀏覽器)
+                開啟」</strong>。<br><br><strong style="color: #2980b9; font-size: 18px;">🔑 必須準備 Google
+                帳號登入：</strong><br>本系統嚴格採用
+            Google 雲端身分驗證。您必須先在首頁點擊登入您的 Google 帳號，系統才會向您解鎖座位表與報名選項。請提前確認您的手機已登入 Google！（建議為平時有使用之Google帳號）
+        </div>
+        <h3>🚨 劃位前最重要步驟：綁定官方 LINE 帳號</h3>
+        <p>為了確保您能第一時間收到最重要的劃位結果與候補通知，<strong style="color: #d35400;">請務必在劃位前完成以下動作</strong>：</p>
+        <div class="important-box" style="background: #e8f4f8; border-color: #3498db; color: #2c3e50;">
+            <ol style="margin-bottom: 0;">
+                <li>點擊右下角懸浮圖示，加入官方 LINE 帳號（國中小請點綠色「<span
+                        style="color: rgb(22, 145, 121);"><strong>山熊科學</strong></span>」，高中請點藍色「<span
+                        style="color: rgb(35, 111, 161);"><strong>山熊升大</strong></span>」）。</li>
+                <li><strong>新加入家長請依照指示傳送學生的「真實姓名」與「家長聯絡電話」。</strong>&nbsp;這樣系統才能順利將您的 LINE 帳號與學生資料綁定！</li>
+                <li><strong>舊生家長</strong>也請確認是否曾經傳送過「<strong>更新 王小明 0987654321</strong>」進行綁定且收到系統自動回覆已完成綁定訊息。</li>
+            </ol>
+        </div>
+        <h3>1. 為什麼我是真人，卻還是被系統擋下、要我等 5 秒鐘？</h3>
+        <p>為防堵黃牛與機器人作弊，系統強制啟用最新的隱形 Google App Check 安全防護機制。雖然不再需要您點選難搞的九宮格圖片了，但如果您遇到畫面突然跳出<strong>「🚨
+                驗證失敗」或「防護網干擾」並強制鎖定按鈕 5
+                秒鐘</strong>，通常是因為您觸發了以下三種 AI 異常判定：</p>
+        <ul>
+            <li><strong>LINE 內建瀏覽器或全新 Google 帳號：</strong> 若您直接從 LINE 點開網址，其封閉環境會阻擋 Google 讀取
+                Cookie，讓您被判定為低信任度的神祕訪客；或是使用剛建立、無使用紀錄的全新 Google 免洗帳號，也極易被系統擋下。<strong>請務必以 Safari 或 Chrome 開啟，並使用平時活躍的
+                    Google 帳號。</strong></li>
+            <li><strong>共用 IP 連坐處分：</strong> 若您在公司大樓、醫院或使用社區寬頻，同一個區域網路發出大量請求，容易被誤判為惡意腳本庫攻擊。<strong
+                    style="color: #27ae60;">建議：關閉
+                    WiFi，改用個人 4G/5G 行動網路。</strong></li>
+            <li><strong>無游標軌跡與零秒送出：</strong> 若您一進網頁，眼睛都沒看就瞬間神速連續點擊送出按鈕，AI 會判斷您的軌跡缺乏人類的「猶豫感」，進而直接沒收您的送出權限，並施加 5
+                秒鐘的強制物理冷卻！</li>
+        </ul>
+        <div class="info-box" style="background: #fff5f5; border-color: #e74c3c; color: #c0392b;">
+            💡&nbsp;<strong>免責聲明與貼心機制：</strong><br>使用Google防護機制為維繫公平競爭的必要決策，恕我們無法將其關閉。但請放心！正常速度點擊的家長不會遇到任何阻礙。此外，為給予家長仔細確認報名資料的時間，我們已將座位保留保護期設定為充裕的
+            <strong style="font-size: 18px;">60 秒</strong>。請優雅、從容地填寫，不需慌張！
+        </div>
+        <h3>2. 劃位時需準備的通關資料</h3>
+        <ul>
+            <li><strong>學生姓名：</strong>請填寫真實姓名，切勿使用小名或英文名字，以免系統無法與 LINE 名單配對。</li>
+            <li><strong>家長手機：</strong>請務必填寫正確的 <span class="highlight">10 碼手機號碼</span> (如 0912345678)。</li>
+            <li><em>⚠️ 嚴重提醒：系統將以「家長手機」與「學生姓名」做為綁定 LINE
+                    傳送通知的最高核對依據，若學生姓名家長電話打錯，將導致您收不到錄取通知！<strong>我們也會將其報名資格取消。</strong></em>
+            </li>
+        </ul>
+        <h3>3. 系統時鐘與基本規則</h3>
+        <ul>
+            <li><strong>絕對時間 (伺服器時間)：</strong> 系統的倒數計時與開放判定，皆以 <strong>Google
+                    雲端伺服器的絕對時間</strong>為準，完全不受您家裡電腦或手機時間的影響。<span
+                    class="highlight">請勿修改設備時間企圖提早進入系統</span>，提早送出的表單將被系統判定無效，列入異常監控黑名單。</li>
+            <li><strong>資料修改：</strong> 報名或劃位送出後，學生姓名無法修改。送出前請務必再次確認學生姓名是否正確！</li>
+        </ul>
+        <div style="margin-top: 40px; border-top: 2px dashed #bdc3c7; padding-top: 20px;">
+            <p>山熊科學系統目前將「<strong>正式課程劃位</strong>」與「<strong>試聽活動報名</strong>」區分為兩個獨立入口，其流程與規則完全不同，請依您參與的活動閱讀下方專屬說明：</p>
+        </div>
+        <h3 style="color: #d35400; border-left-color: #d35400;">▶️ A. 正式課程劃位專屬守則</h3>
+        <p>正式課程採用「實體座位表」與「即時鎖座制」。請留意以下規則：</p>
+        <div class="info-box">👩&zwj;👧&zwj;👦
+            <strong>【家有多寶劃位指南】</strong><br>若您需同時為<strong>兩位以上</strong>的孩子劃不同課程，<strong
+                style="color: #d35400;">強烈建議您「多機操作劃位」！</strong><br>為求公平，系統具有「設備鎖定機制」，同一台手機（或同一個視窗）同時只能保留一個座位。<br>建議策略：<strong>您使用手機幫哥哥劃位，請家人使用另一台設備幫弟弟劃位</strong>，絕對提高劃位成功率！
+        </div>
+        <ul>
+            <li><strong>限時填寫 (60秒座位鎖)：</strong> 點選座位表上的空位後，系統會為您專屬鎖定保留 <span class="highlight">60
+                    秒</span>。這段期間全世界只有您能填寫這個位子的資料，請安心、從容地填寫，<strong>再三確認報名資訊</strong>。但若超時未送出，座位將自動釋出。</li>
+            <li><strong>🚫 嚴格限購 2 席防線：</strong> 為保障多數家長權益，<strong style="color: #c0392b;">每個 Google 帳號在同一個課程班級內，最多僅能劃位 2
+                    個名額。</strong>超過 2 個即會被系統強制阻擋。同位學生請勿重複劃位，系統會即時偵測出重複姓名，並由後台 <span
+                    class="highlight">系統自動刪除所有重複佔據的座位（包含第一席）以示懲戒</span>。</li>
+            <li><strong>請等候我們傳送通知：</strong> 劃位完成後，請耐心等候。我們會透過官方 LINE <span
+                    class="highlight">推播</span>孩子的「劃位結果」及「學費單」給您，請依單據上的金額匯款，並回報帳號後 5 碼，以利行政團隊核帳。再次提醒：請確認是否已進行學生資料綁定。
+            </li>
+            <li><strong>訂單資料雙重保密查詢：</strong>劃位成功後系統會配發一組專屬的「訂單編號」。若您需要事後查詢劃位結果，請至查詢頁面，同時輸入<strong>「家長手機號碼」</strong>與<strong>「訂單編號」</strong>，以最高規格保護您的個人隱私。
+            </li>
+            <li>
+                <div
+                    style="background: #fff3cd; border: 2px dashed #e67e22; border-radius: 10px; padding: 12px 18px; margin-top: 4px;">
+                    <strong style="font-size: 18px; color: #c0392b;">📸 劃位成功後請務必「截圖」留存畫面！</strong><br><span
+                        style="color: #7d6608;">劃位結果上方的訂單編號是您日後查詢訂單的重要依據！請在按下「✅
+                        確定關閉並已截圖」之前，自行使用手機相機或截圖功能將劃位成功畫面完整保存下來。</span>
+                </div>
+            </li>
+            <li><strong>候補機制：</strong>若各梯次座位已全數額滿，系統將在<strong>最後一個梯次全數售罄後</strong>開放「登記候補」。座位表上部分顯示灰色「下梯開放」字樣的座位，代表本梯次暫時保留給後續梯次的家長使用，<strong>請勿嘗試點擊</strong>。若有釋出座位，我們將依照候補登記順序，透過官方
+                LINE 或電話通知遞補。</li>
+        </ul>
+        <h3 style="color: #27ae60; border-left-color: #27ae60;">▶️ B. 試聽活動報名專屬守則</h3>
+        <p>試聽活動採用「志願選填」與「AI 分發」，無須在畫面上搶點座位。重點在於<strong>「精準表達您的意願，讓 AI 幫您安排」</strong>：</p>
+        <div
+            style="background: #e8f8f5; padding: 15px; border-radius: 8px; border-left: 5px solid #1abc9c; margin-bottom: 20px;">
+            <p><strong>🤖 AI 智能分發邏輯解密</strong><br>系統送出後，後台 AI
+                引擎將依照您按下送出時的「<strong>毫秒時間戳記</strong>」與「<strong>志願順序</strong>」進行分發。越早送出，您的志願越能被優先滿足！</p>
+            <ul style="line-height: 1.8; margin-top: 10px;">
+                <li><strong>🎓 志願選擇策略說明：</strong><br>請盡量<strong>填滿您的志願</strong>！若您最想要的「第一志願」已被秒殺額滿，AI
+                    會瞬間無縫幫您報名「第二志願」。多填幾個時段，能大幅提高錄取機率！</li>
+                <li><strong>⏳
+                        純候補模式保障機制：</strong><br>當畫面上顯示「候補登記」時，若您同時勾選多堂課（例如週五班及週六班），萬一其中一科連候補名額都滿了，系統會<strong>自動幫您保留成功的科目</strong>，並在送出畫面上明確列出「未能排入」的班級，保障您的最大權益。
+                </li>
+                <li><strong>🔴
+                        純候補全滿自動關閉機制：</strong><br>純候補模式下，每個班級皆有設定「候補名額上限」。當<strong>所有班級的候補名額均已達到上限</strong>時，首頁課程按鈕將自動變為紅色「🔴
+                    候補已額滿」，此時將無法進入報名頁面。若後台管理員提高了某個班級的候補容量，則按鈕將<strong>即時自動恢復開放</strong>。</li>
+                <li><strong>🌟
+                        雙科預留防護：</strong><br>提醒欲報名雙科的家長，強烈建議選擇「兩科都上，所有時段皆可」。系統擁有高階挪位方法，會非常貼心地<strong>優先尋找「同一天連上兩科」的時段</strong>給您。就算雙科真的爆滿湊不齊，最低限度也會為您「保底單科」並排入另一科的優先候補，絕不讓您兩頭空。
+                    <div
+                        style="margin-top: 10px; padding: 12px; background-color: #fdf2e9; border: 1px dashed #e67e22; border-radius: 5px;">
+                        <strong style="color: #c0392b;">【雙科連動取消規範】</strong><br>
+                        由於排課邏輯會連動影響所有學生的時段，且志願座位皆為「套裝保證保留」，<strong
+                            style="color: #c0392b;">若日後須請假或取消，系統僅能「全部同時取消」，無法接受單獨保留一科！</strong><br>
+                        請務必確認選擇彈性連排時，孩子當日的精神與時間皆能全程參與。
+                    </div>
+                </li>
+                <li><strong>📩 雙重確認
+                        (不即時公布榜單)：</strong><br>送出表單<strong>不代表錄取</strong>。為確保分發作業精確無誤且保護名單隱私，分發結果不會在網頁上即時顯示。排位完成後，山熊行攻老師會於確認後再透過
+                    <strong>LINE 官方帳號</strong> 單獨發送正式錄取/候補通知給您。
+                </li>
+            </ul>
+        </div>
+        <p>💡 <strong>試聽報名總結：</strong> 「由 AI 分發」不代表可以慢慢來！AI 仍會嚴格優先滿足「較早送出」的家長。強烈建議您在開放的 0.1
+            秒就送出表單，並且<strong>善用「所有時段皆可」的包牌選項</strong>，讓 AI 有最大的空間為您爭取席次！</p>
+        <div class="warning-box"><strong>⚠️ 最後提醒：</strong><br>所有重要的通知資訊、繳費單與候補狀態變更，皆仰賴系統與 LINE
+            的自動發送，請不要忘記在劃位前完成「傳送姓名預先綁定」的作業喔！
+        </div>
+    </div>
+
+    <footer>
+        &copy; 2026 山熊科學實驗教室 | 系統開發：Sciencebear Tech Team
+    </footer>
+
+    <div class="float-line-container">
+        <a href="https://lin.ee/FDQ1BLD" target="_blank" class="line-btn btn-bear" title="山熊科學官方LINE">
+            <span class="small">山熊科學</span>
+            <span class="large">LINE</span>
+        </a>
+        <a href="https://lin.ee/kzE9NrI" target="_blank" class="line-btn btn-high" title="山熊升大官方LINE">
+            <span class="small">山熊升大</span>
+            <span class="large">LINE</span>
+        </a>
+    </div>
+
+</body>
+<script>
+    const urlParams = new URLSearchParams(window.location.search);
+    const mode = urlParams.get('mode');
+    if (mode) {
+        document.querySelector('.back-btn').href = 'index.html?mode=' + mode;
+    }
+</script>
+
+</html>

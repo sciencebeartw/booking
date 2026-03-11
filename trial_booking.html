@@ -584,6 +584,7 @@
             /* Push footer to bottom */
         }
     </style>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/animate.css/4.1.1/animate.min.css"/>
 </head>
 
 <body>
@@ -1529,6 +1530,8 @@
                             icon: 'error',
                             title: '慢了一步',
                             html: '<p>您選擇的班級候補名額皆已被搶空！<br>請重新選擇其他班級試試看。</p>',
+                            showClass: { popup: 'animate__animated animate__shakeX' },
+                            hideClass: { popup: 'animate__animated animate__zoomOut' },
                             confirmButtonText: '重新選擇'
                         });
                         return; // 中斷後續寫入
@@ -1575,6 +1578,8 @@
                                 '<p style="font-size:14px; color:#c0392b; font-weight:bold; margin-bottom:15px;">若尚未加官方 LINE<br>請點擊右下角綠色「<span style="color:#27ae60;">山熊科學</span>」圖示加入並建檔。</p>' +
                                 '<p style="font-size:20px; text-align:center; color:#c0392b; font-weight:bold; margin-bottom:0; background:#fff3cd; padding:8px 12px; border-radius:8px; border:2px dashed #e67e22;">📸 請務必「截圖」留存此畫面！</p>' +
                                 '</div>',
+                            showClass: { popup: 'animate__animated animate__tada' },
+                            hideClass: { popup: 'animate__animated animate__zoomOut animate__faster' },
                             confirmButtonText: '✅ 關閉返回',
                             confirmButtonColor: '#2ecc71',
                             allowOutsideClick: false
@@ -1621,6 +1626,8 @@
                         '<p style="font-size:14px; color:#c0392b; font-weight:bold; margin-bottom:15px;">若尚未加官方 LINE<br>請點擊右下角綠色「<span style="color:#27ae60;">山熊科學</span>」圖示加入並建檔。</p>' +
                         '<p style="font-size:20px; text-align:center; color:#c0392b; font-weight:bold; margin-bottom:0; background:#fff3cd; padding:8px 12px; border-radius:8px; border:2px dashed #e67e22;">📸 請務必「截圖」留存此畫面！</p>' +
                         '</div>',
+                    showClass: { popup: 'animate__animated animate__tada' },
+                    hideClass: { popup: 'animate__animated animate__zoomOut animate__faster' },
                     confirmButtonText: '✅ 關閉返回',
                     confirmButtonColor: '#2ecc71',
                     allowOutsideClick: false

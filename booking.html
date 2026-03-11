@@ -1176,10 +1176,24 @@
             const isP3 = isOpen3_1 || isOpen3_2;
 
             if (!isP1 && !isP2 && !isP3) {
-                let msg = "⛔ 目前非開放劃位時間！";
-                if (now < start1) msg = "⛔ 劃位尚未開始！請勿偷跑！";
-                else msg = "⛔ 系統整理中，暫停開放！";
-                Swal.fire(msg).then(() => {
+                let msg = "目前非開放劃位時間！";
+                let iconStr = "warning";
+                if (now < start1) {
+                    msg = "劃位尚未開始！請勿偷跑！";
+                    iconStr = "error";
+                } else {
+                    msg = "系統整理中，暫停開放！";
+                    iconStr = "warning";
+                }
+                Swal.fire({
+                    icon: iconStr,
+                    title: '⛔ 系統提示',
+                    text: msg,
+                    showClass: { popup: 'animate__animated animate__bounceIn' },
+                    hideClass: { popup: 'animate__animated animate__zoomOut animate__faster' },
+                    confirmButtonText: '確定',
+                    confirmButtonColor: '#e74c3c'
+                }).then(() => {
                     window.location.href = "index.html";
                 });
                 return;

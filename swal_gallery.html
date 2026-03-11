@@ -7,6 +7,7 @@
     <title>Swal 視窗全覽 (系統導覽版)</title>
     <!-- 引入 SweetAlert2 -->
     <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/animate.css/4.1.1/animate.min.css" />
     <style>
         :root {
             --success: #2ecc71;
@@ -175,9 +176,17 @@
                 <span class="label-trial">雙科模式</span>
                 <span class="icon">⚖️</span>雙科連排報名成功
             </button>
-            <button class="swal-btn btn-success" onclick="showWaitlistTrialSuccess()">
+            <button class="swal-btn btn-success" onclick="showWaitlistTrialSuccess('both')">
                 <span class="label-trial">純候補模式</span>
-                <span class="icon">⏳</span>純候補登記成功 (含班級標籤)
+                <span class="icon">⏳</span>純候補 - 2科皆候補成功
+            </button>
+            <button class="swal-btn btn-warning" onclick="showWaitlistTrialSuccess('partial')">
+                <span class="label-trial">純候補模式</span>
+                <span class="icon">🚧</span>純候補 - 1科候補，1科全滿
+            </button>
+            <button class="swal-btn btn-error" onclick="showWaitlistTrialSuccess('fail')">
+                <span class="label-trial">純候補模式</span>
+                <span class="icon">⛔</span>純候補 - 皆已滿 (慢了一步)
             </button>
             <button class="swal-btn btn-teal" onclick="showRuleDescription('multi')">
                 <span class="icon">📋</span>報名規則預覽 (多志願)
@@ -256,6 +265,9 @@
             <button class="swal-btn btn-warning" onclick="showPhaseEnded()">
                 <span class="icon">⏳</span>劃位階段已結束
             </button>
+            <button class="swal-btn btn-error" onclick="showNotStarted()">
+                <span class="icon">🚫</span>劃位尚未開始 (含彈出動畫)
+            </button>
             <button class="swal-btn btn-warning" onclick="showSeatCancelled()">
                 <span class="icon">❌</span>座位已被取消保留
             </button>
@@ -315,8 +327,36 @@
             });
         }
 
-        function showWaitlistTrialSuccess() {
+        function showWaitlistTrialSuccess(type) {
             const timeStr = new Date().toLocaleString('zh-TW', { hour12: false }) + '.123';
+            
+            if (type === 'fail') {
+                Swal.fire({
+                    icon: 'error',
+                    title: '慢了一步',
+                    html: '<p>您選擇的班級候補名額皆已被搶空！<br>請重新選擇其他班級試試看。</p>',
+                    confirmButtonText: '重新選擇'
+                });
+                return;
+            }
+
+            let listHtml = '';
+            let failHtml = '';
+
+            if (type === 'both' || type === 'partial') {
+                listHtml += `<div style="display:inline-block; font-size:18px; font-weight:bold; color:#fff; background:${THEME_ORANGE}; padding:8px 18px; border-radius:25px; margin:4px; box-shadow:0 2px 5px rgba(230,126,34,0.3);">國二物理進階班</div>`;
+            }
+            if (type === 'both') {
+                listHtml += `<div style="display:inline-block; font-size:18px; font-weight:bold; color:#fff; background:${THEME_ORANGE}; padding:8px 18px; border-radius:25px; margin:4px; box-shadow:0 2px 5px rgba(230,126,34,0.3);">初階機器人實作</div>`;
+            }
+
+            if (type === 'partial') {
+                failHtml += '<div style="margin-top:15px; padding-top:20px; border-top:1px dashed #ccc; margin-bottom:15px;">';
+                failHtml += '<p style="font-size:15px; font-weight:bold; color:#7f8c8d; margin-bottom:12px;">以下班級連候補都已額滿，未能成功排入：</p>';
+                failHtml += `<div style="display:inline-block; font-size:15px; color:#95a5a6; background:#eee; padding:6px 16px; border-radius:25px; margin:4px; text-decoration:line-through;">初階機器人實作</div>`;
+                failHtml += '</div>';
+            }
+
             Swal.fire({
                 html: `<div style="text-align:center; background:#f4f6f7; padding:15px; border-radius:10px; margin-top:15px; font-size:16px;">
                     <p style="font-size:20px; font-weight:bold; color:${THEME_ORANGE}; margin-bottom:15px;">候補登記成功</p>
@@ -325,10 +365,10 @@
                     <p style="font-size:16px; color:#555; margin-bottom:15px;">系統已成功記錄您的報名資料。</p>
                     <p style="font-size:16px; color:#555; margin-bottom:10px;">您本次的候補班級：</p>
                     <div style="margin-bottom:10px;">
-                        <div style="display:inline-block; font-size:18px; font-weight:bold; color:#fff; background:${THEME_ORANGE}; padding:8px 18px; border-radius:25px; margin:4px; box-shadow:0 2px 5px rgba(230,126,34,0.3);">國二物理進階班</div>
-                        <div style="display:inline-block; font-size:18px; font-weight:bold; color:#fff; background:${THEME_ORANGE}; padding:8px 18px; border-radius:25px; margin:4px; box-shadow:0 2px 5px rgba(230,126,34,0.3);">初階機器人實作</div>
+                        ${listHtml}
                     </div>
                     <div style="font-size:14px; color:#7f8c8d; background:#fff; padding:10px; border-radius:8px; display:inline-block; margin-bottom:15px; border:1px solid #e0e0e0; line-height:1.5;">注意：候補班級目前皆已額滿有候補。<br>本次會依序加入原候補序列後方。</div>
+                    ${failHtml}
                     <p style="font-size:16px; color:#555; margin-bottom:15px;">候補序號我們將透過 Line 官方帳號發送「正式通知」。</p>
                     <p style="font-size:20px; text-align:center; color:#c0392b; font-weight:bold; margin-bottom:0; background:#fff3cd; padding:8px 12px; border-radius:8px; border:2px dashed ${THEME_ORANGE};">📸 請務必「截圖」留存此畫面！</p>
                 </div>`,
@@ -449,7 +489,25 @@
             Swal.fire({ icon: 'error', title: '無效的課程連結！' });
         }
         function showPhaseEnded() {
-            Swal.fire({ icon: 'warning', title: '劃位階段已結束！', html: '系統整理中，請等待下一階段開放。' });
+            Swal.fire({
+                icon: 'warning',
+                title: '⛔ 系統整理中，暫停開放！',
+                showClass: { popup: 'animate__animated animate__bounceIn' },
+                hideClass: { popup: 'animate__animated animate__zoomOut animate__faster' },
+                confirmButtonText: '確定',
+                confirmButtonColor: '#e74c3c'
+            });
+        }
+        function showNotStarted() {
+            Swal.fire({
+                icon: 'error',
+                title: '⛔ 系統提示',
+                text: '劃位尚未開始！請勿偷跑！',
+                showClass: { popup: 'animate__animated animate__bounceIn' },
+                hideClass: { popup: 'animate__animated animate__zoomOut animate__faster' },
+                confirmButtonText: '確定',
+                confirmButtonColor: '#e74c3c'
+            });
         }
         function showSeatCancelled() {
             Swal.fire({ icon: 'warning', title: '此座位已被取消保留', html: '請重新選擇。' });
