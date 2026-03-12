@@ -1131,6 +1131,23 @@
             <div style="margin-top:15px;">
                 <button onclick="downloadSeatingChart()" class="success">📸 下載座位表圖片 (A4)</button>
             </div>
+
+            <!-- ★★★ 新增：座位總表同步區塊 ★★★ -->
+            <div id="masterSyncArea" style="margin-top:20px; background:#e8f4fd; padding:15px; border-radius:10px; border:1px solid #3498db; width:100%; max-width:500px; box-sizing:border-box;">
+                <h3 style="margin-top:0; color:#2980b9; font-size:16px;">🚀 座位總表同步 (獨立 GAS)</h3>
+                <div style="display:flex; flex-direction:column; gap:8px; text-align:left;">
+                    <label style="font-size:13px; font-weight:bold;">1. 總表 Webhook URL:</label>
+                    <input type="url" id="master-gas-webhook" style="width:100%; padding:8px; border:1px solid #ccc; border-radius:4px;" placeholder="https://script.google.com/macros/s/..../exec" value="https://script.google.com/macros/s/AKfycbwNMeWvaHKp8D3608c_vXKWusWCsc0Vd0b_cGwbdwLoDvCzFn11tV5-I8TmbZKcyOcZ/exec">
+                    
+                    <label style="font-size:13px; font-weight:bold;">2. 分頁名稱:</label>
+                    <input type="text" id="master-tab-name" style="width:100%; padding:8px; border:1px solid #ccc; border-radius:4px;" placeholder="例如：114座位總表">
+                    
+                    <div style="display:flex; gap:10px; margin-top:5px;">
+                        <button onclick="exportToMasterMap()" class="success" style="flex:1; background:#3498db; border-color:#3498db;">🚀 寫入總表</button>
+                        <button onclick="showBeautifulTable()" class="warning" style="flex:1;">✨ 美化表格視窗</button>
+                    </div>
+                </div>
+            </div>
         </div>
 
         <div id="printArea">
@@ -1149,12 +1166,20 @@
         </div>
     </div>
 
-    <div id="previewModal" class="preview-modal" onclick="closePreview()">
-        <div class="preview-box" onclick="event.stopPropagation()">
-            <h3 id="previewTitle"></h3>
-            <div id="previewContent"
-                style="display:flex; justify-content:center; flex-direction:column; align-items:center;"></div>
-            <button onclick="closePreview()" style="margin-top:20px;">關閉</button>
+    </div>
+
+    <!-- ★★★ 新增：美化表格 Modal ★★★ -->
+    <div id="beautifulTableModal" class="preview-modal" style="display:none; z-index: 10000;" onclick="closeBeautifulTable()">
+        <div class="preview-box" style="max-width: 95%; width: auto; max-height: 90vh; overflow-y: auto;" onclick="event.stopPropagation()">
+            <h3 id="beautyTitle" style="color:#2c3e50; font-size:24px; margin-bottom:10px;">✨ 座位美化表格</h3>
+            <div id="beautyClassInfo" style="margin-bottom:15px; color:#7f8c8d; font-size:14px;"></div>
+            <div id="beautyTableContainer" style="overflow-x:auto; background:white; padding:20px; border-radius:10px; box-shadow:0 10px 30px rgba(0,0,0,0.1);">
+                <!-- 表格內容由 JS 動態生成 -->
+            </div>
+            <div style="margin-top:20px; display:flex; gap:10px; justify-content:center;">
+                <button onclick="printBeautifulTable()" class="success">🖨️ 直接列印表格</button>
+                <button onclick="closeBeautifulTable()" class="danger">關閉視窗</button>
+            </div>
         </div>
     </div>
 

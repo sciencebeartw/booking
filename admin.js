@@ -176,6 +176,19 @@ onValue(ref(db, 'settings/gasWebhookUrl'), (snap) => {
     if (input) input.value = gasWebhookUrl;
 });
 
+// ★ V37.0 Seat Map Master Sync settings
+onValue(ref(db, 'settings/masterGasWebhookUrl'), (snap) => {
+    const val = snap.val() || "";
+    const input = document.getElementById('master-gas-webhook');
+    if (input) input.value = val;
+});
+
+onValue(ref(db, 'settings/masterTabName'), (snap) => {
+    const val = snap.val() || "";
+    const input = document.getElementById('master-tab-name');
+    if (input) input.value = val;
+});
+
 tinymce.init({
     selector: '#c_desc, #e_desc',
     plugins: 'image link lists media table code',
@@ -3553,6 +3566,197 @@ window.downloadSeatingChart = function () {
         link.href = canvas.toDataURL("image/png");
         link.click();
     });
+};
+
+// ★★★ V37.0 Seat Map Master Export & Beautiful Table Logic ★★★
+window.exportToMasterMap = async function() {
+    const webhookUrl = document.getElementById('master-gas-webhook').value.trim();
+    const tabName = document.getElementById('master-tab-name').value.trim();
+    
+    if (!webhookUrl || !tabName) {
+        return Swal.fire("❌ 缺少資訊", "請填寫總表 Webhook URL 與分頁名稱！", "error");
+    }
+
+    // 儲存設定到 Firebase (方便下次使用)
+    set(ref(db, 'settings/masterGasWebhookUrl'), webhookUrl);
+    set(ref(db, 'settings/masterTabName'), tabName);
+
+    const source = document.getElementById('printSourceSelector').value;
+    const selectedId = document.getElementById('printCourseSelector').value;
+    if (!selectedId) return Swal.fire("❌ 請先產生座位表", "", "warning");
+
+    // 1. 取得當前使用的 Layout
+    let layoutToRender = null;
+    if (source === 'live') {
+        const c = coursesData[selectedId];
+        layoutToRender = c.layout || (classrooms[c.classroom] ? classrooms[c.classroom].layout : null);
+    } else if (source === 'manual') {
+        layoutToRender = printLayouts[selectedId].layout;
+    } else if (source === 'empty') {
+        layoutToRender = classrooms[selectedId].layout;
+    }
+    if (!layoutToRender) return Swal.fire("❌ 無法取得 Layout 資訊", "", "error");
+
+    // 2. 取得當前 UI 上的名單 (可能已被手動修改)
+    const records = [];
+    layoutToRender.forEach((row, rowIdx) => {
+        row.forEach((seatCode, colIdx) => {
+            let code = seatCode;
+            if (code.includes(':X')) code = code.split(':')[0];
+            if (code === "_" || code === "DOOR" || code === "PILLAR") return;
+
+            const seatEl = document.querySelector(`.print-seat[data-id="${code}"]`);
+            if (seatEl) {
+                const name = seatEl.textContent.trim();
+                records.push({
+                    seatId: code,
+                    studentName: name,
+                    rowIdx: rowIdx,
+                    colIdx: colIdx
+                });
+            }
+        });
+    });
+
+    Swal.fire({
+        title: '🚀 正在寫入座位總表...',
+        text: '請稍候，正在同步中...',
+        allowOutsideClick: false,
+        didOpen: () => { Swal.showLoading(); }
+    });
+
+    try {
+        const response = await fetch(webhookUrl, {
+            method: 'POST',
+            mode: 'no-cors', // 配合 GAS 通常需要 no-cors
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({
+                action: "export_seating_chart",
+                tabName: tabName,
+                records: records
+            })
+        });
+        
+        // 由於 no-cors 無法得知成功與否，我們只能提示已發送
+        Swal.fire({
+            icon: 'success',
+            title: '✅ 已發送寫入請求',
+            text: '由於網域安全性限制，系統無法直接確認寫入結果。請檢查您的 Google 試算表！',
+            confirmButtonColor: '#3498db'
+        });
+    } catch (err) {
+        Swal.fire("❌ 寫入失敗", err.message, "error");
+    }
+};
+
+window.showBeautifulTable = function() {
+    const container = document.getElementById('beautifulTableModal');
+    const infoArea = document.getElementById('beautyClassInfo');
+    const tableArea = document.getElementById('beautyTableContainer');
+    
+    const source = document.getElementById('printSourceSelector').value;
+    const selectedId = document.getElementById('printCourseSelector').value;
+    if (!selectedId) return Swal.fire("請先在下方產生座位表後再點擊美化表格！", "", "warning");
+
+    const classroomName = document.getElementById('p_classroom').textContent;
+    const classType = document.getElementById('p_classType').textContent;
+    const time = document.getElementById('p_time').textContent;
+    const teacher = document.getElementById('p_teacher').textContent;
+
+    infoArea.innerHTML = `<div>${classroomName} | ${classType}</div><div>${time} | ${teacher}</div>`;
+
+    // 1. 取得當前使用的 Layout
+    let layout = null;
+    if (source === 'live') {
+        const c = coursesData[selectedId];
+        layout = c.layout || (classrooms[c.classroom] ? classrooms[c.classroom].layout : null);
+    } else if (source === 'manual') {
+        layout = printLayouts[selectedId].layout;
+    } else if (source === 'empty') {
+        layout = classrooms[selectedId].layout;
+    }
+    if (!layout) return alert("無法載入 Layout 資訊");
+
+    // 2. 建立表格
+    let html = `<table class="beauty-table" style="width:100%; border-collapse:collapse; text-align:center; font-family:'Inter', sans-serif;">`;
+    html += `<thead><tr><th colspan="${layout[0].length}" style="background:#2c3e50; color:white; padding:15px; font-size:20px; border-radius:10px 10px 0 0;">講　　台</th></tr></thead><tbody>`;
+
+    layout.forEach(row => {
+        html += `<tr>`;
+        row.forEach(seatCode => {
+            let code = seatCode;
+            let isBlocked = false;
+            if (code.includes(':X')) { code = code.split(':')[0]; isBlocked = true; }
+
+            let style = "border:1px solid #dfe6e9; padding:10px; width:70px; height:50px; font-size:16px;";
+            let content = "";
+
+            if (code === "_") {
+                style += "background:#f9f9f9; border:none;";
+                content = "";
+            } else if (code === "DOOR") {
+                style += "background:#ecf0f1; font-size:12px; color:#95a5a6; border:1px dashed #ccc;";
+                content = "門";
+            } else if (code === "PILLAR") {
+                style += "background:#dcdde1; font-weight:bold; color:#7f8c8d;";
+                content = "柱";
+            } else if (isBlocked) {
+                style += "background:#fab1a0; color:white; font-size:12px;";
+                content = code;
+            } else {
+                const seatEl = document.querySelector(`.print-seat[data-id="${code}"]`);
+                const studentName = seatEl ? seatEl.textContent.trim() : "";
+                if (studentName) {
+                    style += "background:#e8f4fd; font-weight:bold; color:#2980b9; border: 2px solid #3498db; box-shadow: inset 0 0 5px rgba(52,152,219,0.1);";
+                    content = studentName;
+                } else {
+                    style += "color:#bdc3c7; font-size:10px; background:white;";
+                    content = code;
+                }
+            }
+            html += `<td style="${style}">${content}</td>`;
+        });
+        html += `</tr>`;
+    });
+
+    html += `</tbody></table>`;
+    tableArea.innerHTML = html;
+    container.style.display = 'flex';
+};
+
+window.closeBeautifulTable = function() {
+    document.getElementById('beautifulTableModal').style.display = 'none';
+};
+
+window.printBeautifulTable = function() {
+    const printContent = document.getElementById('beautyTableContainer').innerHTML;
+    const info = document.getElementById('beautyClassInfo').innerHTML;
+    const windowUrl = 'about:blank';
+    const uniqueName = new Date();
+    const windowName = 'Print' + uniqueName.getTime();
+    const printWindow = window.open(windowUrl, windowName, 'left=500,top=500,width=900,height=900');
+
+    printWindow.document.write(`
+        <html>
+            <head>
+                <title>座位表列印</title>
+                <style>
+                    body { font-family: 'Inter', sans-serif; text-align: center; padding: 40px; }
+                    .header-info { margin-bottom: 30px; border-bottom: 2px solid #eee; padding-bottom: 10px; }
+                    .beauty-table { width: 100%; border-collapse: collapse; table-layout: fixed; }
+                    .beauty-table td { border: 1px solid #ccc; padding: 15px; text-align: center; font-size: 18px; word-break: break-all; }
+                    .beauty-table th { background: #333; color: white; padding: 15px; }
+                </style>
+            </head>
+            <body>
+                <div class="header-info">${info}</div>
+                ${printContent}
+            </body>
+        </html>
+    `);
+    printWindow.document.close();
+    printWindow.focus();
+    printWindow.print();
 };
 
 // ★★★ V36.0 雲端圖庫邏輯 (共用模組) ★★★
