@@ -3639,8 +3639,8 @@ const animationSvg = `
     `;
 
     Swal.fire({
-        title: '🚀 正在寫入座位總表...',
-        html: animationSvg + '<div>山熊魔法傳輸中，請稍候...</div>',
+        title: '',
+        html: animationSvg + '<div style="font-size:1.8em; font-weight:bold; margin-bottom:15px;">🚀 正在寫入座位總表...</div><div>山熊魔法傳輸中，請稍候...</div>',
         allowOutsideClick: false,
         showConfirmButton: false,
         didOpen: () => { Swal.showLoading(); }
