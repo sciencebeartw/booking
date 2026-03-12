@@ -107,7 +107,7 @@ function handleExportSeatingChart(tabName, records, info) {
     cell.setHorizontalAlignment("center");
     cell.setVerticalAlignment("middle");
     cell.setFontWeight("bold");
-    cell.setFontSize(27); // 使用者要求放大至 27pt
+    cell.setFontSize(22); // 使用者要求放大至 22pt
   });
 
   // 4. 自動化格式調整 (讓格子方正)
