@@ -3618,30 +3618,58 @@ window.exportToMasterMap = async function() {
         });
     });
 
+const animationSvg = `
+        <svg width="80" height="80" viewBox="0 0 100 100" xmlns="http://www.w3.org/2000/svg" style="margin: 0 auto 15px;">
+            <style>
+                @keyframes flyEnvelope { 0% { transform: translate(0px, 10px) rotate(-10deg); opacity: 0; } 20% { opacity: 1; transform: translate(15px, -5px) rotate(5deg); } 80% { opacity: 1; transform: translate(40px, -20px) rotate(15deg); } 100% { transform: translate(50px, -25px) rotate(20deg); opacity: 0; } }
+                @keyframes spark { 0% { opacity: 0.2; transform: scale(0.8); } 50% { opacity: 1; transform: scale(1.2); } 100% { opacity: 0.2; transform: scale(0.8); } }
+            </style>
+            <circle cx="50" cy="50" r="45" fill="#f4f6f7" />
+            <g style="animation: flyEnvelope 2s ease-in-out infinite;">
+                <path d="M 20,40 L 60,40 L 60,65 L 20,65 Z" fill="#fff" stroke="#3498db" stroke-width="3" stroke-linejoin="round"/>
+                <path d="M 20,40 L 40,55 L 60,40" fill="none" stroke="#e74c3c" stroke-width="3" stroke-linejoin="round"/>
+                <rect x="25" y="45" width="8" height="6" fill="#f1c40f" />
+            </g>
+            <g fill="#27ae60">
+                <circle cx="75" cy="25" r="3" style="animation: spark 1.5s infinite 0s;" />
+                <circle cx="85" cy="40" r="4" style="animation: spark 1.5s infinite 0.5s;" />
+                <circle cx="70" cy="55" r="2" style="animation: spark 1.5s infinite 1s;" />
+            </g>
+        </svg>
+    `;
+
     Swal.fire({
         title: '🚀 正在寫入座位總表...',
-        text: '請稍候，正在同步中...',
+        html: animationSvg + '<div>山熊魔法傳輸中，請稍候...</div>',
         allowOutsideClick: false,
+        showConfirmButton: false,
         didOpen: () => { Swal.showLoading(); }
     });
+
+    const info = {
+        classroom: document.getElementById('p_classroom').textContent,
+        classType: document.getElementById('p_classType').textContent.replace('班級：', '').trim(),
+        time: document.getElementById('p_time').textContent.replace('上課時間：', '').trim(),
+        teacher: document.getElementById('p_teacher').textContent.replace('老師：', '').trim()
+    };
 
     try {
         const response = await fetch(webhookUrl, {
             method: 'POST',
-            mode: 'no-cors', // 配合 GAS 通常需要 no-cors
-            headers: { 'Content-Type': 'application/json' },
+            mode: 'no-cors',
+            headers: { 'Content-Type': 'text/plain;charset=utf-8' },
             body: JSON.stringify({
                 action: "export_seating_chart",
                 tabName: tabName,
-                records: records
+                records: records,
+                info: info
             })
         });
         
-        // 由於 no-cors 無法得知成功與否，我們只能提示已發送
         Swal.fire({
             icon: 'success',
             title: '✅ 已發送寫入請求',
-            text: '由於網域安全性限制，系統無法直接確認寫入結果。請檢查您的 Google 試算表！',
+            text: '由於網域安全性限制，系統無法確認寫入結果。請檢查您的 Google 試算表！',
             confirmButtonColor: '#3498db'
         });
     } catch (err) {
@@ -3677,9 +3705,9 @@ window.showBeautifulTable = function() {
     }
     if (!layout) return alert("無法載入 Layout 資訊");
 
-    // 2. 建立表格
-    let html = `<table class="beauty-table" style="width:100%; border-collapse:collapse; text-align:center; font-family:'Inter', sans-serif;">`;
-    html += `<thead><tr><th colspan="${layout[0].length}" style="background:#2c3e50; color:white; padding:15px; font-size:20px; border-radius:10px 10px 0 0;">講　　台</th></tr></thead><tbody>`;
+    // 2. 建立表格 (黑白簡潔風格)
+    let html = `<table class="beauty-table" style="width:100%; border-collapse:collapse; text-align:center; font-family:'Inter', sans-serif; background:white; color:black;">`;
+    html += `<thead><tr><th colspan="${layout[0].length}" style="background:#fff; color:black; padding:15px; font-size:24px; border:2px solid black; font-weight:bold;">講　　台</th></tr></thead><tbody>`;
 
     layout.forEach(row => {
         html += `<tr>`;
@@ -3688,29 +3716,29 @@ window.showBeautifulTable = function() {
             let isBlocked = false;
             if (code.includes(':X')) { code = code.split(':')[0]; isBlocked = true; }
 
-            let style = "border:1px solid #dfe6e9; padding:10px; width:70px; height:50px; font-size:16px;";
+            let style = "border:1px solid #000; padding:10px; width:80px; height:55px; font-size:18px;";
             let content = "";
 
             if (code === "_") {
-                style += "background:#f9f9f9; border:none;";
+                style += "background:white; border:none;";
                 content = "";
             } else if (code === "DOOR") {
-                style += "background:#ecf0f1; font-size:12px; color:#95a5a6; border:1px dashed #ccc;";
+                style += "background:white; font-size:14px; color:black; border:1px solid #000;";
                 content = "門";
             } else if (code === "PILLAR") {
-                style += "background:#dcdde1; font-weight:bold; color:#7f8c8d;";
+                style += "background:#f2f2f2; font-weight:bold; color:black; border:1px solid #000;";
                 content = "柱";
             } else if (isBlocked) {
-                style += "background:#fab1a0; color:white; font-size:12px;";
+                style += "background:#fff; color:black; font-size:12px; border:1px solid #000;";
                 content = code;
             } else {
                 const seatEl = document.querySelector(`.print-seat[data-id="${code}"]`);
                 const studentName = seatEl ? seatEl.textContent.trim() : "";
                 if (studentName) {
-                    style += "background:#e8f4fd; font-weight:bold; color:#2980b9; border: 2px solid #3498db; box-shadow: inset 0 0 5px rgba(52,152,219,0.1);";
+                    style += "background:white; font-weight:bold; color:black; border: 2px solid black;";
                     content = studentName;
                 } else {
-                    style += "color:#bdc3c7; font-size:10px; background:white;";
+                    style += "color:#999; font-size:12px; background:white;";
                     content = code;
                 }
             }
