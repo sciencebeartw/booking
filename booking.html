@@ -1793,6 +1793,24 @@
 
         // ★★★ 提供給開發人員/系統的全局觸發函數 (供測試用) ★★★
         window.triggerPenalty = function (msg) {
+            // ★ 新增：將違規紀錄寫入 Firebase bot-warnings
+            try {
+                const myUserEmail = auth.currentUser ? auth.currentUser.email : '未知';
+                const myUserId = auth.currentUser ? auth.currentUser.uid : '未知';
+                const warningRef = push(ref(db, 'bot-warnings/booking_enter'));
+                set(warningRef, {
+                    timestamp: Date.now(),
+                    email: myUserEmail,
+                    uid: myUserId,
+                    targetId: currentClassId || '未知',
+                    penaltySeconds: 5,
+                    reason: msg || '未知',
+                    studentName: document.getElementById('studentName') ? document.getElementById('studentName').value.trim() : ''
+                });
+            } catch (e) {
+                console.error("寫入警告紀錄失敗", e);
+            }
+
             Swal.fire({
                 icon: 'warning',
                 title: '系統阻擋：環境異常或頻繁操作',

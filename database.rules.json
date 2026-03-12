@@ -43,6 +43,7 @@
         "waitlist": {
             ".read": "auth != null && auth.token.email != null && root.child('admins').child(auth.token.email.replace('.', ',').replace('.', ',').replace('.', ',')).exists()",
             "$courseId": {
+                ".read": "auth != null",
                 ".write": "auth != null && auth.token.email != null && root.child('admins').child(auth.token.email.replace('.', ',').replace('.', ',').replace('.', ',')).exists()",
                 "$waitId": {
                     ".write": "(auth != null && !data.exists() && newData.exists()) || (auth != null && auth.token.email != null && root.child('admins').child(auth.token.email.replace('.', ',').replace('.', ',').replace('.', ',')).exists())"
@@ -65,7 +66,7 @@
         },
         // 座位：劃位核心邏輯
         "seats": {
-            ".read": true,
+            ".read": "auth != null",
             ".indexOn": [
                 "status"
             ],
@@ -122,7 +123,8 @@
                   data.child('status').val() === 'locked' && 
                   newData.child('status').val() === 'sold' && 
                   data.child('user').val() === newData.child('user').val() &&
-                  data.child('user').val() === auth.uid
+                  data.child('user').val() === auth.uid &&
+                  (now - data.child('timestamp').val()) >= 1500
                 )
               )
             )
