@@ -306,20 +306,22 @@
             pointer-events: none;
         }
 
+        .seat-tag br {
+            display: none;
+        }
+
         .seat.phase2 .seat-tag,
         .seat.phase3 .seat-tag {
-            font-size: 0.7em;
+            font-size: 9px;
             opacity: 1;
             font-weight: bold;
-            line-height: 1;
         }
 
         .seat.phase2 .seat-id,
         .seat.phase3 .seat-id {
-            font-size: 0.8em;
-            /* Default seat size */
+            font-size: 13px;
             font-weight: bold;
-            margin-bottom: 0px;
+            margin-bottom: 1px;
         }
 
         .seat.mylocked {
@@ -755,9 +757,25 @@
                 min-width: 21px;
                 height: auto;
                 aspect-ratio: 45 / 55;
-                font-size: clamp(7px, 2.2vw, 11px) !important;
+                font-size: clamp(8px, 2.5vw, 12px) !important;
                 border-radius: 3px;
                 padding: 0;
+            }
+
+            .seat.phase2 .seat-tag,
+            .seat.phase3 .seat-tag {
+                font-size: 0.7em;
+                line-height: 1;
+            }
+
+            .seat.phase2 .seat-id,
+            .seat.phase3 .seat-id {
+                font-size: 0.8em;
+                margin-bottom: 0px;
+            }
+
+            .seat-tag br {
+                display: block;
             }
 
             .seat:hover,
