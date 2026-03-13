@@ -234,23 +234,30 @@ let waitlistSort = { col: 'timestamp', asc: true };
 let currentEditorLayout = [];
 let isEditorLocked = false;
 
-window.switchTab = function (tabName) {
+window.switchTab = function (tabName, fromHash) {
     window.currentTabId = tabName;
     document.querySelectorAll('.page-section').forEach(el => el.classList.remove('active'));
     document.querySelectorAll('.nav-tabs button').forEach(el => el.classList.remove('active'));
-    
+
     const tabEl = document.getElementById(`tab-${tabName}`);
     if (tabEl) tabEl.classList.add('active');
-    
-    if (window.event && window.event.target && window.event.target.tagName === 'BUTTON') {
-        window.event.target.classList.add('active');
+
+    // 根據 tabName 找到對應的導航按鈕並啟動，不再依賴 window.event
+    document.querySelectorAll('.nav-tabs button').forEach(btn => {
+        const match = (btn.getAttribute('onclick') || '').match(/switchTab\('([^']+)'\)/);
+        if (match && match[1] === tabName) btn.classList.add('active');
+    });
+
+    // 同步更新 URL Hash（若不是從 hash 觸發的，才推入歷史紀錄）
+    if (!fromHash && location.hash !== `#${tabName}`) {
+        history.pushState({ tab: tabName }, '', `#${tabName}`);
     }
-    
+
     if (tabName === 'monitor' || tabName === 'multisync') {
         renderTable();
         if (tabName === 'monitor') loadVisualMap();
     }
-    
+
     if (tabName === 'bills') initBillPage();
     if (tabName === 'print') initPrintPage();
     if (tabName === 'trial_events') renderTrialEventsList();
@@ -260,6 +267,22 @@ window.switchTab = function (tabName) {
         populateTrialNotifySelector();
     }
 };
+
+// 監聽瀏覽器上一頁 / 下一頁（hash 變化）
+window.addEventListener('popstate', function (e) {
+    const tab = (e.state && e.state.tab) || location.hash.replace('#', '') || 'monitor';
+    window.switchTab(tab, true);
+});
+
+// 頁面載入時，根據 URL Hash 切換到對應分頁
+(function initTabFromHash() {
+    const hash = location.hash.replace('#', '');
+    const validTab = document.getElementById(`tab-${hash}`);
+    const startTab = validTab ? hash : 'monitor';
+    // 將初始狀態放入歷史紀錄
+    history.replaceState({ tab: startTab }, '', `#${startTab}`);
+    window.switchTab(startTab, true);
+})();
 window.showCourseForm = function () {
     document.getElementById('courseListView').style.display = 'none';
     document.getElementById('courseFormView').style.display = 'block';
