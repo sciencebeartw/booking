@@ -1148,14 +1148,14 @@
                                     timerLabel.textContent = "🔥 目前狀態";
                                     let stageLabel;
                                     if (phases.length === 1) {
-                                        // 只有一個梯次，第二階段即最後一階段 (含候補)
-                                        stageLabel = "第二階段開放中（含候補）";
+                                        // 只有一個梯次，第二階段即最後一階段
+                                        stageLabel = "第二階段開放中";
                                     } else if (phases.length === 2 && i === 1) {
-                                        // 有兩個梯次，目前是第二梯次，則是最後一階段 (含候補)
-                                        stageLabel = "第二梯次第二階段（含候補）";
+                                        // 有兩個梯次，目前是第二梯次，則是最後一階段
+                                        stageLabel = "第二梯次第二階段";
                                     } else if (phases.length === 3 && i === 2) {
-                                        // 有三個梯次，目前是第三梯次，則是最後一階段 (含候補)
-                                        stageLabel = "第三梯次第二階段（含候補）";
+                                        // 有三個梯次，目前是第三梯次，則是最後一階段
+                                        stageLabel = "第三梯次第二階段";
                                     } else {
                                         stageLabel = `第 ${i + 1} 梯次 二階開放中`;
                                     }
