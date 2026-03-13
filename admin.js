@@ -275,14 +275,15 @@ window.addEventListener('popstate', function (e) {
 });
 
 // 頁面載入時，根據 URL Hash 切換到對應分頁
-(function initTabFromHash() {
+// 用 setTimeout 0 確保整個 admin.js 執行完畢、所有函數都定義後再初始化
+setTimeout(function initTabFromHash() {
     const hash = location.hash.replace('#', '');
     const validTab = document.getElementById(`tab-${hash}`);
     const startTab = validTab ? hash : 'monitor';
     // 將初始狀態放入歷史紀錄
     history.replaceState({ tab: startTab }, '', `#${startTab}`);
     window.switchTab(startTab, true);
-})();
+}, 0);
 window.showCourseForm = function () {
     document.getElementById('courseListView').style.display = 'none';
     document.getElementById('courseFormView').style.display = 'block';
