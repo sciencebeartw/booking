@@ -773,10 +773,14 @@
         <script type="module">
             import { db, ref, auth, signInWithRedirect, getRedirectResult, GoogleAuthProvider, get, child, ref as dbRef, onAuthStateChanged, signInAnonymously } from './firebase-config.js';
             import { onValue } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-database.js";
-
             // ★ 匿名登入 (給訪客無形通行證，以讀取 seats 和 waitlist)
-            signInAnonymously(auth).catch((err) => {
-                console.error("匿名登入失敗:", err);
+            // 避免踢掉已登入的正式帳號 (例如從 detail.html 返回時)，只在未登入時才匿名登入
+            onAuthStateChanged(auth, (user) => {
+                if (!user) {
+                    signInAnonymously(auth).catch((err) => {
+                        console.error("匿名登入失敗:", err);
+                    });
+                }
             });
 
             // ★★★ 核心時間校準監聽 ★★★
