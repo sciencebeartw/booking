@@ -62,6 +62,14 @@
             transition: all 0.3s ease;
         }
 
+        @media (max-width: 600px) {
+            .auth-bar {
+                flex-direction: column;
+                gap: 8px;
+                padding: 12px 10px;
+            }
+        }
+
         .auth-bar.logged-in {
             background: #2ecc71;
             color: white;
@@ -300,14 +308,15 @@
 
         .seat.phase2 .seat-tag,
         .seat.phase3 .seat-tag {
-            font-size: 9px;
+            font-size: 0.75em;
             opacity: 1;
             font-weight: bold;
+            line-height: 1.1;
         }
 
         .seat.phase2 .seat-id,
         .seat.phase3 .seat-id {
-            font-size: 13px;
+            font-size: inherit;
             /* Default seat size */
             font-weight: bold;
             margin-bottom: 1px;
@@ -746,7 +755,7 @@
                 min-width: 21px;
                 height: auto;
                 aspect-ratio: 45 / 55;
-                font-size: clamp(8px, 2.5vw, 12px) !important;
+                font-size: clamp(7px, 2.2vw, 11px) !important;
                 border-radius: 3px;
                 padding: 0;
             }
@@ -950,7 +959,30 @@
     </div>
 
     <footer>
-        &copy; 2025 山熊科學實驗教室 | 系統開發：Sciencebear Tech Team
+        <div class="footer-content">
+            <span class="footer-top">
+                &copy; 2025 山熊科學實驗教室 | 
+                <a href="https://www.facebook.com/sciencebear" target="_blank" class="footer-link">粉絲專頁</a>
+            </span>
+            <span class="footer-divider"> | </span>
+            <span class="footer-bottom">系統開發：Sciencebear Tech Team</span>
+        </div>
+        <style>
+            .footer-link {
+                color: #3498db;
+                text-decoration: none;
+                font-weight: bold;
+                transition: 0.3s;
+            }
+            .footer-link:hover {
+                color: #f1c40f;
+                text-decoration: underline;
+            }
+            @media (max-width: 600px) {
+                .footer-divider { display: none; }
+                .footer-bottom { display: block; margin-top: 8px; }
+            }
+        </style>
     </footer>
 
     <!-- ★★★ 雙 LINE 按鈕 ★★★ -->
@@ -1430,12 +1462,12 @@
                                 // admin_reserved 視為橘色填寫中，不列入已滿計算
                             } else if (seatInfo.user === 'admin_phase2') {
                                 seatEl.classList.add('phase2');
-                                seatEl.innerHTML = `<span class="seat-id">${seatId}</span><span class="seat-tag">下梯開放</span>`;
+                                seatEl.innerHTML = `<span class="seat-id">${seatId}</span><span class="seat-tag">下梯<br>開放</span>`;
                                 // 只要是顯示為紫色的「下梯開放」，就代表一般家長現在絕對不能點，所以必定要佔用一個「已滿」的名額
                                 currentPhaseLockedCount++;
                             } else if (seatInfo.user === 'admin_phase3') {
                                 seatEl.classList.add('phase3');
-                                seatEl.innerHTML = `<span class="seat-id">${seatId}</span><span class="seat-tag">下梯開放</span>`;
+                                seatEl.innerHTML = `<span class="seat-id">${seatId}</span><span class="seat-tag">下梯<br>開放</span>`;
                                 // 同上，只要鎖住就是不能點
                                 currentPhaseLockedCount++;
                             } else {
