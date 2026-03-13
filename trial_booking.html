@@ -759,7 +759,7 @@
         document.getElementById('btnHugeLogin').addEventListener('click', handleLogin);
 
         onAuthStateChanged(auth, (user) => {
-            if (user) {
+            if (user && !user.isAnonymous) {
                 // 已登入
                 currentUserEmail = user.email;
                 currentUserId = user.uid;

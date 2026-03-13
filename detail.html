@@ -680,7 +680,7 @@
 
         // 監聽登入狀態改變
         onAuthStateChanged(auth, (user) => {
-            if (user) {
+            if (user && !user.isAnonymous) {
                 // 已登入
                 authBar.classList.add('logged-in');
                 authStatusText.innerHTML = `✅ 您已登入為：${user.email} <button id="btnLogout" class="btn-auth btn-logout" style="margin-left: 10px;">切換帳號 (登出)</button>`;

@@ -1019,7 +1019,7 @@
         document.getElementById('btnHugeLogin').addEventListener('click', handleGoogleLogin);
 
         onAuthStateChanged(auth, (user) => {
-            if (user) {
+            if (user && !user.isAnonymous) {
                 myUserId = user.uid;
                 myUserEmail = user.email;
 
