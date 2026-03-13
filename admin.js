@@ -270,7 +270,27 @@ window.switchTab = function (tabName, fromHash) {
 
 // 監聽瀏覽器上一頁 / 下一頁（hash 變化）
 window.addEventListener('popstate', function (e) {
-    const tab = (e.state && e.state.tab) || location.hash.replace('#', '') || 'monitor';
+    const state = e.state || {};
+    const tab = state.tab || location.hash.replace('#', '') || 'monitor';
+
+    // 若正在返回課程管理，且課程表單開著 → 關閉表單（放棄編輯）
+    if (tab === 'courses') {
+        const formView = document.getElementById('courseFormView');
+        if (formView && formView.style.display !== 'none') {
+            window.hideCourseForm();
+            return;
+        }
+    }
+
+    // 若正在返回試聽活動管理，且試聽表單開著 → 關閉表單（放棄編輯）
+    if (tab === 'trial_events') {
+        const eventFormView = document.getElementById('eventFormView');
+        if (eventFormView && eventFormView.style.display !== 'none') {
+            window.hideEventForm();
+            return;
+        }
+    }
+
     window.switchTab(tab, true);
 });
 
@@ -289,8 +309,13 @@ window.showCourseForm = function () {
     document.getElementById('courseFormView').style.display = 'block';
     resetForm();
     resetSeatEditor();
+    // 推入歷史，讓「上一頁」可以關閉表單
+    history.pushState({ tab: 'courses', form: 'open' }, '', '#courses');
 };
-window.hideCourseForm = function () { document.getElementById('courseListView').style.display = 'block'; document.getElementById('courseFormView').style.display = 'none'; };
+window.hideCourseForm = function () {
+    document.getElementById('courseListView').style.display = 'block';
+    document.getElementById('courseFormView').style.display = 'none';
+};
 
 // ★★★ V36.1 更新：預覽圖片時也支援網路圖片 (從圖庫抓回來的) ★★★
 window.previewImage = function (input, imgId = 'imgPreview', urlId = 'c_image_url') {
@@ -4295,6 +4320,9 @@ window.showEventForm = function () {
     document.getElementById('qm_day2').value = '';
     document.getElementById('qm_timeA').value = '';
     document.getElementById('qm_timeB').value = '';
+
+    // 推入歷史，讓「上一頁」可以關閉試聽表單
+    history.pushState({ tab: 'trial_events', form: 'open' }, '', '#trial_events');
 
     document.getElementById('e_id').value = '';
     document.getElementById('e_title').value = '';
