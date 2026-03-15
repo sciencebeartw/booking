@@ -5301,6 +5301,11 @@ window.renderTrialResults = function (allocated, waitlist, sessionsMap, isRestor
 
     // ✨ 功能七：更新上方看板的 helper (拉上去後同步綠色/藍色標籤)
     window._syncUpperTableBadge = function (stuId, labelHtml) {
+        // 將藍色手動調班改為橘偏黃色，提醒使用者
+        if (labelHtml.includes('手動調班')) {
+            labelHtml = labelHtml.replace('#2980b9', '#f39c12');
+        }
+
         const trs = document.querySelectorAll('#trialMonitorTable tr');
         for (let tr of trs) {
             // 第 6 個 td 的取消按鈕內有 stuId
@@ -5737,14 +5742,15 @@ window.renderTrialResults = function (allocated, waitlist, sessionsMap, isRestor
         const isSourceWl = undoOp.prevIsWaitlist === 'true';
         const isTargetWl = targetClass === 'waitlist';
 
-        // ✨ 功能八：正取 → 正取 調班，若是跨科，不再阻擋，而是橘色警告
+        // ✨ 功能八修正版：正取 → 正取 調班，若是跨科直接阻擋，同科才允許
         if (!isSourceWl && !isTargetWl) {
             const srcSubj = source_class.startsWith('math_') ? 'math' : source_class.startsWith('sci_') ? 'sci' : null;
             const tgtSubj = targetClass.startsWith('math_') ? 'math' : targetClass.startsWith('sci_') ? 'sci' : null;
             if (srcSubj && tgtSubj && srcSubj !== tgtSubj) {
-                // 不阻擋，只做橘色閃爍提示，允許拖放
-                el.style.outline = '3px solid #e67e22';
+                // 阻擋跨科拖放
+                el.style.outline = '3px solid #e74c3c';
                 setTimeout(() => el.style.outline = '', 800);
+                return;
             }
         }
 
@@ -5778,7 +5784,27 @@ window.renderTrialResults = function (allocated, waitlist, sessionsMap, isRestor
             if (isTargetWl || isSameContainer) {
                 // 候補區內排序，不變
             } else {
-                // 拉入正取區
+                // ✨ 修正：拉入正取區，要在原位置留下一張灰色的「已補上」卡片
+                if (undoOp.fromParent && insertRef !== el) {
+                    const ghostCard = el.cloneNode(true);
+                    ghostCard.style.background = '#bdc3c7'; // 灰色
+                    ghostCard.style.color = '#333';
+                    ghostCard.draggable = false;
+                    ghostCard.style.cursor = 'default';
+                    ghostCard.style.opacity = '0.75';
+                    ghostCard.setAttribute('data-is-waitlist', 'filled');
+                    
+                    const tag = document.createElement('span');
+                    tag.className = 'wl-filled-tag';
+                    tag.style.cssText = 'background:#2980b9; color:white; padding:2px 5px; border-radius:3px; margin-left:5px; font-size:10px; font-weight:bold;';
+                    tag.innerText = '已補上 ✅';
+                    ghostCard.appendChild(tag);
+                    
+                    // 將替身留在原地
+                    undoOp.fromParent.insertBefore(ghostCard, undoOp.fromNextSibling);
+                    undoOp.createdGhost = ghostCard; // 存入 undoOp 供復原時刪除
+                }
+
                 el.setAttribute('data-is-waitlist', 'false');
                 el.id = `stu_${studentId}_${targetClass}`;
                 const seqSpan = el.querySelector('.wl-seq');
@@ -5800,29 +5826,34 @@ window.renderTrialResults = function (allocated, waitlist, sessionsMap, isRestor
             undoOp.insertedBefore = null;
         }
 
-        if (isTargetWl || wasWaitlist) window.renumberWaitlist(targetContainer);
+        if (isTargetWl || wasWaitlist) {
+            window.renumberWaitlist(targetContainer);
+            if (undoOp.fromParent) window.renumberWaitlist(undoOp.fromParent);
+        }
         if (!isSameContainer) {
             const sourceContainer = document.querySelector(`.class-list-container[data-cls="${source_class}"]`);
             if (sourceContainer) window.renumberWaitlist(sourceContainer);
         }
 
-        // ✨ 功能一：候補影分身消除 → 改為灰化標記
+        // ✨ 功能一：候補拉入正取後，其他同"科目"的分身要全部標註灰底
         if (!isSameContainer && wasWaitlist && !isTargetWl) {
-            const isTargetMath = targetClass.startsWith('math_');
-            const isTargetSci = targetClass.startsWith('sci_');
-
-            // 原本的 el 本身已經是藍色了，不需要特別改，只要改"其他"候補卡
+            // 單科跟雙科模式都可以，只要拉上正取，所有其他的同原始 ID 的候補都要灰化
+            // （本尊是拉上去的正取那張，原地留下的是 ghostCard，其他的則是真正的分身）
             const shadowClones = document.querySelectorAll(`div[data-original-id="${studentId}"]`);
 
             shadowClones.forEach(clone => {
-                if (clone === el) return;
+                if (clone === el) return; // 這是拉上去的正取本尊
+                if (clone === undoOp.createdGhost) return; // 這是原地留下的「已補上」幽靈卡
                 if (clone.getAttribute('data-is-waitlist') !== 'true') return; // 只找正常紅色的候補卡
 
                 const cloneClass = clone.getAttribute('data-class');
+                const isTargetMath = targetClass.startsWith('math_');
+                const isTargetSci = targetClass.startsWith('sci_');
                 const isCloneMath = cloneClass.startsWith('math_');
                 const isCloneSci = cloneClass.startsWith('sci_');
 
-                if ((isTargetMath && isCloneMath) || (isTargetSci && isCloneSci)) {
+                // 只有「同科目」能連動灰化。（雙科模式的數學補上了，自然還能排）
+                if ((isTargetMath && isCloneMath) || (isTargetSci && isCloneSci) || (!isTargetMath && !isTargetSci && !isCloneMath && !isCloneSci)) {
                     // 灰化處理
                     const clonePrevBg = clone.style.background;
                     const clonePrevColor = clone.style.color;
@@ -5889,7 +5920,7 @@ window.renderTrialResults = function (allocated, waitlist, sessionsMap, isRestor
                     labelHtml = `<span style="color:#e67e22; font-weight:bold;">⚠️ 手動跨科：${tgtName}</span>`;
                     logDesc = `${stuName} 跨科 從 [${classNamesMap[source_class]||source_class}] 移至 [${tgtName}]`;
                 } else {
-                    labelHtml = `<span style="color:#2980b9; font-weight:bold;">🔄 手動調班：${tgtName}</span>`;
+                    labelHtml = `<span style="background:#f39c12; color:white; padding:2px 5px; border-radius:3px; font-size:11px;">🔄 手動調班：${tgtName}</span>`;
                     logDesc = `${stuName} 從 [${classNamesMap[source_class]||source_class}] 移至 [${tgtName}]`;
                 }
             }
