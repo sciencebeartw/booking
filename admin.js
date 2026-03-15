@@ -4155,6 +4155,20 @@ window.deleteTrialRegistration = async function (id, isHardDelete) {
         if (confirm("確定要【取消】這名學生的報名資格嗎？(將會有刪除線，並從分發名單中剃除)")) {
             try {
                 await update(ref(db, `trial_events/registrations/${currentTrialEventId}/${id}`), { status: 'deleted' });
+                // ✨ 功能三：同步更新分發看板 (灰化、不可拖曳)
+                const cards = document.querySelectorAll(`div[data-original-id="${id}"]`);
+                cards.forEach(card => {
+                    card.style.background = '#95a5a6';
+                    card.style.textDecoration = 'line-through';
+                    card.draggable = false;
+                    card.style.cursor = 'not-allowed';
+                    card.style.opacity = '0.7';
+                    // 加上已取消標籤
+                    let titleText = card.querySelector('strong');
+                    if (titleText && !titleText.innerHTML.includes('已取消')) {
+                        titleText.innerHTML += ' <span style="color:#e74c3c; font-size:10px;">[已取消]</span>';
+                    }
+                });
             } catch (e) {
                 alert('取消失敗：' + e.message);
             }
@@ -4168,6 +4182,20 @@ window.recoverTrialRegistration = async function (id) {
     if (confirm("💡 確定要【復原】這名學生的報名資格嗎？\n(他將會重新回到「候補中/待分發」狀態，需重新點擊 AI 分發按鈕)")) {
         try {
             await update(ref(db, `trial_events/registrations/${currentTrialEventId}/${id}`), { status: 'pending' });
+            // ✨ 配合功能三：復原看板卡片樣式（雖然還是建議他重新分發，但這邊至少把畫面復原）
+            const cards = document.querySelectorAll(`div[data-original-id="${id}"]`);
+            cards.forEach(card => {
+                const isWl = card.getAttribute('data-is-waitlist') === 'true';
+                const isWlFilled = card.getAttribute('data-is-waitlist') === 'filled';
+                card.style.background = isWl ? '#e74c3c' : (isWlFilled ? '#bdc3c7' : '#3498db');
+                card.style.textDecoration = 'none';
+                card.draggable = !isWlFilled;
+                card.style.cursor = isWlFilled ? 'default' : 'grab';
+                card.style.opacity = '1';
+                // 移除 [已取消] 標籤
+                let titleText = card.querySelector('strong');
+                if (titleText) titleText.innerHTML = titleText.innerHTML.replace(' <span style="color:#e74c3c; font-size:10px;">[已取消]</span>', '');
+            });
         } catch (e) {
             alert('復原失敗：' + e.message);
         }
@@ -4307,6 +4335,14 @@ window.switchTrialEvent = function () {
 
     // 掛載實時監聽
     listenToTrialRegistrations(currentTrialEventId);
+
+    // ✨ 功能二：自動載入鎖死結果 (如果有的話)
+    if (trialEventsConfig[currentTrialEventId] && trialEventsConfig[currentTrialEventId].lockedAllocation) {
+        // 等待 trialRegistrations 載入完成再還原
+        setTimeout(() => {
+            window.restoreLockedAllocation(currentTrialEventId);
+        }, 1000); // 簡易 delay 確保 list 已經 fetch 到
+    }
 };
 
 window.showEventForm = function () {
@@ -5238,11 +5274,123 @@ function runDualMatchEngine(processingList, capacities, allocated, waitlist) {
     return optimizationCount; // 回傳無損挪位次數給主引擎
 }
 
-window.renderTrialResults = function (allocated, waitlist, sessionsMap) {
+window.renderTrialResults = function (allocated, waitlist, sessionsMap, isRestored = false) {
     document.getElementById('trialResultsBoard').style.display = 'block';
 
     const grid = document.getElementById('trialClassesGrid');
     grid.innerHTML = "";
+
+    // ✨ 功能四、九：Undo/Redo 與 Action Log 基礎架構
+    if (!window._undoStack || !isRestored) {
+        window._undoStack = [];
+        window._redoStack = [];
+        window._actionLog = [];
+    }
+
+    // ✨ 功能五：產生 stuPrefsMap 供 Tooltip 與 CSV 使用
+    window._stuPrefsMap = {};
+    trialRegistrations.forEach(stu => {
+        if (!stu.preferences) return;
+        let prefArr = [];
+        for (let i = 1; i <= 6; i++) {
+            let ch = stu.preferences[`choice${i}`];
+            if (ch && ch !== "none") prefArr.push(`#${i}: ${prefMap[ch] || ch}`);
+        }
+        window._stuPrefsMap[stu.id] = prefArr.length > 0 ? prefArr.join('\n') : '無志願資料';
+    });
+
+    // ✨ 功能七：更新上方看板的 helper (拉上去後同步綠色/藍色標籤)
+    window._syncUpperTableBadge = function (stuId, labelHtml) {
+        const trs = document.querySelectorAll('#trialMonitorTable tr');
+        for (let tr of trs) {
+            // 第 6 個 td 的取消按鈕內有 stuId
+            const btnHtml = tr.cells[5].innerHTML;
+            if (btnHtml.includes(`'${stuId}'`)) {
+                // 更新第 5 個 td (結果標籤)
+                tr.cells[4].innerHTML = labelHtml;
+                break;
+            }
+        }
+        // 同步更新 trialRegistrations，確保重新 renderMonitorTable 也能保持
+        const stu = trialRegistrations.find(s => String(s.id) === String(stuId));
+        if (stu) {
+            // 從 labelHtml 萃取文字
+            const tempDiv = document.createElement('div');
+            tempDiv.innerHTML = labelHtml;
+            stu.assignDesc = tempDiv.innerText;
+        }
+    };
+
+    // 加入 Undo/Redo 按鈕介面 (插入到 trialClassesGrid 之前)
+    let headerContainer = document.getElementById('trialResultsHeaderControls');
+    if (!headerContainer) {
+        headerContainer = document.createElement('div');
+        headerContainer.id = 'trialResultsHeaderControls';
+        headerContainer.style.cssText = "display:flex; justify-content:flex-end; gap:10px; margin-bottom:15px;";
+        grid.parentNode.insertBefore(headerContainer, grid);
+    }
+    headerContainer.innerHTML = `
+        <button id="btnUndoDrop" onclick="window._undoLastDrop()" class="btn-cancel" style="padding:6px 15px; font-size:14px; opacity:0.5; pointer-events:none; transition:0.3s; background:#7f8c8d;">↩ 復原上一步 (Ctrl+Z)</button>
+        <button id="btnRedoDrop" onclick="window._redoLastDrop()" class="btn-confirm" style="padding:6px 15px; font-size:14px; opacity:0.5; pointer-events:none; transition:0.3s; background:#7f8c8d;">↪ 重做 (Ctrl+Shift+Z)</button>
+    `;
+    window._updateUndoRedoUI = function () {
+        const btnU = document.getElementById('btnUndoDrop');
+        const btnR = document.getElementById('btnRedoDrop');
+        if (btnU) {
+            if (window._undoStack.length > 0) { btnU.style.opacity = '1'; btnU.style.pointerEvents = 'auto'; btnU.style.background = '#e67e22'; }
+            else { btnU.style.opacity = '0.5'; btnU.style.pointerEvents = 'none'; btnU.style.background = '#7f8c8d'; }
+        }
+        if (btnR) {
+            if (window._redoStack.length > 0) { btnR.style.opacity = '1'; btnR.style.pointerEvents = 'auto'; btnR.style.background = '#2980b9'; }
+            else { btnR.style.opacity = '0.5'; btnR.style.pointerEvents = 'none'; btnR.style.background = '#7f8c8d'; }
+        }
+        window._renderActionLogUI();
+    };
+
+    // ✨ 功能九：操作日誌 UI 區塊 (加在最下方)
+    let logContainer = document.getElementById('trialActionLogModule');
+    if (!logContainer) {
+        logContainer = document.createElement('div');
+        logContainer.id = 'trialActionLogModule';
+        logContainer.style.cssText = "margin-top:30px; border:1px solid #ddd; background:#fff; border-radius:8px; overflow:hidden;";
+        document.getElementById('trialWaitlistBoard').parentNode.appendChild(logContainer);
+    }
+
+    window._renderActionLogUI = function () {
+        const logContent = window._actionLog.map(l => {
+            let color = l.type === 'undo' ? '#e67e22' : l.type === 'redo' ? '#2980b9' : '#333';
+            let fstyle = l.type === 'undo' ? 'italic' : 'normal';
+            return `<div style="padding:4px 0; border-bottom:1px solid #f0f0f0; font-size:13px; color:${color}; font-style:${fstyle}">
+                <span style="color:#95a5a6; margin-right:8px; font-size:11px;">${l.time}</span> ${l.desc}
+            </div>`;
+        }).join('');
+        
+        logContainer.innerHTML = `
+            <div style="background:#f4f6f7; padding:10px 15px; font-weight:bold; display:flex; justify-content:space-between; align-items:center;">
+                <span>📋 操作日誌</span>
+                <div>
+                    <button onclick="window._actionLog=[]; window._updateUndoRedoUI();" style="border:none; background:#e74c3c; color:white; border-radius:3px; padding:3px 8px; cursor:pointer; font-size:12px;">清除欄位</button>
+                    <button onclick="window._copyActionLog()" style="border:none; background:#34495e; color:white; border-radius:3px; padding:3px 8px; cursor:pointer; font-size:12px; margin-left:5px;">複製全部</button>
+                </div>
+            </div>
+            <div style="padding:15px; max-height:200px; overflow-y:auto; text-align:left; background:#fafafa;">
+                ${window._actionLog.length === 0 ? '<div style="color:#95a5a6; font-size:13px; text-align:center;">尚無手動操作記錄</div>' : logContent}
+            </div>
+        `;
+    };
+
+    window._copyActionLog = function() {
+        if(window._actionLog.length === 0) return alert('日誌為空。');
+        let txt = window._actionLog.map(l => `[${l.time}] ${l.type.toUpperCase()}: ${l.desc}`).join('\\n');
+        navigator.clipboard.writeText(txt).then(() => alert('已複製純文字日誌！'));
+    };
+
+    window._logAction = function(type, desc) {
+        const now = new Date();
+        const t = String(now.getHours()).padStart(2,'0')+':'+String(now.getMinutes()).padStart(2,'0')+':'+String(now.getSeconds()).padStart(2,'0');
+        window._actionLog.push({ time: t, type: type, desc: desc });
+        window._updateUndoRedoUI();
+    };
 
     // 建立拖曳相關函數 (God Mode 拖曳調整)
 
@@ -5378,23 +5526,170 @@ window.renderTrialResults = function (allocated, waitlist, sessionsMap) {
         });
     }
 
+    // ✨ 監聽 Ctrl+Z / Ctrl+Shift+Z
+    if (!window._undoRedoListenerAdded) {
+        window.addEventListener('keydown', function(e) {
+            if (e.ctrlKey || e.metaKey) {
+                if (e.key === 'z' || e.key === 'Z') {
+                    e.preventDefault();
+                    if (e.shiftKey) window._redoLastDrop();
+                    else window._undoLastDrop();
+                }
+            }
+        });
+        window._undoRedoListenerAdded = true;
+    }
+
+    // ✨ 功能四：Undo / Redo 實作
+    window._undoLastDrop = function() {
+        if (!window._undoStack || window._undoStack.length === 0) return;
+        const lastOp = window._undoStack.pop();
+
+        // 把 el 移回原位
+        if (lastOp.fromNextSibling && lastOp.fromNextSibling.parentNode === lastOp.fromParent) {
+            lastOp.fromParent.insertBefore(lastOp.el, lastOp.fromNextSibling);
+        } else {
+            lastOp.fromParent.appendChild(lastOp.el);
+        }
+
+        // 復原 el 的屬性與樣式
+        lastOp.el.setAttribute('data-class', lastOp.fromParent.getAttribute('data-cls'));
+        lastOp.el.setAttribute('data-is-waitlist', lastOp.prevIsWaitlist);
+        lastOp.el.id = lastOp.prevId;
+        lastOp.el.style.background = lastOp.prevBg;
+        lastOp.el.style.color = lastOp.prevColor;
+        lastOp.el.draggable = true;
+        lastOp.el.style.cursor = 'grab';
+        lastOp.el.style.opacity = '1';
+
+        // 恢復被改變的影分身或原位置卡片
+        if (lastOp.filledClones) {
+            lastOp.filledClones.forEach(tc => {
+                tc.clone.style.background = tc.prevBg;
+                tc.clone.style.color = tc.prevColor;
+                tc.clone.draggable = tc.prevDraggable;
+                tc.clone.style.cursor = tc.prevDraggable ? 'grab' : 'default';
+                tc.clone.style.opacity = '1';
+                tc.clone.setAttribute('data-is-waitlist', 'true'); // 恢復正常候補狀態
+                if (tc.removedTag) tc.removedTag.remove();
+            });
+        }
+
+        // 恢復 Tooltip 與上方看板標籤
+        lastOp.upperTableUpdates.forEach(upd => {
+            window._syncUpperTableBadge(upd.stuId, upd.prevDesc);
+            // 找出看板上該名學生的 tooltip div 更新
+            const nameEl = lastOp.el.querySelector('.assign-desc-text');
+            if (nameEl) nameEl.innerHTML = upd.prevDesc;
+        });
+
+        // 移除或加回 wl-seq 如果需要 (如果在候補區內需要 seq)
+        if (lastOp.prevIsWaitlist === 'true') {
+            if (!lastOp.el.querySelector('.wl-seq')) {
+                const seq = document.createElement('span');
+                seq.className = 'wl-seq';
+                seq.style.cssText = 'background:rgba(0,0,0,0.2); padding:2px 4px; border-radius:3px; margin-right:4px;';
+                lastOp.el.insertBefore(seq, lastOp.el.firstChild);
+            }
+        } else {
+            const seq = lastOp.el.querySelector('.wl-seq');
+            if (seq) seq.remove();
+        }
+
+        const targetContainer = document.querySelector(`.class-list-container[data-cls="${lastOp.targetClass}"]`);
+        window.renumberWaitlist(lastOp.fromParent);
+        if (targetContainer && targetContainer !== lastOp.fromParent) window.renumberWaitlist(targetContainer);
+        window.updateClassCounts();
+
+        // 紀錄到 redo stack
+        window._redoStack.push(lastOp);
+        
+        const stuName = lastOp.el.querySelector('strong')?.innerText || '學生';
+        window._logAction('undo', `復原了 [${stuName}] 的調整`);
+    };
+
+    window._redoLastDrop = function() {
+        if (!window._redoStack || window._redoStack.length === 0) return;
+        const op = window._redoStack.pop();
+        // 直接觸發模擬的 drop 效果 (這裡簡化，僅靠重新插入，不跑完整 dom 事件)
+        const targetContainer = document.querySelector(`.class-list-container[data-cls="${op.targetClass}"]`);
+        if (!targetContainer) return;
+
+        // 我們直接將 el 丟進去並模擬改變 (最簡單的方式是保存原本 drag+drop 邏輯，但有一定複雜度。這裡我們精確重播變更)
+        if (op.insertedBefore && op.insertedBefore.parentNode === targetContainer) {
+            targetContainer.insertBefore(op.el, op.insertedBefore);
+        } else {
+            targetContainer.appendChild(op.el);
+        }
+        
+        // 重新執行原本的修改
+        op.el.setAttribute('data-class', op.targetClass);
+        op.el.setAttribute('data-is-waitlist', 'false'); // 若原本是拉入正取則為 false
+        op.el.id = op.newId;
+
+        if (op.filledClones) {
+            op.filledClones.forEach(tc => {
+                tc.clone.style.background = tc.newBg;
+                tc.clone.style.color = tc.newColor;
+                tc.clone.draggable = false;
+                tc.clone.style.cursor = 'default';
+                tc.clone.style.opacity = '0.75';
+                tc.clone.setAttribute('data-is-waitlist', 'filled');
+                tc.clone.appendChild(tc.removedTag);
+            });
+        }
+
+        op.upperTableUpdates.forEach(upd => {
+            window._syncUpperTableBadge(upd.stuId, upd.newDescBadge);
+            const nameEl = op.el.querySelector('.assign-desc-text');
+            if (nameEl) nameEl.innerHTML = upd.newDescContent;
+        });
+
+        const seq = op.el.querySelector('.wl-seq');
+        if (seq) seq.remove();
+
+        window.renumberWaitlist(targetContainer);
+        if (op.fromParent !== targetContainer) window.renumberWaitlist(op.fromParent);
+        window.updateClassCounts();
+
+        window._undoStack.push(op); // push 回 undo stack
+        
+        const stuName = op.el.querySelector('strong')?.innerText || '學生';
+        window._logAction('redo', `重做了 [${stuName}] 的調整`);
+    };
+
     window.drop = function (ev) {
         ev.preventDefault();
 
-        // ✨ 先記住 placeholder 目前在哪（nextSibling 就是插入參考點），再移除它
+        // 收集 Undo 紀錄所需資訊
+        const undoOp = {
+            el: null,
+            fromParent: null,
+            fromNextSibling: null,
+            prevIsWaitlist: null,
+            prevId: null,
+            prevBg: null,
+            prevColor: null,
+            targetClass: null,
+            newId: null, // 給 REDO 用
+            newBg: null, // 給 REDO 用
+            newColor: null, // 給 REDO 用
+            filledClones: [],
+            upperTableUpdates: []
+        };
+
         const placeholderNext = _dragPlaceholder ? _dragPlaceholder.nextSibling : null;
         const placeholderParent = _dragPlaceholder ? _dragPlaceholder.parentNode : null;
-        _removePlaceholder(); // 清除占位符
+        _removePlaceholder();
 
-        const data = ev.dataTransfer.getData("stu_id");      // 元素的 ID (例如 stu_12345)
-        const source_class = ev.dataTransfer.getData("source_class"); // 來源班級
+        const data = ev.dataTransfer.getData("stu_id");
+        const source_class = ev.dataTransfer.getData("source_class");
         const targetContainer = ev.target.closest('.class-list-container');
         if (!targetContainer) return;
 
         const targetClass = targetContainer.getAttribute('data-cls');
         const isSameContainer = source_class === targetClass;
 
-        // ✨ 找到拖曳目標、被拖曳元素、判斷是否為插隊模式
         const el = document.getElementById(data);
         if (!el) return;
         _restoreDragSource();
@@ -5402,11 +5697,9 @@ window.renderTrialResults = function (allocated, waitlist, sessionsMap) {
         let isInsertMode = true;
         let insertRef = null;
 
-        // ✨ 優先用 placeholder 最後所在的位置（最準確，就是使用者看到的那個細縫）
         if (placeholderParent && placeholderParent === targetContainer) {
-            insertRef = placeholderNext; // insert before this node (null = append to end)
+            insertRef = placeholderNext;
         } else {
-            // 萬一 placeholder 沒出現在 targetContainer（拖太快），fallback 到 ev.target
             const dropTarget = ev.target.closest('div[data-original-id]');
             if (dropTarget && dropTarget !== el && targetContainer.contains(dropTarget)) {
                 const rect = dropTarget.getBoundingClientRect();
@@ -5415,110 +5708,200 @@ window.renderTrialResults = function (allocated, waitlist, sessionsMap) {
             }
         }
 
-        // 防呆：同容器且插入點就是元素本身，代表沒有真正移動
         if (isSameContainer && insertRef === el) return;
         if (isSameContainer && !placeholderParent && insertRef === null) return;
 
-        const isSourceWl = el.getAttribute('data-is-waitlist') === 'true';
+        // 紀錄拖曳前狀態
+        undoOp.el = el;
+        undoOp.fromParent = el.parentNode;
+        undoOp.fromNextSibling = el.nextSibling === _dragPlaceholder ? _dragPlaceholder.nextSibling : el.nextSibling;
+        undoOp.prevIsWaitlist = el.getAttribute('data-is-waitlist') || 'false';
+        undoOp.prevId = el.id;
+        undoOp.prevBg = el.style.background;
+        undoOp.prevColor = el.style.color;
+
+        const isSourceWl = undoOp.prevIsWaitlist === 'true';
         const isTargetWl = targetClass === 'waitlist';
 
-        // ✨ 防呆：禁止跨科拖曳（僅在正取區之間）
-        // 只有當來源是正取區、目標也是正取區時才進行科目比對
+        // ✨ 功能八：正取 → 正取 調班，若是跨科，不再阻擋，而是橘色警告
         if (!isSourceWl && !isTargetWl) {
             const srcSubj = source_class.startsWith('math_') ? 'math' : source_class.startsWith('sci_') ? 'sci' : null;
             const tgtSubj = targetClass.startsWith('math_') ? 'math' : targetClass.startsWith('sci_') ? 'sci' : null;
             if (srcSubj && tgtSubj && srcSubj !== tgtSubj) {
-                // 彈跳提示 (輕量)
-                el.style.outline = '3px solid #e74c3c';
+                // 不阻擋，只做橘色閃爍提示，允許拖放
+                el.style.outline = '3px solid #e67e22';
                 setTimeout(() => el.style.outline = '', 800);
-                return; // 阻擋跨科拖曳
             }
         }
 
-        // ✨ 防呆：禁止從候補區跨科拖入正取班（數學候補不能拉進自然班，反之亦然）
-        if (isSourceWl && !isTargetWl && targetClass !== 'waitlist') {
-            const srcSubj = source_class.startsWith('math_') ? 'math' : source_class.startsWith('sci_') ? 'sci' : null;
-            const tgtSubj = targetClass.startsWith('math_') ? 'math' : targetClass.startsWith('sci_') ? 'sci' : null;
-            if (srcSubj && tgtSubj && srcSubj !== tgtSubj) {
+        // ✨ 功能六：候補只能拉進「完全對應」的正取班
+        if (isSourceWl && !isTargetWl) {
+            if (source_class !== targetClass) {
+                // 阻擋跨時段候補拖入
                 el.style.outline = '3px solid #e74c3c';
                 setTimeout(() => el.style.outline = '', 800);
                 return;
             }
         }
 
-        // 抓出學生的唯一原始 ID (用來找影分身)
+        // 抓出學生的唯一原始 ID
         const studentId = el.getAttribute('data-original-id') || data.replace('stu_', '').split('_')[0];
 
-        el.setAttribute('data-class', targetClass);
+        // 記錄舊的 assignDesc
+        const oldDescTextObj = el.querySelector('.assign-desc-text');
+        const oldDescHtml = oldDescTextObj ? oldDescTextObj.innerHTML : '';
+        undoOp.upperTableUpdates.push({
+            stuId: studentId,
+            prevDesc: oldDescHtml
+        });
 
-        // ✨ 更新 ID 功能：候補區內拖曳排序時保留 _wl_ 標記；拉入正取區才椎改 ID
-        const wasWaitlist = el.getAttribute('data-is-waitlist') === 'true';
+        // 進行移動
+        el.setAttribute('data-class', targetClass);
+        undoOp.targetClass = targetClass;
+
+        const wasWaitlist = isSourceWl;
         if (wasWaitlist) {
             if (isTargetWl || isSameContainer) {
-                // 各候補區內拖曳：保留候補標記，只更新 data-class
-                // ID 保留 _wl_ 不改
+                // 候補區內排序，不變
             } else {
-                // 候補拉入正取區：移除候補標記、更新 ID、移除序號
+                // 拉入正取區
                 el.setAttribute('data-is-waitlist', 'false');
                 el.id = `stu_${studentId}_${targetClass}`;
                 const seqSpan = el.querySelector('.wl-seq');
                 if (seqSpan) seqSpan.remove();
+                el.style.background = "#3498db"; // 變回藍色
             }
         } else {
             el.id = `stu_${studentId}_${targetClass}`;
         }
+        undoOp.newId = el.id;
+        undoOp.newBg = el.style.background;
+        undoOp.newColor = el.style.color;
 
         if (isInsertMode && insertRef) {
             targetContainer.insertBefore(el, insertRef);
-        } else if (isInsertMode) {
-            targetContainer.appendChild(el); // insertRef 為 null 代表放在尾端
+            undoOp.insertedBefore = insertRef;
         } else {
             targetContainer.appendChild(el);
+            undoOp.insertedBefore = null;
         }
 
-        // ✨ 重算候補名單序號 (目標容器)
-        if (isTargetWl || wasWaitlist) {
-            window.renumberWaitlist(targetContainer);
-        }
-        // 也重算來源容器（如果不是同容器）
+        if (isTargetWl || wasWaitlist) window.renumberWaitlist(targetContainer);
         if (!isSameContainer) {
             const sourceContainer = document.querySelector(`.class-list-container[data-cls="${source_class}"]`);
-            if (sourceContainer) {
-                window.renumberWaitlist(sourceContainer);
-            }
+            if (sourceContainer) window.renumberWaitlist(sourceContainer);
         }
 
-        // --- 需求二：同科影分身消除機制 ---
-        // ✨ 只有從候補拉入正取時才觸發，同容器排序不消除
+        // ✨ 功能一：候補影分身消除 → 改為灰化標記
         if (!isSameContainer && wasWaitlist && !isTargetWl) {
-            // 判斷目標班級是數學還是自然
             const isTargetMath = targetClass.startsWith('math_');
             const isTargetSci = targetClass.startsWith('sci_');
 
-            // 尋找畫面上所有屬於這名學生的候補影分身
+            // 原本的 el 本身已經是藍色了，不需要特別改，只要改"其他"候補卡
             const shadowClones = document.querySelectorAll(`div[data-original-id="${studentId}"]`);
 
             shadowClones.forEach(clone => {
-                if (clone === el) return; // 不要刪自己
-                // 只處理候補名單中的影分身
-                if (clone.getAttribute('data-is-waitlist') !== 'true') return;
+                if (clone === el) return;
+                if (clone.getAttribute('data-is-waitlist') !== 'true') return; // 只找正常紅色的候補卡
 
                 const cloneClass = clone.getAttribute('data-class');
                 const isCloneMath = cloneClass.startsWith('math_');
                 const isCloneSci = cloneClass.startsWith('sci_');
 
-                // 如果影分身跟目標班級是「同科目」，就把它消除
                 if ((isTargetMath && isCloneMath) || (isTargetSci && isCloneSci)) {
-                    // 消除前先重算該容器的序號
+                    // 灰化處理
+                    const clonePrevBg = clone.style.background;
+                    const clonePrevColor = clone.style.color;
+                    const clonePrevDraggable = clone.draggable;
+                    
+                    clone.style.background = '#bdc3c7'; // 灰色
+                    clone.style.color = '#333';
+                    clone.draggable = false;
+                    clone.style.cursor = 'default';
+                    clone.style.opacity = '0.75';
+                    clone.setAttribute('data-is-waitlist', 'filled');
+
+                    const tag = document.createElement('span');
+                    tag.className = 'wl-filled-tag';
+                    tag.style.cssText = 'background:#7f8c8d; color:white; padding:2px 5px; border-radius:3px; margin-left:5px; font-size:10px; font-weight:bold;';
+                    
+                    // 同手同腳：同班原本的另一張候補卡顯示藍色，他班顯示灰色
+                    if (cloneClass === targetClass) {
+                        clone.style.background = '#3498db';
+                        clone.style.color = 'white';
+                        tag.style.background = '#2980b9';
+                        tag.innerText = '已補上 ✅';
+                    } else {
+                        tag.innerText = '他班已補上';
+                    }
+                    clone.appendChild(tag);
+
+                    undoOp.filledClones.push({
+                        clone: clone,
+                        prevBg: clonePrevBg,
+                        prevColor: clonePrevColor,
+                        prevDraggable: clonePrevDraggable,
+                        newBg: clone.style.background,
+                        newColor: clone.style.color,
+                        removedTag: tag
+                    });
+
                     const cloneContainer = clone.closest('.class-list-container');
-                    clone.remove();
                     if (cloneContainer) window.renumberWaitlist(cloneContainer);
                 }
             });
         }
 
-        // 這裡我們不處理正取名單的互斥（考量到雙科生本來就會在兩個正取班），只處理把候補的冗餘卡片刪掉
-        // 更新標題人數
+        // ✨ 功能七：更新上方看板與卡片備註
+        if (!isSameContainer) {
+            const classNamesMap = {};
+            if (sessionsMap) Object.keys(sessionsMap).forEach(k => classNamesMap[k] = sessionsMap[k].name);
+            const tgtName = classNamesMap[targetClass] || targetClass;
+            
+            let labelHtml = '';
+            let logType = 'move';
+            let logDesc = '';
+            const stuName = undoOp.el.querySelector('strong')?.innerText || '學生';
+
+            if (wasWaitlist && !isTargetWl) {
+                // 候補補上
+                labelHtml = `<span style="color:#27ae60; font-weight:bold;">✅ 補上：${tgtName}</span>`;
+                logDesc = `${stuName} 從 [${classNamesMap[source_class]||source_class} 候補] 補上 [${tgtName} 正取]`;
+            } else if (!wasWaitlist && !isTargetWl) {
+                // 正取調班
+                const srcSubj = source_class.startsWith('math_') ? 'math' : source_class.startsWith('sci_') ? 'sci' : null;
+                const tgtSubj = targetClass.startsWith('math_') ? 'math' : targetClass.startsWith('sci_') ? 'sci' : null;
+                if (srcSubj && tgtSubj && srcSubj !== tgtSubj) {
+                    labelHtml = `<span style="color:#e67e22; font-weight:bold;">⚠️ 手動跨科：${tgtName}</span>`;
+                    logDesc = `${stuName} 跨科 從 [${classNamesMap[source_class]||source_class}] 移至 [${tgtName}]`;
+                } else {
+                    labelHtml = `<span style="color:#2980b9; font-weight:bold;">🔄 手動調班：${tgtName}</span>`;
+                    logDesc = `${stuName} 從 [${classNamesMap[source_class]||source_class}] 移至 [${tgtName}]`;
+                }
+            }
+
+            if (labelHtml) {
+                // 紀錄新值給 redo 
+                undoOp.upperTableUpdates[0].newDescBadge = labelHtml;
+                
+                // 萃取文字放到卡片本身
+                const tempDiv = document.createElement('div');
+                tempDiv.innerHTML = labelHtml;
+                const pureText = tempDiv.innerText;
+                undoOp.upperTableUpdates[0].newDescContent = pureText;
+
+                window._syncUpperTableBadge(studentId, labelHtml);
+                const nameEl = el.querySelector('.assign-desc-text');
+                if (nameEl) nameEl.innerHTML = pureText;
+            }
+
+            if (logDesc) window._logAction(logType, logDesc);
+        }
+
+        window._undoStack.push(undoOp);
+        window._redoStack = []; // 清掉 redo 堆疊
+        window._updateUndoRedoUI();
+
         window.updateClassCounts();
     }
 
@@ -5554,17 +5937,20 @@ window.renderTrialResults = function (allocated, waitlist, sessionsMap) {
         allocated[cls].forEach(stu => {
             let stuItem = document.createElement('div');
             stuItem.id = `stu_${stu.id}_${cls}`;
+            stuItem.className = 'draggable-card tooltip-container'; // ✨ 功能五 Tooltip CSS
             stuItem.setAttribute('data-class', cls);
             stuItem.setAttribute('data-original-id', stu.id);
+            stuItem.setAttribute('data-prefs', window._stuPrefsMap[stu.id] || '無'); // 儲存 Tooltip 資料
             stuItem.draggable = true;
             stuItem.ondragstart = window.drag;
-            stuItem.style.background = "#3498db";
-            stuItem.style.color = "white";
-            stuItem.style.padding = "8px";
-            stuItem.style.margin = "5px 0";
-            stuItem.style.borderRadius = "5px";
-            stuItem.style.cursor = "grab";
-            stuItem.style.position = "relative";
+            stuItem.ondragend = window.dragEnd;
+            stuItem.style.cssText = "background:#3498db; color:white; padding:8px; margin:5px 0; border-radius:5px; cursor:grab; position:relative; min-height:40px;";
+
+            // Tooltip 元素
+            let tt = document.createElement('div');
+            tt.className = 'pref-tooltip';
+            tt.innerText = window._stuPrefsMap[stu.id] || '無';
+            stuItem.appendChild(tt);
 
             // "複製 LINE 通知" 按鈕
             let copyBtn = document.createElement('button');
@@ -5586,8 +5972,8 @@ window.renderTrialResults = function (allocated, waitlist, sessionsMap) {
                 });
             };
 
-            stuItem.innerHTML = `<strong>${window.escapeHTML(stu.studentName)}</strong> (${window.escapeHTML(stu.parentPhone)}) 
-            <div style="font-size:11px; margin-top:5px; background:rgba(0,0,0,0.2); padding:2px 5px; border-radius:3px; color:white; display:inline-block;">${stu.assignDesc}</div>`;
+            stuItem.innerHTML += `<strong>${window.escapeHTML(stu.studentName)}</strong> <span style="font-size:11px;">(${window.escapeHTML(stu.parentPhone)})</span>
+            <div style="font-size:11px; margin-top:5px; background:rgba(0,0,0,0.2); padding:2px 5px; border-radius:3px; color:white; display:inline-block;" class="assign-desc-text">${stu.assignDesc || ''}</div>`;
             stuItem.appendChild(copyBtn);
             listContainer.appendChild(stuItem);
         });
@@ -5681,20 +6067,20 @@ window.renderTrialResults = function (allocated, waitlist, sessionsMap) {
         waitlistByClass[cls].forEach((stu, wIndex) => {
             let stuItem = document.createElement('div');
             stuItem.id = `stu_${stu.id}_wl_${cls}`;
+            stuItem.className = 'draggable-card tooltip-container'; // ✨ 功能五
             stuItem.setAttribute('data-class', cls);
             stuItem.setAttribute('data-original-id', stu.id);
+            stuItem.setAttribute('data-prefs', window._stuPrefsMap[stu.id] || '無');
             stuItem.setAttribute('data-is-waitlist', 'true'); // ✨ 候補卡片標記
             stuItem.draggable = true;
             stuItem.ondragstart = window.drag;
             stuItem.ondragend = window.dragEnd; // ✨ 拖曳結束還原
-            stuItem.style.background = "#e74c3c";
-            stuItem.style.color = "white";
-            stuItem.style.padding = "6px";
-            stuItem.style.margin = "4px 0";
-            stuItem.style.borderRadius = "4px";
-            stuItem.style.fontSize = "12px";
-            stuItem.style.cursor = "grab";
-            stuItem.style.transition = "opacity 0.2s, transform 0.2s"; // ✨ 動畫過渡
+            stuItem.style.cssText = "background:#e74c3c; color:white; padding:6px; margin:4px 0; border-radius:4px; font-size:12px; cursor:grab; transition:opacity 0.2s, background 0.2s; position:relative;";
+
+            let tt = document.createElement('div');
+            tt.className = 'pref-tooltip';
+            tt.innerText = window._stuPrefsMap[stu.id] || '無';
+            stuItem.appendChild(tt);
 
             // ★ 如果引擎已經賦予了絕對 rank，就用它的，否則按順序排
             let displayRank = stu.rank ? stu.rank : (wIndex + 1);
@@ -5711,7 +6097,7 @@ window.renderTrialResults = function (allocated, waitlist, sessionsMap) {
                 timeStr = `<span style="opacity:0.75; font-size:10px; margin-left:6px;">⏱ ${mm}/${dd} ${hh}:${min}:${ss}</span>`;
             }
 
-            stuItem.innerHTML = `<span class="wl-seq" style="background:rgba(0,0,0,0.2); padding:2px 4px; border-radius:3px; margin-right:4px;">#${displayRank}</span> <strong>${window.escapeHTML(stu.studentName)}</strong> (${window.escapeHTML(stu.parentPhone)})${timeStr}`;
+            stuItem.innerHTML += `<span class="wl-seq" style="background:rgba(0,0,0,0.2); padding:2px 4px; border-radius:3px; margin-right:4px;">#${displayRank}</span> <strong>${window.escapeHTML(stu.studentName)}</strong> <span style="font-size:10px;">(${window.escapeHTML(stu.parentPhone)})</span>${timeStr}`;
             listContainer.appendChild(stuItem);
         });
 
@@ -5813,7 +6199,7 @@ window.exportTrialAllocationCSV = function () {
     }
 
     let csvContent = "\uFEFF"; // BOM for Excel UTF-8
-    csvContent += "狀態,班級,姓名,家長電話,備註說明\n";
+    csvContent += "狀態,班級,姓名,家長電話,備註說明,所有志願\n";
 
     // 1. 抓取正取各班
     const classContainers = document.querySelectorAll('#trialClassesGrid .class-list-container');
@@ -5831,10 +6217,13 @@ window.exportTrialAllocationCSV = function () {
             const phoneMatch = stuDiv.innerHTML.match(/\((09\d{8})\)/);
             const phone = phoneMatch ? phoneMatch[1] : "";
 
-            const descDiv = stuDiv.querySelector('div');
+            const descDiv = stuDiv.querySelector('div.assign-desc-text');
             const desc = descDiv ? descDiv.innerText.trim() : "";
 
-            csvContent += `正取,${className},${name},${phone},${desc}\n`;
+            // ✨ 功能五：讀取 data-prefs 志願
+            const prefs = stuDiv.getAttribute('data-prefs') ? stuDiv.getAttribute('data-prefs').replace(/\n/g, '；') : '';
+
+            csvContent += `正取,${className},${name},${phone},${desc},${prefs}\n`;
         });
     });
 
@@ -5853,10 +6242,13 @@ window.exportTrialAllocationCSV = function () {
             const phoneMatch = stuDiv.innerHTML.match(/\((09\d{8})\)/);
             const phone = phoneMatch ? phoneMatch[1] : "";
 
-            const seqSpan = stuDiv.querySelector('span');
+            const seqSpan = stuDiv.querySelector('span.wl-seq');
             const seq = seqSpan ? seqSpan.innerText.trim() : "";
 
-            csvContent += `候補,${className},${name},${phone},候補順位 ${seq}\n`;
+            // ✨ 功能五：讀取 data-prefs 志願
+            const prefs = stuDiv.getAttribute('data-prefs') ? stuDiv.getAttribute('data-prefs').replace(/\n/g, '；') : '';
+
+            csvContent += `候補,${className},${name},${phone},候補順位 ${seq},${prefs}\n`;
         });
     });
 
@@ -5934,6 +6326,52 @@ window.clearTrialAllocationBoard = function () {
     const statusEl = document.getElementById('aiEngineStatus');
     statusEl.innerHTML = "🧹 分發看板已清空，可隨時重新執行。";
     statusEl.style.color = "#f39c12";
+}
+
+// ✨ 功能二：鎖死資料讀回可編輯狀態
+window.restoreLockedAllocation = function (eventId) {
+    const config = trialEventsConfig[eventId];
+    if (!config || !config.lockedAllocation) return;
+
+    const lockedData = config.lockedAllocation;
+    const allocated = lockedData.allocated || {};
+    const waitlistByClass = lockedData.waitlistByClass || {};
+
+    // 由於 lockedAllocation 只有存 id, name, phone, rank，我們需要從 trialRegistrations 補齊 preferences 和 timestamp
+    // 才能支援 Tooltip 與 UI 的完整渲染
+    const waitlistFlat = [];
+
+    // 補齊 waitlistFlat
+    for (let cls in waitlistByClass) {
+        waitlistByClass[cls].forEach((minStu, idx) => {
+            // 找原本的學生完整資料
+            const fullStu = trialRegistrations.find(s => String(s.id) === String(minStu.id));
+            if (fullStu) {
+                // 做一個深烤貝，避免修改到原始 list
+                const mergeStu = { ...fullStu, waitlistTarget: cls, rank: minStu.rank || (idx + 1) };
+                waitlistFlat.push(mergeStu);
+            }
+        });
+    }
+
+    // 補齊正取學生的 assignDesc
+    for (let cls in allocated) {
+        allocated[cls].forEach(minStu => {
+            const fullStu = trialRegistrations.find(s => String(s.id) === String(minStu.id));
+            if (fullStu) {
+                fullStu.assignDesc = minStu.assignDesc; // 讓上方表格和卡片能畫出正確備註
+            }
+        });
+    }
+
+    document.getElementById('aiEngineStatus').innerHTML = "🔒 載入鎖死版本中... 可繼續拖曳微調，完成後再次點擊鎖死。";
+    document.getElementById('aiEngineStatus').style.color = "#8e44ad"; // 紫色提示
+
+    // 呼叫原本的 render，傳入 isRestored = true 讓 Undo Stack 初始化
+    window.renderTrialResults(allocated, waitlistFlat, config.sessions, true);
+    
+    // 復原時把上方看板重新畫一次，這樣手動改過的標籤才會長出來
+    window.renderTrialMonitorTable();
 }
 
 // ==========================================
