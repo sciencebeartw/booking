@@ -3999,6 +3999,9 @@ window.listenToTrialRegistrations = function (eventId) {
 
     if (!eventId) return;
 
+    // 用於防癟首次載入後再次觸發重繪分發看板
+    window._allocationRendered = false;
+
     unsubscribeTrial = onValue(ref(db, `trial_events/registrations/${eventId}`), (snapshot) => {
         trialRegistrations = [];
         if (snapshot.exists()) {
@@ -4009,6 +4012,16 @@ window.listenToTrialRegistrations = function (eventId) {
             }));
         }
         renderTrialMonitorTable();
+
+        // ✨ 功能修正：只在首次載入時才嘗試自動還原鎖死結果，後續 Firebase 更新（如取消資格）不重繪
+        if (!window._allocationRendered) {
+            window._allocationRendered = true;
+            if (trialEventsConfig[eventId] && trialEventsConfig[eventId].lockedAllocation) {
+                setTimeout(() => {
+                    window.restoreLockedAllocation(eventId);
+                }, 500);
+            }
+        }
     });
 };
 
@@ -4333,16 +4346,8 @@ window.switchTrialEvent = function () {
         }
     }
 
-    // 掛載實時監聽
+    // 掛載實時監聽（內部已處理首次自動還原）
     listenToTrialRegistrations(currentTrialEventId);
-
-    // ✨ 功能二：自動載入鎖死結果 (如果有的話)
-    if (trialEventsConfig[currentTrialEventId] && trialEventsConfig[currentTrialEventId].lockedAllocation) {
-        // 等待 trialRegistrations 載入完成再還原
-        setTimeout(() => {
-            window.restoreLockedAllocation(currentTrialEventId);
-        }, 1000); // 簡易 delay 確保 list 已經 fetch 到
-    }
 };
 
 window.showEventForm = function () {
@@ -6021,14 +6026,32 @@ window.renderTrialResults = function (allocated, waitlist, sessionsMap, isRestor
                 });
             };
 
-            let descBg = "rgba(0,0,0,0.2)";
-            let descStr = stu.assignDesc || '';
-            if (descStr.includes('手動調班')) descBg = "#f39c12";
-            else if (descStr.includes('手動候補上課程')) descBg = "#f1c40f";
+            // ★修正：用独立元素建構，屈名放在第一列，傍避被 tooltip div appendChild 到最後
+            const nameDiv = document.createElement('div');
+            nameDiv.style.cssText = 'font-size:18px; font-weight:bold; margin-bottom:4px; letter-spacing:1px; line-height:1.2;';
+            nameDiv.textContent = stu.studentName;
 
-            stuItem.innerHTML += `<div style="font-size:18px; font-weight:bold; margin-bottom:4px; letter-spacing:1px; line-height:1.2;">${window.escapeHTML(stu.studentName)}</div>
-            <span style="font-size:11px;">(${window.escapeHTML(stu.parentPhone)})</span>
-            ${descStr ? `<div style="font-size:11px; margin-top:5px; background:${descBg}; padding:3px 6px; border-radius:3px; color:${descBg==='#f1c40f'?'#333':'white'}; display:inline-block;" class="assign-desc-text">${descStr}</div>` : ''}`;
+            const phoneSpan = document.createElement('span');
+            phoneSpan.style.fontSize = '11px';
+            phoneSpan.textContent = `(${stu.parentPhone})`;
+
+            stuItem.appendChild(nameDiv);
+            stuItem.appendChild(phoneSpan);
+
+            let descBg = "rgba(0,0,0,0.2)";
+            let descColor = 'white';
+            let descStr = stu.assignDesc || '';
+            if (descStr.includes('手動調班')) { descBg = '#f39c12'; }
+            else if (descStr.includes('手動候補上')) { descBg = '#f1c40f'; descColor = '#333'; }
+
+            if (descStr) {
+                const descDiv = document.createElement('div');
+                descDiv.className = 'assign-desc-text';
+                descDiv.style.cssText = `font-size:11px; margin-top:5px; background:${descBg}; padding:3px 6px; border-radius:3px; color:${descColor}; display:inline-block;`;
+                descDiv.textContent = descStr;
+                stuItem.appendChild(descDiv);
+            }
+
             stuItem.appendChild(copyBtn);
             listContainer.appendChild(stuItem);
         });
@@ -6152,9 +6175,35 @@ window.renderTrialResults = function (allocated, waitlist, sessionsMap, isRestor
                 timeStr = `<span style="opacity:0.75; font-size:10px; margin-left:6px;">⏱ ${mm}/${dd} ${hh}:${min}:${ss}</span>`;
             }
 
-            stuItem.innerHTML += `<div style="font-size:18px; font-weight:bold; margin-bottom:4px; letter-spacing:1px; line-height:1.2;">${window.escapeHTML(stu.studentName)}</div>
-            <div class="wl-seq" style="background:rgba(0,0,0,0.2); padding:3px 6px; border-radius:4px; margin-right:4px; font-size:11px; display:inline-block; vertical-align:middle; line-height:1;">#${displayRank}</div>
-            <span style="font-size:11px; vertical-align:middle;">(${window.escapeHTML(stu.parentPhone)})</span>${timeStr}`;
+            // ★修正：用 appendChild 來屈名先排
+            const nameDiv2 = document.createElement('div');
+            nameDiv2.style.cssText = 'font-size:18px; font-weight:bold; margin-bottom:4px; letter-spacing:1px; line-height:1.2;';
+            nameDiv2.textContent = stu.studentName;
+            stuItem.appendChild(nameDiv2);
+
+            const seqTag = document.createElement('div');
+            seqTag.className = 'wl-seq';
+            seqTag.style.cssText = 'background:rgba(0,0,0,0.2); padding:3px 6px; border-radius:4px; margin-right:4px; font-size:11px; display:inline-block; vertical-align:middle; line-height:1;';
+            seqTag.textContent = `#${displayRank}`;
+            stuItem.appendChild(seqTag);
+
+            const phoneSpan2 = document.createElement('span');
+            phoneSpan2.style.cssText = 'font-size:11px; vertical-align:middle;';
+            phoneSpan2.textContent = `(${stu.parentPhone})`;
+            stuItem.appendChild(phoneSpan2);
+
+            if (timeStr) {
+                const timeEl = document.createElement('span');
+                timeEl.style.cssText = 'opacity:0.75; font-size:10px; margin-left:6px;';
+                const d = new Date(stu.clientTimestampMs);
+                const mm = String(d.getMonth() + 1).padStart(2, '0');
+                const dd2 = String(d.getDate()).padStart(2, '0');
+                const hh = String(d.getHours()).padStart(2, '0');
+                const min = String(d.getMinutes()).padStart(2, '0');
+                const ss = String(d.getSeconds()).padStart(2, '0');
+                timeEl.textContent = `⏱ ${mm}/${dd2} ${hh}:${min}:${ss}`;
+                stuItem.appendChild(timeEl);
+            }
             listContainer.appendChild(stuItem);
         });
 
