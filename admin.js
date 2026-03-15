@@ -5945,8 +5945,22 @@ window.renderTrialResults = function (allocated, waitlist, sessionsMap, isRestor
                 undoOp.upperTableUpdates[0].newDescContent = pureText;
 
                 window._syncUpperTableBadge(studentId, labelHtml);
-                const nameEl = el.querySelector('.assign-desc-text');
-                if (nameEl) nameEl.innerHTML = pureText;
+                let existingDescEl = el.querySelector('.assign-desc-text');
+                if (existingDescEl) {
+                    existingDescEl.textContent = pureText;
+                    if (pureText.includes('手動調班')) { existingDescEl.style.background = '#f39c12'; existingDescEl.style.color = 'white'; }
+                    else if (pureText.includes('手動候補上')) { existingDescEl.style.background = '#f1c40f'; existingDescEl.style.color = '#333'; }
+                } else {
+                    const newDesc = document.createElement('div');
+                    newDesc.className = 'assign-desc-text';
+                    let bg2 = 'rgba(0,0,0,0.2)', fg2 = 'white';
+                    if (pureText.includes('手動調班')) { bg2 = '#f39c12'; }
+                    else if (pureText.includes('手動候補上')) { bg2 = '#f1c40f'; fg2 = '#333'; }
+                    newDesc.style.cssText = `font-size:11px; margin-top:5px; background:${bg2}; padding:3px 6px; border-radius:3px; color:${fg2}; display:inline-block;`;
+                    newDesc.textContent = pureText;
+                    const btn2 = el.querySelector('button');
+                    if (btn2) el.insertBefore(newDesc, btn2); else el.appendChild(newDesc);
+                }
             }
 
             if (logDesc) window._logAction(logType, logDesc);
@@ -6000,45 +6014,18 @@ window.renderTrialResults = function (allocated, waitlist, sessionsMap, isRestor
             stuItem.ondragend = window.dragEnd;
             stuItem.style.cssText = "background:#3498db; color:white; padding:8px; margin:5px 0; border-radius:5px; cursor:grab; position:relative; min-height:40px;";
 
-            // Tooltip 元素
-            let tt = document.createElement('div');
-            tt.className = 'pref-tooltip';
-            tt.innerText = window._stuPrefsMap[stu.id] || '無';
-            stuItem.appendChild(tt);
-
-            // "複製 LINE 通知" 按鈕
-            let copyBtn = document.createElement('button');
-            copyBtn.innerHTML = "📋";
-            copyBtn.style.position = "absolute";
-            copyBtn.style.right = "5px";
-            copyBtn.style.top = "5px";
-            copyBtn.style.background = "rgba(255,255,255,0.3)";
-            copyBtn.style.border = "none";
-            copyBtn.style.borderRadius = "3px";
-            copyBtn.style.cursor = "pointer";
-            copyBtn.title = "複製錄取通知至剪貼簿";
-            copyBtn.onclick = (e) => {
-                let msg = `🎉 恭喜 ${stu.studentName} 同學錄取「山熊科學」試聽課程！\n\n您被分配到的班級是：\n${classNames[cls] || cls}\n\n如有任何問題，請隨時透過官方 LINE 聯繫我們。期待相見！`;
-                navigator.clipboard.writeText(msg).then(() => {
-                    let oldHtml = copyBtn.innerHTML;
-                    copyBtn.innerHTML = "✔️";
-                    setTimeout(() => copyBtn.innerHTML = oldHtml, 2000);
-                });
-            };
-
-            // ★修正：用独立元素建構，屈名放在第一列，傍避被 tooltip div appendChild 到最後
+            // ★ 姓名放第一 (不先 append tooltip)
             const nameDiv = document.createElement('div');
             nameDiv.style.cssText = 'font-size:18px; font-weight:bold; margin-bottom:4px; letter-spacing:1px; line-height:1.2;';
             nameDiv.textContent = stu.studentName;
+            stuItem.appendChild(nameDiv);
 
             const phoneSpan = document.createElement('span');
             phoneSpan.style.fontSize = '11px';
             phoneSpan.textContent = `(${stu.parentPhone})`;
-
-            stuItem.appendChild(nameDiv);
             stuItem.appendChild(phoneSpan);
 
-            let descBg = "rgba(0,0,0,0.2)";
+            let descBg = 'rgba(0,0,0,0.2)';
             let descColor = 'white';
             let descStr = stu.assignDesc || '';
             if (descStr.includes('手動調班')) { descBg = '#f39c12'; }
@@ -6052,7 +6039,33 @@ window.renderTrialResults = function (allocated, waitlist, sessionsMap, isRestor
                 stuItem.appendChild(descDiv);
             }
 
+            // "複製 LINE 通知" 按鈕
+            let copyBtn = document.createElement('button');
+            copyBtn.innerHTML = "📋";
+            copyBtn.style.position = "absolute";
+            copyBtn.style.right = "5px";
+            copyBtn.style.top = "5px";
+            copyBtn.style.background = "rgba(255,255,255,0.3)";
+            copyBtn.style.border = "none";
+            copyBtn.style.borderRadius = "3px";
+            copyBtn.style.cursor = "pointer";
+            copyBtn.title = "複製錄取通知至剪貼簿";
+            copyBtn.onclick = (e) => {
+                e.stopPropagation();
+                let msg = `🎉 恭喜 ${stu.studentName} 同學錄取「山熊科學」試聽課程！\n\n您被分配到的班級是：\n${classNames[cls] || cls}\n\n如有任何問題，請隨時透過官方 LINE 聯繫我們。期待相見！`;
+                navigator.clipboard.writeText(msg).then(() => {
+                    let oldHtml = copyBtn.innerHTML;
+                    copyBtn.innerHTML = "✔️";
+                    setTimeout(() => copyBtn.innerHTML = oldHtml, 2000);
+                });
+            };
             stuItem.appendChild(copyBtn);
+
+            // ★ Tooltip 最後才掛，不干擾前面的 DOM 順序
+            let tt = document.createElement('div');
+            tt.className = 'pref-tooltip';
+            tt.innerText = window._stuPrefsMap[stu.id] || '無';
+            stuItem.appendChild(tt);
             listContainer.appendChild(stuItem);
         });
 
