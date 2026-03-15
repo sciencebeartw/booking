@@ -5785,7 +5785,7 @@ window.renderTrialResults = function (allocated, waitlist, sessionsMap, isRestor
                 // 候補區內排序，不變
             } else {
                 // ✨ 修正：拉入正取區，要在原位置留下一張灰色的「已補上」卡片
-                if (undoOp.fromParent && insertRef !== el) {
+                if (undoOp.fromParent) {
                     const ghostCard = el.cloneNode(true);
                     ghostCard.style.background = '#bdc3c7'; // 灰色
                     ghostCard.style.color = '#333';
@@ -5796,12 +5796,16 @@ window.renderTrialResults = function (allocated, waitlist, sessionsMap, isRestor
                     
                     const tag = document.createElement('span');
                     tag.className = 'wl-filled-tag';
-                    tag.style.cssText = 'background:#2980b9; color:white; padding:2px 5px; border-radius:3px; margin-left:5px; font-size:10px; font-weight:bold;';
+                    tag.style.cssText = 'background:#2980b9; color:white; padding:3px 6px; border-radius:3px; margin-top:5px; font-size:11px; font-weight:bold; display:inline-block;';
                     tag.innerText = '已補上 ✅';
                     ghostCard.appendChild(tag);
                     
                     // 將替身留在原地
-                    undoOp.fromParent.insertBefore(ghostCard, undoOp.fromNextSibling);
+                    if (undoOp.fromNextSibling) {
+                        undoOp.fromParent.insertBefore(ghostCard, undoOp.fromNextSibling);
+                    } else {
+                        undoOp.fromParent.appendChild(ghostCard);
+                    }
                     undoOp.createdGhost = ghostCard; // 存入 undoOp 供復原時刪除
                 }
 
@@ -5910,7 +5914,7 @@ window.renderTrialResults = function (allocated, waitlist, sessionsMap, isRestor
 
             if (wasWaitlist && !isTargetWl) {
                 // 候補補上
-                labelHtml = `<span style="color:#27ae60; font-weight:bold;">✅ 補上：${tgtName}</span>`;
+                labelHtml = `<span style="background:#f1c40f; color:#333; padding:2px 5px; border-radius:3px; font-size:11px; font-weight:bold;">⚠️ 手動候補上課程：${tgtName}</span>`;
                 logDesc = `${stuName} 從 [${classNamesMap[source_class]||source_class} 候補] 補上 [${tgtName} 正取]`;
             } else if (!wasWaitlist && !isTargetWl) {
                 // 正取調班
@@ -6017,8 +6021,14 @@ window.renderTrialResults = function (allocated, waitlist, sessionsMap, isRestor
                 });
             };
 
-            stuItem.innerHTML += `<strong>${window.escapeHTML(stu.studentName)}</strong> <span style="font-size:11px;">(${window.escapeHTML(stu.parentPhone)})</span>
-            <div style="font-size:11px; margin-top:5px; background:rgba(0,0,0,0.2); padding:2px 5px; border-radius:3px; color:white; display:inline-block;" class="assign-desc-text">${stu.assignDesc || ''}</div>`;
+            let descBg = "rgba(0,0,0,0.2)";
+            let descStr = stu.assignDesc || '';
+            if (descStr.includes('手動調班')) descBg = "#f39c12";
+            else if (descStr.includes('手動候補上課程')) descBg = "#f1c40f";
+
+            stuItem.innerHTML += `<div style="font-size:18px; font-weight:bold; margin-bottom:4px; letter-spacing:1px; line-height:1.2;">${window.escapeHTML(stu.studentName)}</div>
+            <span style="font-size:11px;">(${window.escapeHTML(stu.parentPhone)})</span>
+            ${descStr ? `<div style="font-size:11px; margin-top:5px; background:${descBg}; padding:3px 6px; border-radius:3px; color:${descBg==='#f1c40f'?'#333':'white'}; display:inline-block;" class="assign-desc-text">${descStr}</div>` : ''}`;
             stuItem.appendChild(copyBtn);
             listContainer.appendChild(stuItem);
         });
@@ -6142,7 +6152,9 @@ window.renderTrialResults = function (allocated, waitlist, sessionsMap, isRestor
                 timeStr = `<span style="opacity:0.75; font-size:10px; margin-left:6px;">⏱ ${mm}/${dd} ${hh}:${min}:${ss}</span>`;
             }
 
-            stuItem.innerHTML += `<span class="wl-seq" style="background:rgba(0,0,0,0.2); padding:2px 4px; border-radius:3px; margin-right:4px;">#${displayRank}</span> <strong>${window.escapeHTML(stu.studentName)}</strong> <span style="font-size:10px;">(${window.escapeHTML(stu.parentPhone)})</span>${timeStr}`;
+            stuItem.innerHTML += `<div style="font-size:18px; font-weight:bold; margin-bottom:4px; letter-spacing:1px; line-height:1.2;">${window.escapeHTML(stu.studentName)}</div>
+            <div class="wl-seq" style="background:rgba(0,0,0,0.2); padding:3px 6px; border-radius:4px; margin-right:4px; font-size:11px; display:inline-block; vertical-align:middle; line-height:1;">#${displayRank}</div>
+            <span style="font-size:11px; vertical-align:middle;">(${window.escapeHTML(stu.parentPhone)})</span>${timeStr}`;
             listContainer.appendChild(stuItem);
         });
 
