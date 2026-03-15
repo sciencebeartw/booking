@@ -5680,18 +5680,23 @@ window.renderTrialResults = function (allocated, waitlist, sessionsMap, isRestor
 
         const placeholderNext = _dragPlaceholder ? _dragPlaceholder.nextSibling : null;
         const placeholderParent = _dragPlaceholder ? _dragPlaceholder.parentNode : null;
-        _removePlaceholder();
 
         const data = ev.dataTransfer.getData("stu_id");
         const source_class = ev.dataTransfer.getData("source_class");
         const targetContainer = ev.target.closest('.class-list-container');
-        if (!targetContainer) return;
+        if (!targetContainer) {
+            _removePlaceholder();
+            return;
+        }
 
         const targetClass = targetContainer.getAttribute('data-cls');
         const isSameContainer = source_class === targetClass;
 
         const el = document.getElementById(data);
-        if (!el) return;
+        if (!el) {
+            _removePlaceholder();
+            return;
+        }
         _restoreDragSource();
 
         let isInsertMode = true;
@@ -5708,8 +5713,14 @@ window.renderTrialResults = function (allocated, waitlist, sessionsMap, isRestor
             }
         }
 
-        if (isSameContainer && insertRef === el) return;
-        if (isSameContainer && !placeholderParent && insertRef === null) return;
+        if (isSameContainer && insertRef === el) {
+            _removePlaceholder();
+            return;
+        }
+        if (isSameContainer && !placeholderParent && insertRef === null) {
+            _removePlaceholder();
+            return;
+        }
 
         // 紀錄拖曳前狀態
         undoOp.el = el;
@@ -5719,6 +5730,9 @@ window.renderTrialResults = function (allocated, waitlist, sessionsMap, isRestor
         undoOp.prevId = el.id;
         undoOp.prevBg = el.style.background;
         undoOp.prevColor = el.style.color;
+
+        // 狀態紀錄完成，安全移除 placeholder
+        _removePlaceholder();
 
         const isSourceWl = undoOp.prevIsWaitlist === 'true';
         const isTargetWl = targetClass === 'waitlist';
